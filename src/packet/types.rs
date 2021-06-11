@@ -23,7 +23,7 @@ impl Display for VarInt {
 
 #[async_trait::async_trait]
 impl Readable for VarInt {
-    fn read<R: AsyncRead + Send>(reader: &R) -> Pin<Box<dyn Future<Output=Self>>> {
+    fn read<R: AsyncRead + Send>(_reader: &R) -> Pin<Box<dyn Future<Output=Self>>> {
 
         async fn run() -> VarInt {
             const PART: u32 = 0x7F;

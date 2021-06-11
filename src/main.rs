@@ -18,7 +18,7 @@ async fn main() {
 }
 
 async fn run() -> ResContext {
-    let connections = connections::create().await?;
+    let _connections = connections::create().await?;
 
 
     Ok(())

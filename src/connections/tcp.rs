@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+
 use tokio::net::TcpStream;
 use tokio_socks::tcp::Socks5Stream;
 

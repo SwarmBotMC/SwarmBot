@@ -12,7 +12,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn run(&self, scope: &rayon::Scope){
+    pub fn run(&self, _scope: &rayon::Scope){
         
     }
 }
