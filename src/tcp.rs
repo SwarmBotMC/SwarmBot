@@ -41,7 +41,7 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, users: &
         inner
     };
 
-    Ok(users.into_iter().zip(streams).map(|(user, stream)| {
+    Ok(users.iter().zip(streams).map(|(user, stream)| {
         let user = user.clone();
         let (read, write) = stream.into_split();
         Connection {

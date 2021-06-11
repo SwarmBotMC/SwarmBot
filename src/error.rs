@@ -7,7 +7,6 @@ pub enum Error {
     IO(std::io::Error),
     CSV(csv::Error),
     Socks5(tokio_socks::Error),
-    Tokio(tokio::io::Error),
     Simple(String),
 }
 
@@ -18,7 +17,6 @@ impl Display for Error {
             Error::CSV(csv) => csv.fmt(f),
             Error::Simple(str) => f.write_str(str),
             Error::Socks5(socks) => socks.fmt(f),
-            Error::Tokio(tokio) => tokio.fmt(f)
         }
     }
 }

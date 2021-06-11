@@ -1,7 +1,6 @@
 use std::fs::File;
 
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
 
 use crate::error::Res;
 use crate::{User, Proxy};
