@@ -3,11 +3,10 @@ use std::task::{Context, Poll};
 
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
-
-use crate::packet::io::{AES, ZLib};
-use crate::packet::transform::ReadableExt;
-use crate::packet::types::{PacketData, VarInt, RawVec};
-use crate::packet::serialization::read::{ByteReader, LenRead};
+use crate::protocol::io::{ZLib, AES};
+use crate::protocol::types::{PacketData, VarInt, RawVec};
+use crate::protocol::serialization::read::{ByteReader, LenRead};
+use crate::protocol::transform::ReadableExt;
 
 struct Reader {
     reader: EncryptedReader,

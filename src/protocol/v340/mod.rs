@@ -7,7 +7,27 @@
 //     data: Vec<u8>
 // }
 
-struct Protocol;
+use crate::error::Res;
+use crate::connections::Connection;
+use crate::client::instance::Client;
+use crate::protocol::McProtocol;
+
+pub struct Protocol;
+
+#[async_trait::async_trait]
+impl McProtocol for Protocol {
+    async fn login(conn: &Connection) -> Res<Self> {
+        todo!()
+    }
+
+    fn apply_packets(&self, client: &mut Client) {
+        todo!()
+    }
+
+    fn teleport(&mut self) {
+        todo!()
+    }
+}
 
 // #[async_trait::async_trait]
 // impl McProtocol for Protocol {

@@ -3,17 +3,31 @@ use std::rc::Rc;
 
 use tokio::task::JoinHandle;
 
-use crate::client::instance::ClientProtocol;
+use crate::client::protocol::ClientProtocol;
 use crate::connections::Connection;
-use crate::packet::McProtocol;
+use crate::protocol::McProtocol;
 
-struct ClientRunner<T: McProtocol + Send> {
+pub struct Runner<T: McProtocol> {
     clients: Rc<RefCell<Vec<ClientProtocol<T>>>>,
     handles: Vec<JoinHandle<()>>,
 }
 
-impl<T: McProtocol + Send + 'static> ClientRunner<T> {
-    fn new(connections: Vec<Connection>) -> ClientRunner<T> {
+impl<T: McProtocol> Drop for Runner<T> {
+    fn drop(&mut self) {
+        for handle in &self.handles {
+            handle.abort();
+        }
+    }
+}
+
+impl<T: McProtocol + 'static> Runner<T> {
+    pub async fn run(connections: Vec<Connection>) -> ! {
+        let mut runner = Runner::<T>::new(connections);
+        runner.game_loop().await
+    }
+
+
+    fn new(connections: Vec<Connection>) -> Runner<T> {
         let conn_len = connections.len();
         let clients = Rc::new(RefCell::new(Vec::with_capacity(conn_len)));
         let mut handles = Vec::with_capacity(conn_len);
@@ -27,13 +41,20 @@ impl<T: McProtocol + Send + 'static> ClientRunner<T> {
             handles.push(handle);
         }
 
-        ClientRunner {
+        Runner {
             handles,
             clients,
         }
     }
 
-    fn game_loop(&mut self) {
+
+    pub async fn game_loop(&mut self) -> ! {
+        loop {
+            self.game_iter();
+        }
+    }
+
+    fn game_iter(&mut self) {
 
         // process packets from game loop
         {

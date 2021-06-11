@@ -4,10 +4,9 @@ use clap::{AppSettings, Clap};
 #[clap(version = "1.0", author = "Andrew Gazelka")]
 #[clap(setting = AppSettings::ColoredHelp)]
 pub struct Opts {
-
     pub host: String,
 
-    #[clap(short,long, default_value = "1")]
+    #[clap(short, long, default_value = "1")]
     pub count: usize,
 
     #[clap(short, long)]
@@ -21,10 +20,13 @@ pub struct Opts {
 
     #[clap(short, long)]
     pub proxy: bool,
+
+    #[clap(short, long, default_value = "340")]
+    pub version: usize,
 }
 
 impl Opts {
-    pub fn get() -> Opts{
+    pub fn get() -> Opts {
         Opts::parse()
     }
 }

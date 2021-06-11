@@ -38,9 +38,13 @@ impl Proxy {
     }
 }
 
+pub struct Connections {
+    pub version: usize,
+    pub list: Vec<Connection>
+}
 
-pub async fn create() -> ResContext<Vec<Connection>> {
-    let Opts { users_file, proxy, proxies_file, host, count, .. } = Opts::get();
+pub async fn create() -> ResContext<Connections> {
+    let Opts { users_file, proxy, proxies_file, host, count, version, .. } = Opts::get();
 
     let users = {
         let file = File::open(&users_file).context(|| format!("opening users ({})", users_file))?;
@@ -55,7 +59,12 @@ pub async fn create() -> ResContext<Vec<Connection>> {
 
     let host = format!("{}:{}", host, 25565);
 
-    let connections = obtain_connections(proxy, &proxies_file, &host, users).await?;
+    let list = obtain_connections(proxy, &proxies_file, &host, users).await?;
+
+    let connections= Connections {
+        version,
+        list
+    };
 
     Ok(connections)
 }

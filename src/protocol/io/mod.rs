@@ -7,16 +7,9 @@ use flate2::Compression;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 
-
-
-
-
-
-
+pub mod reader;
 
 type AesCfb8 = Cfb8<Aes128>;
-
-mod reader;
 
 
 /// https://github.com/RustCrypto/block-ciphers/issues/28
@@ -68,5 +61,3 @@ impl ZLib {
         e.finish()
     }
 }
-
-

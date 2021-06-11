@@ -3,9 +3,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 use tokio::io::{AsyncRead};
-
-use crate::packet::transform::{Readable};
-use crate::packet::serialization::read::{ByteReadable, ByteReader, ByteReadableLike};
+use crate::protocol::serialization::read::{ByteReader, ByteReadable, ByteReadableLike};
+use crate::protocol::transform::Readable;
 
 pub struct PacketData {
     pub id: u32,
