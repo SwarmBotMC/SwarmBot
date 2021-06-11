@@ -3,9 +3,8 @@ use std::rc::Rc;
 
 use tokio::task::JoinHandle;
 
-use crate::client::protocol::ClientProtocol;
 use crate::connections::Connection;
-use crate::protocol::McProtocol;
+use crate::protocol::{McProtocol, ClientProtocol};
 
 pub struct Runner<T: McProtocol> {
     clients: Rc<RefCell<Vec<ClientProtocol<T>>>>,

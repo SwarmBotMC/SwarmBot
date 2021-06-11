@@ -10,15 +10,16 @@
 use crate::error::Res;
 use crate::connections::Connection;
 use crate::client::instance::Client;
-use crate::protocol::McProtocol;
+use crate::protocol::{McProtocol, ClientProtocol};
 
 pub struct Protocol;
 
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
-    async fn login(conn: &Connection) -> Res<Self> {
+    async fn login(conn: &Connection) -> Res<ClientProtocol<Self>> {
         todo!()
     }
+
 
     fn apply_packets(&self, client: &mut Client) {
         todo!()
