@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use tokio::task::JoinHandle;
 
-use crate::connections::Connection;
+use crate::bootstrap::Connection;
 use crate::protocol::{McProtocol, ClientProtocol};
 
 pub struct Runner<T: McProtocol> {

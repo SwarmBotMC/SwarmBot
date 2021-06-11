@@ -1,5 +1,5 @@
 use crate::client::instance::Client;
-use crate::connections::Connection;
+use crate::bootstrap::Connection;
 use crate::error::Res;
 
 pub mod v340;

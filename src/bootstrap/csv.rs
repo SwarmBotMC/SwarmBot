@@ -3,7 +3,7 @@ use std::fs::File;
 use serde::de::DeserializeOwned;
 
 use crate::error::Res;
-use crate::connections::{User, Proxy};
+use crate::bootstrap::{User, Proxy};
 
 fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
     csv::ReaderBuilder::new()

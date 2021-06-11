@@ -8,7 +8,7 @@
 // }
 
 use crate::error::Res;
-use crate::connections::Connection;
+use crate::bootstrap::Connection;
 use crate::client::instance::Client;
 use crate::protocol::{McProtocol, ClientProtocol};
 

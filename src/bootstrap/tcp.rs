@@ -5,8 +5,8 @@ use tokio::net::TcpStream;
 use tokio_socks::tcp::Socks5Stream;
 
 use crate::error::{HasContext, ResContext};
-use crate::connections::csv::read_proxies;
-use crate::connections::{User, Connection};
+use crate::bootstrap::csv::read_proxies;
+use crate::bootstrap::{User, Connection};
 
 pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, users: &[User]) -> ResContext<Vec<Connection>> {
     let count = users.len();

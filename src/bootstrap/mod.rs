@@ -1,8 +1,8 @@
 use std::fs::File;
 
-use crate::connections::csv::read_users;
-use crate::connections::opts::Opts;
-use crate::connections::tcp::{obtain_connections};
+use crate::bootstrap::csv::read_users;
+use crate::bootstrap::opts::Opts;
+use crate::bootstrap::tcp::{obtain_connections};
 use serde::Deserialize;
 use crate::error::{err, HasContext, ResContext};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
@@ -38,12 +38,12 @@ impl Proxy {
     }
 }
 
-pub struct Connections {
+pub struct Output {
     pub version: usize,
-    pub list: Vec<Connection>
+    pub connections: Vec<Connection>
 }
 
-pub async fn create() -> ResContext<Connections> {
+pub async fn init() -> ResContext<Output> {
     let Opts { users_file, proxy, proxies_file, host, count, version, .. } = Opts::get();
 
     let users = {
@@ -61,9 +61,9 @@ pub async fn create() -> ResContext<Connections> {
 
     let list = obtain_connections(proxy, &proxies_file, &host, users).await?;
 
-    let connections= Connections {
+    let connections= Output {
         version,
-        list
+        connections: list
     };
 
     Ok(connections)
