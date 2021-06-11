@@ -6,7 +6,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# parsing arguments
 clap= "3.0.0-beta.2"
+# reading from csv
+csv = "1.1"
 
 [profile.release]
 debug = 1

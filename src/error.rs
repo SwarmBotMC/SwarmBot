@@ -7,19 +7,20 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct ContextError<T: Display + Debug> {
-    context: &'static str,
+    context: String,
     error: T,
 }
 
 pub trait ContextTrait<T, E> where E: Display + Debug {
-    fn context(self, context: &'static str) -> Result<T, ContextError<E>>;
+    fn context(self, context: impl Fn() -> String) -> Result<T, ContextError<E>>;
 }
 
 impl<E: Display + Debug, T> ContextTrait<T, E> for Result<T, E> {
-    fn context(self, context: &'static str) -> Result<T, ContextError<E>> {
+    fn context(self, context: impl Fn() -> String) -> Result<T, ContextError<E>> {
         match self {
             Ok(x) => Ok(x),
             Err(error) => {
+                let context = context();
                 let wrapped = ContextError {
                     context,
                     error,

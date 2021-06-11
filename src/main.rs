@@ -1,25 +1,26 @@
-use clap::{Clap, AppSettings};
+use std::fs::File;
 
-#[derive(Clap, Debug)]
-#[clap(version = "1.0", author = "Andrew Gazelka")]
-#[clap(setting = AppSettings::ColoredHelp)]
-struct Opts {
+use crate::error::ContextTrait;
+use crate::opts::Opts;
 
-    host: String,
+mod opts;
+mod error;
 
-    #[clap(short,long, default_value = "1")]
-    count: usize,
-
-    #[clap(short, long)]
-    online: bool,
-
-    #[clap(short, long)]
-    socks5: bool,
-}
+pub type Res<T = ()> = Result<T, error::Error>;
 
 fn main() {
-    println!("Hello, world!");
-    let opts: Opts = Opts::parse();
+    match run() {
+        Ok(_) => println!("Program exited without errors"),
+        Err(err) => println!("{}", err)
+    };
+}
 
-    println!("opts {:?}", opts);
+fn run() -> Res {
+    println!("Hello, world!");
+    let Opts { users_file, .. } = Opts::get();
+
+    let users = File::open(&users_file).context(|| format!("reading {}", users_file))?;
+
+
+    Ok(())
 }
