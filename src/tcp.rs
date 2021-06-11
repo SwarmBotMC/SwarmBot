@@ -6,7 +6,7 @@ use tokio_socks::tcp::Socks5Stream;
 
 use crate::{User};
 use crate::csv::read_proxies;
-use crate::error::{HasContext, Res, ResContext};
+use crate::error::{HasContext, ResContext};
 
 #[derive(Debug)]
 pub struct Connection {
