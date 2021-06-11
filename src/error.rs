@@ -6,15 +6,28 @@ pub type ResContext<T = ()> = Result<T, Context<Error>>;
 pub enum Error {
     IO(std::io::Error),
     CSV(csv::Error),
+    Socks5(tokio_socks::Error),
+    Tokio(tokio::io::Error),
+    Simple(String),
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::IO(io) => std::fmt::Display::fmt(&io, f),
-            Error::CSV(csv) => std::fmt::Debug::fmt(&csv, f)
+            Error::IO(io) => io.fmt(f),
+            Error::CSV(csv) => csv.fmt(f),
+            Error::Simple(str) => f.write_str(str),
+            Error::Socks5(socks) => socks.fmt(f),
+            Error::Tokio(tokio) => tokio.fmt(f)
         }
     }
+}
+
+pub fn err(str: String) -> Result<(), Context<Error>> {
+    Err(Context {
+        inner: Error::Simple(str),
+        context: "".to_string(),
+    })
 }
 
 impl From<csv::Error> for Error {
@@ -28,6 +41,24 @@ impl From<std::io::Error> for Error {
         Self::IO(err)
     }
 }
+
+// impl From<tokio::io::Error> for Error {
+//     fn from(err: tokio::io::Error) -> Self {
+//         Self::Tokio(err)
+//     }
+// }
+
+impl From<tokio_socks::Error> for Error {
+    fn from(err: tokio_socks::Error) -> Self {
+        Self::Socks5(err)
+    }
+}
+
+// impl From<tokio::io::Error> for Error {
+//     fn from(err: tokio_socks::Error) -> Self {
+//         Self::Socks5(err)
+//     }
+// }
 
 pub struct Context<T> {
     inner: T,
@@ -44,7 +75,7 @@ pub trait HasContext<T, E> {
     fn context(self, f: impl Fn() -> String) -> Result<T, Context<E>>;
 }
 
-impl<T, E : Into<Error>> HasContext<T, Error> for Result<T, E> {
+impl<T, E: Into<Error>> HasContext<T, Error> for Result<T, E> {
     fn context(self, f: impl Fn() -> String) -> Result<T, Context<Error>> {
         match self {
             Ok(res) => Ok(res),

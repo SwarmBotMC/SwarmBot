@@ -4,6 +4,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 
 use crate::error::Res;
+use crate::{User, Proxy};
 
 fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
     csv::ReaderBuilder::new()
@@ -16,20 +17,6 @@ fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
             Ok(elem)
         })
         .collect()
-}
-
-#[derive(Debug, Deserialize)]
-pub struct User {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Proxy {
-    host: String,
-    port: u32,
-    user: String,
-    pass: String,
 }
 
 pub fn read_users(file: File) -> Res<Vec<User>> {
