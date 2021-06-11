@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 pub type Res<T = ()> = Result<T, Error>;
 pub type ResContext<T = ()> = Result<T, Context<Error>>;
 
+#[derive(Debug)]
 pub enum Error {
     IO(std::io::Error),
     CSV(csv::Error),

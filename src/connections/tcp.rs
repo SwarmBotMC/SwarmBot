@@ -4,16 +4,9 @@ use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 use tokio_socks::tcp::Socks5Stream;
 
-use crate::{User};
-use crate::csv::read_proxies;
 use crate::error::{HasContext, ResContext};
-
-#[derive(Debug)]
-pub struct Connection {
-    pub user: User,
-    pub read: OwnedReadHalf,
-    pub write: OwnedWriteHalf,
-}
+use crate::connections::csv::read_proxies;
+use crate::connections::{User, Connection};
 
 pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, users: &[User]) -> ResContext<Vec<Connection>> {
     let count = users.len();

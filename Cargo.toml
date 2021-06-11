@@ -22,5 +22,22 @@ tokio-socks = "0.5.1"
 # tokio
 tokio = { version = "1.5.0", features = ["full"] }
 
+# async trait
+async-trait = "0.1.50"
+
+
+# encruption
+aes = "0.7.4"
+cfb8 = "0.7.1"
+
+# zlib
+flate2 = "1.0"
+
+# get_u8, etc extensions
+bytes = "1.0.1"
+
+rayon = "1.5.1"
+#byteorder = "1.4.3"
+
 [profile.release]
 debug = 1
