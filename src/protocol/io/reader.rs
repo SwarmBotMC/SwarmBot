@@ -100,7 +100,8 @@ impl PacketReader {
 
         // if id == 0 && T::STATE == PacketState::Login {
         //     let Disconnect {reason} = reader.read();
-        //     return Err(crate::Error::Disconnect(reason))
+        //     println!("disconnected because {}", reason);
+        //     // return Err(crate::Error::Disconnect(reason))
         // }
 
         if id != T::ID {

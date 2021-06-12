@@ -36,21 +36,15 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u1
             let proxies = read_proxies(file).context(|| format!("opening proxies ({})", proxies))?;
 
             tokio::task::spawn_local(async move {
-                for (proxies, user) in proxies.chunks_exact(2).cycle().zip(users) {
-                    let stream = {
-                        let proxy = &proxies[0];
-                        let proxy_addr = proxy.address();
-                        let actual_addr = format!("{}:{}", host, port);
-                        let stream = Socks5Stream::connect_with_password(proxy_addr.as_str(), actual_addr.as_str(), &proxy.user, &proxy.pass).await.unwrap();
-                        stream.into_inner()
-                        // stream.await.context(|| format!("connecting to proxy {}", proxy.address()))?
-                    };
+                for (proxy, user) in proxies.iter().cycle().zip(users) {
 
-                    let mojang = {
-                        let proxy = &proxies[1];
-                        let proxy_addr = proxy.address();
-                        Mojang::socks5(proxy_addr.as_str(), &proxy.user, &proxy.pass).context(|| format!("generating mojang https client")).unwrap()
-                    };
+                    let proxy_addr = proxy.address();
+                    let actual_addr = format!("{}:{}", host, port);
+
+                    let stream = Socks5Stream::connect_with_password(proxy_addr.as_str(), actual_addr.as_str(), &proxy.user, &proxy.pass).await.unwrap();
+                    let stream = stream.into_inner();
+
+                    let mojang = Mojang::socks5(proxy_addr.as_str(), &proxy.user, &proxy.pass).context(|| format!("generating mojang https client")).unwrap();
 
                     tx.send(combine(user, stream, mojang, host.clone(), port)).await.unwrap();
                 }

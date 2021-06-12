@@ -12,7 +12,7 @@ use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::types::PacketData;
-use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
+use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess, Disconnect};
 use crate::protocol::v340::serverbound::HandshakeNextState;
 use crate::client::runner::GlobalState;
 
