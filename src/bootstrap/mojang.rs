@@ -16,7 +16,6 @@ impl Mojang {
     pub fn socks5(address: &str, user: &str, pass: &str) -> Res<Mojang> {
         let full_address = format!("socks5://{}", address);
 
-        println!("address {}", full_address);
         let proxy = reqwest::Proxy::https(full_address)?
             .basic_auth(user, pass);
 
@@ -78,22 +77,20 @@ impl Mojang {
     pub async fn authenticate(&self, email: &str, password: &str) -> Res<AuthResponse> {
         let payload = json!({
             "agent": {
-                "name": "Minecraft",
+                "name": "minecraft",
                 "version": 1
             },
             "username": email, // this is not a mistake... the username now takes in email
             "password": password,
-            "requestUser": false
+            "requestuser": false
         });
 
         let payload = payload.to_string();
 
-        // TODO: is this right?
         let res = self.client.post("https://authserver.mojang.com/authenticate")
             .body(payload)
             .send()
             .await?;
-
 
         let status = res.status();
         if status != 200 {

@@ -60,6 +60,9 @@ sha1 = "0.6"
 # json parsing (particularly for mojang api)
 serde_json = "1.0"
 
+# quite a few uses
+itertools = "0.10.1"
+
 packets = { path = "packets" } # from a path in the local filesystem
 
 [profile.release]

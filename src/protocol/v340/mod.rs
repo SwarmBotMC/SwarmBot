@@ -184,6 +184,10 @@ impl Protocol {
                 });
 
             },
+            ChatMessage::ID => {
+                let ChatMessage { json, .. } = data.read();
+                println!("chat {}", json);
+            }
             _ => {}
         }
     }
