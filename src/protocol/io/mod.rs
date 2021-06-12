@@ -8,6 +8,7 @@ use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 
 pub mod reader;
+pub mod writer;
 
 type AesCfb8 = Cfb8<Aes128>;
 

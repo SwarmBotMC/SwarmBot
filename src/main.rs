@@ -25,8 +25,6 @@ async fn main() {
 async fn run() -> ResContext<!> {
     let Output { version, connections } = bootstrap::init().await?;
 
-    let world_blocks = WorldBlocks::default();
-
     match version {
         340 => Runner::<protocol::v340::Protocol>::run(connections).await,
         _ => { panic!("version {} does not exist", version) }

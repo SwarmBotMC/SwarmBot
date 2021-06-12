@@ -8,7 +8,7 @@ use crate::protocol::types::{PacketData, VarInt, RawVec};
 use crate::protocol::serialization::read::{ByteReader, LenRead};
 use crate::protocol::transform::ReadableExt;
 
-struct Reader {
+pub struct PacketReader {
     reader: EncryptedReader,
     compression: Option<ZLib>,
 }
@@ -33,8 +33,8 @@ impl AsyncRead for EncryptedReader {
     }
 }
 
-impl Reader {
-    fn new(read: OwnedReadHalf) -> Reader {
+impl From<OwnedReadHalf> for PacketReader {
+    fn from(read: OwnedReadHalf) -> Self {
         let reader = BufReader::new(read);
 
         let reader = EncryptedReader {
@@ -42,17 +42,20 @@ impl Reader {
             cipher: None
         };
 
-        Reader {
+        PacketReader {
             reader,
             compression: None
         }
     }
+}
 
-    fn encryption(&mut self, key: &[u8]) {
+impl PacketReader {
+
+    pub fn encryption(&mut self, key: &[u8]) {
         self.reader.cipher = Some(AES::new(key));
     }
 
-    fn compression(&mut self, threshold: u32) {
+    pub fn compression(&mut self, threshold: u32) {
         self.compression = Some(ZLib::new(threshold))
     }
 

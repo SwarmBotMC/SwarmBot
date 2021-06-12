@@ -9,15 +9,26 @@
 
 use crate::error::Res;
 use crate::bootstrap::Connection;
-use crate::client::instance::{Client, State};
+use crate::client::instance::{State};
 use crate::protocol::{McProtocol, Login};
+use crate::protocol::io::reader::PacketReader;
+use crate::protocol::io::writer::PacketWriter;
 
-pub struct Protocol;
+pub struct Protocol {
+    reader: PacketReader,
+    writer: PacketWriter
+}
 
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
     async fn login(conn: Connection) -> Res<Login<Self>> {
+
+        let reader = PacketReader::from(conn.read);
+        let writer = PacketWriter::from(conn.write);
+
         todo!()
+
+
     }
 
     fn apply_packets(&self, client: &mut State) {
@@ -28,20 +39,3 @@ impl McProtocol for Protocol {
         todo!()
     }
 }
-
-// #[async_trait::async_trait]
-// impl McProtocol for Protocol {
-//     type PacketType = PacketData;
-//
-//     async fn login(read_half: OwnedReadHalf, write_half: OwnedWriteHalf) -> Res<Self> {
-//         todo!()
-//     }
-//
-//     async fn read_packet(&self) -> Self::PacketType {
-//         todo!()
-//     }
-//
-//     async fn write_packet(&self) -> Self::PacketType {
-//         todo!()
-//     }
-// }

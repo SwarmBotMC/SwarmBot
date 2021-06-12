@@ -5,14 +5,31 @@ use std::pin::Pin;
 use tokio::io::{AsyncRead};
 use crate::protocol::serialization::read::{ByteReader, ByteReadable, ByteReadableLike};
 use crate::protocol::transform::Readable;
+use crate::protocol::serialization::write::{ByteWritable, ByteWriter};
 
 pub struct PacketData {
     pub id: u32,
     pub reader: ByteReader
 }
 
+pub trait Packet {
+    const ID: u32;
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct VarInt(pub i32);
+
+impl From<i32> for VarInt {
+    fn from(input: i32) -> Self {
+        VarInt(input)
+    }
+}
+
+impl From<u32> for VarInt {
+    fn from(input: u32) -> Self {
+        VarInt(input as i32)
+    }
+}
 
 impl Display for VarInt {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -83,6 +100,12 @@ impl<T> RawVec<T> {
     }
 }
 
+impl From<Vec<u8>> for RawVec {
+    fn from(data: Vec<u8>) -> Self {
+        RawVec(data)
+    }
+}
+
 impl ByteReadable for RawVec {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let mut inner = Vec::new();
@@ -104,6 +127,30 @@ impl<T: ByteReadable> ByteReadableLike for RawVec<T> {
             inner.push(byte_reader.read());
         }
         RawVec(inner)
+    }
+}
+
+
+impl ByteWritable for VarInt {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        const PART: u32 = 0x7F;
+        let mut val = self.0 as u32;
+        loop {
+            if (val & !PART) == 0 {
+                writer.write(val as u8);
+                return;
+            }
+            writer.write(((val & PART) | 0x80) as u8);
+            val >>= 7;
+        }
+    }
+}
+
+impl ByteWritable for RawVec {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        for value in self.inner() {
+            writer.write(value);
+        }
     }
 }
 
