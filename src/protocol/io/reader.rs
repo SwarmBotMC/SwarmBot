@@ -68,7 +68,6 @@ impl PacketReader {
         // ignore 0-sized packets
         loop {
             let len = VarInt::read_async(Pin::new(&mut self.reader)).await;
-            println!("len {}", len.0);
             let len = len.0;
             if len != 0 {
                 pkt_len = len as usize;

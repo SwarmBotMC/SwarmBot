@@ -107,5 +107,5 @@ impl<'a, T: McProtocol + 'static> Runner<'a, T> {
 }
 
 fn run_client(scope: &Scope, state: &State){
-   todo!()
+
 }

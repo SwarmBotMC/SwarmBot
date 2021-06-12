@@ -1,10 +1,11 @@
 use crate::storage::world::WorldBlocks;
 use crate::protocol::McProtocol;
+use packets::types::UUID;
 
 pub struct ClientInfo {
-    username: String,
-    uuid: u128,
-    entity_id: u32,
+    pub username: String,
+    pub uuid: UUID,
+    pub entity_id: u32,
 }
 
 #[derive(Default)]

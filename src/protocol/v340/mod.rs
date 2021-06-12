@@ -11,7 +11,7 @@ mod serverbound;
 
 use crate::error::Res;
 use crate::bootstrap::{Connection, User};
-use crate::client::instance::{State};
+use crate::client::instance::{State, ClientInfo};
 use crate::protocol::{McProtocol, Login};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::PacketWriter;
@@ -42,11 +42,11 @@ impl McProtocol for Protocol {
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
 
-        let AuthResponse {access_token, name, uuid} = if online {
+        let AuthResponse {access_token, username, uuid} = if online {
             mojang.authenticate(&email, &password).await?
         } else {
             let mut response = AuthResponse::default();
-            response.name = email;
+            response.username = email;
             response
         };
 
@@ -60,7 +60,7 @@ impl McProtocol for Protocol {
 
         // START: login
         writer.write(serverbound::LoginStart {
-            username: name
+            username: username.clone()
         }).await;
 
 
@@ -77,7 +77,7 @@ impl McProtocol for Protocol {
             // Mojang online mode requests
             if online {
                 let hash = calc_hash(&server_id, &shared_secret, &public_key_der);
-                mojang.join(UUID::from(&uuid), &hash, &access_token).await?;
+                mojang.join(uuid, &hash, &access_token).await?;
             }
 
             // why sleep?
@@ -123,21 +123,32 @@ impl McProtocol for Protocol {
                     });
                 }
             };
-
-            println!("successfully logged in {}", username);
         }
 
 
-        todo!()
+        let protocol = Protocol {
+            reader,
+            writer
+        };
 
+        let login = Login {
+            protocol,
+            info: ClientInfo {
+                username,
+                uuid,
+                entity_id: 0
+            }
+        };
+
+        Ok(login)
 
     }
 
     fn apply_packets(&self, client: &mut State) {
-        todo!()
+
     }
 
     fn teleport(&mut self) {
-        todo!()
+
     }
 }

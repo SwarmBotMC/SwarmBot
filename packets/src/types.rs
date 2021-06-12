@@ -158,7 +158,7 @@ impl From<UUIDHyphenated> for UUID {
 }
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct UUID(pub u128);
 
 impl From<&String> for UUID {

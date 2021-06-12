@@ -68,8 +68,8 @@ struct RawAuthResponse {
 #[derive(Default)]
 pub struct AuthResponse {
     pub access_token: String,
-    pub name: String,
-    pub uuid: String
+    pub username: String,
+    pub uuid: UUID
 }
 
 impl Mojang {
@@ -104,8 +104,8 @@ impl Mojang {
         let auth: RawAuthResponse = res.json().await?;
         let auth = AuthResponse {
             access_token: auth.access_token,
-            name: auth.selected_profile.name,
-            uuid: auth.selected_profile.id
+            username: auth.selected_profile.name,
+            uuid: UUID::from(&auth.selected_profile.id)
         };
         Ok(auth)
     }
