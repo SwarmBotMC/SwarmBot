@@ -13,7 +13,7 @@ pub struct PacketWriter {
 }
 
 struct EncryptedWriter {
-    writer: OwnedWriteHalf,
+    writer: BufWriter<OwnedWriteHalf>,
     cipher: Option<AES>,
 }
 
@@ -29,7 +29,7 @@ impl EncryptedWriter {
 
 impl From<OwnedWriteHalf> for PacketWriter {
     fn from(write: OwnedWriteHalf) -> PacketWriter {
-        let writer = write;
+        let writer = BufWriter::new(write);
 
         let writer = EncryptedWriter {
             writer,
@@ -66,7 +66,10 @@ impl PacketWriter {
 
         let mut data = writer.freeze();
         self.writer.write_all(&mut data).await.unwrap();
+    }
 
+    pub async fn flush(&mut self){
+        self.writer.writer.flush().await;
     }
 }
 

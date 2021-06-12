@@ -56,10 +56,13 @@ impl McProtocol for Protocol {
             next_state: HandshakeNextState::Login,
         }).await;
 
+
         // START: login
         writer.write(serverbound::LoginStart {
             username: username.clone()
         }).await;
+
+        writer.flush().await;
 
 
         if online {
@@ -86,6 +89,8 @@ impl McProtocol for Protocol {
                 shared_secret: encrypted_ss,
                 verify_token: encrypted_verify,
             }).await;
+
+            writer.flush().await;
 
             // we now do everything encrypted
             writer.encryption(&shared_secret);
@@ -162,7 +167,11 @@ impl McProtocol for Protocol {
         Ok(login)
     }
 
-    fn apply_packets(&self, client: &mut State) {}
+    fn apply_packets(&self, client: &mut State) {
+        while let Ok(res) = self.rx.try_recv() {
+            println!("got packet {:#04x}", res.id);
+        }
+    }
 
     fn teleport(&mut self) {}
 }
