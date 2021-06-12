@@ -26,11 +26,11 @@ pub enum HandshakeNextState {
     Login,
 }
 
-#[derive(Debug, Packet)]
+#[derive(Debug, Packet, Writable)]
 #[packet(0x00, Login)]
-pub struct LoginStart<'a> {
+pub struct LoginStart {
     /// player's username
-    pub username: &'a String,
+    pub username: String,
 }
 
 #[derive(Packet, Writable)]

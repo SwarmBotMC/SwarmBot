@@ -42,6 +42,13 @@ rayon = "1.5.1"
 # mojang https api
 reqwest = { version = "0.11", features = ["json", "tokio-socks"] }
 
+# for minecraft auth RSA response
+rsa-der = "0.2"
+rsa = "0.4"
+
+# used for RSA and random generation
+rand = "0.8.3"
+
 # mojang hash
 num-bigint = "0.4"
 

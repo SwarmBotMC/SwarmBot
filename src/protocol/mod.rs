@@ -7,6 +7,7 @@ pub mod v340;
 mod types;
 mod io;
 mod transform;
+mod encrypt;
 
 #[async_trait::async_trait]
 pub trait McProtocol where Self: Sized {

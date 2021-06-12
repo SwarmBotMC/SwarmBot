@@ -17,8 +17,13 @@ use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::PacketWriter;
 use crate::protocol::types::PacketData;
 use crate::protocol::v340::serverbound::HandshakeNextState;
-use packets::types::VarInt;
-use crate::bootstrap::mojang::AuthResponse;
+use packets::types::{VarInt, PacketState, UUID};
+use crate::bootstrap::mojang::{AuthResponse, calc_hash};
+use crate::protocol::encrypt::{RSA, rand_bits};
+use tokio::time::{sleep, Duration};
+use packets::types::Packet;
+use crate::protocol::v340::clientbound::LoginSuccess;
+use crate::error::Error::WrongPacket;
 
 pub struct Protocol {
     reader: PacketReader,
@@ -54,14 +59,72 @@ impl McProtocol for Protocol {
         }).await;
 
         // START: login
-        // writer.write(serverbound::LoginStart {
-        //     username: &name
-        // });
+        writer.write(serverbound::LoginStart {
+            username: name
+        }).await;
+
 
         if online {
             let clientbound::EncryptionRequest { public_key_der, verify_token, server_id } = reader.read_exact_packet().await?;
 
-            println!("got encryption request {}", server_id);
+            let rsa = RSA::from_der(&public_key_der);
+
+            let shared_secret = rand_bits();
+
+            let encrypted_ss = rsa.encrypt(&shared_secret).unwrap();
+            let encrypted_verify = rsa.encrypt(&verify_token).unwrap();
+
+            // Mojang online mode requests
+            if online {
+                let hash = calc_hash(&server_id, &shared_secret, &public_key_der);
+                mojang.join(UUID::from(&uuid), &hash, &access_token).await?;
+            }
+
+            // why sleep?
+            sleep(Duration::from_secs(1)).await;
+
+            // id = 1
+            writer.write(serverbound::EncryptionResponse {
+                shared_secret: encrypted_ss,
+                verify_token: encrypted_verify,
+            }).await;
+
+            // we now do everything encrypted
+            writer.encryption(&shared_secret);
+            reader.encryption(&shared_secret);
+        }
+
+
+        // set compression or login success
+        {
+            let mut data = reader.read().await;
+
+            let LoginSuccess { username, uuid } = match data.id {
+                clientbound::SetCompression::ID => {
+                    let clientbound::SetCompression{ threshold } = data.read();
+
+                    reader.compression(threshold.into());
+                    writer.compression(threshold.into());
+
+                    reader.read_exact_packet().await?
+                }
+                clientbound::LoginSuccess::ID => {
+                    data.reader.read()
+                }
+                // clientbound::Disconnect::ID => {
+                //     let clientbound::Disconnect { reason } = data.reader.read();
+                //     return Err(Disconnect(reason));
+                // }
+                actual => {
+                    return Err(WrongPacket {
+                        state: PacketState::Login,
+                        expected: LoginSuccess::ID,
+                        actual,
+                    });
+                }
+            };
+
+            println!("successfully logged in {}", username);
         }
 
 

@@ -4,7 +4,6 @@ use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
 use crate::protocol::io::{ZLib, AES};
-use crate::protocol::transform::ReadableExt;
 use packets::read::{ByteReader, LenRead, ByteReadable};
 use crate::protocol::types::PacketData;
 use packets::types::{VarInt, RawVec, Packet, PacketState};
@@ -68,8 +67,8 @@ impl PacketReader {
 
         // ignore 0-sized packets
         loop {
-
-            let len = VarInt::read_async(&mut self.reader).await;
+            let len = VarInt::read_async(Pin::new(&mut self.reader)).await;
+            println!("len {}", len.0);
             let len = len.0;
             if len != 0 {
                 pkt_len = len as usize;

@@ -13,7 +13,7 @@ pub struct PacketWriter {
 }
 
 struct EncryptedWriter {
-    writer: BufWriter<OwnedWriteHalf>,
+    writer: OwnedWriteHalf,
     cipher: Option<AES>,
 }
 
@@ -29,7 +29,7 @@ impl EncryptedWriter {
 
 impl From<OwnedWriteHalf> for PacketWriter {
     fn from(write: OwnedWriteHalf) -> PacketWriter {
-        let writer = BufWriter::new(write);
+        let writer = write;
 
         let writer = EncryptedWriter {
             writer,

@@ -9,6 +9,7 @@ use crate::read::ByteReader;
 use crate::write::ByteWritable;
 use crate::write::ByteWritableLike;
 use crate::write::ByteWriter;
+use std::pin::Pin;
 
 pub trait Packet {
     const ID: u32;
@@ -44,6 +45,18 @@ pub type Chat = String;
 
 pub struct BitField {
     pub values: [bool; 8],
+}
+
+impl Into<u32> for VarInt {
+    fn into(self) -> u32 {
+        self.0 as u32
+    }
+}
+
+impl Into<i32> for VarInt {
+    fn into(self) -> i32 {
+        self.0 as i32
+    }
 }
 
 impl From<u8> for BitField {
@@ -265,7 +278,7 @@ impl ByteReadable for VarInt {
 }
 
 impl VarInt {
-    pub async fn read_async<R: AsyncRead + Unpin>(reader: &mut R) -> VarInt {
+    pub async fn read_async<R: AsyncRead>(mut reader: Pin<&mut R>) -> VarInt {
         const PART: u32 = 0x7F;
         let mut size = 0;
         let mut val = 0u32;

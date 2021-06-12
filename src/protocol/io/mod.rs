@@ -6,12 +6,12 @@ use cfb8::Cfb8;
 use flate2::Compression;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
+use rsa::RSAPublicKey;
 
 pub mod reader;
 pub mod writer;
 
 type AesCfb8 = Cfb8<Aes128>;
-
 
 /// https://github.com/RustCrypto/block-ciphers/issues/28
 /// https://docs.rs/cfb-mode/0.7.1/cfb_mode/
