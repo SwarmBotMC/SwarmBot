@@ -1,17 +1,26 @@
 use std::fs::File;
 
-use crate::bootstrap::csv::read_users;
-use crate::bootstrap::opts::Opts;
-use crate::bootstrap::tcp::{obtain_connections};
 use serde::Deserialize;
-use crate::error::{err, HasContext, ResContext};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+
+use crate::bootstrap::csv::read_users;
+use crate::bootstrap::dns::dns_lookup;
 use crate::bootstrap::mojang::Mojang;
+use crate::bootstrap::opts::Opts;
+use crate::bootstrap::tcp::obtain_connections;
+use crate::error::{err, HasContext, ResContext};
 
 mod opts;
 mod csv;
 mod tcp;
+mod dns;
 pub mod mojang;
+
+
+pub struct Address {
+    host: String,
+    port: u16,
+}
 
 #[derive(Debug)]
 pub struct Connection {
@@ -28,7 +37,7 @@ pub struct Connection {
 pub struct User {
     pub email: String,
     pub password: String,
-    pub online: bool
+    pub online: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,28 +56,41 @@ impl Proxy {
 
 pub struct Output {
     pub version: usize,
-    pub connections: Vec<Connection>
+    pub connections: Vec<Connection>,
 }
 
 pub async fn init() -> ResContext<Output> {
+
+    // read from config
     let Opts { users_file, proxy, proxies_file, host, count, version, port, .. } = Opts::get();
 
+
+    // DNS Lookup
+    let Address { host, port } = dns_lookup(&host).await.unwrap_or(Address {
+        host,
+        port,
+    });
+
+    // list users we want to login
     let users = {
         let file = File::open(&users_file).context(|| format!("opening users ({})", users_file))?;
         read_users(file).context(|| format!("reading users ({})", users_file))?
     };
 
+    // we are requesting too many users
     if users.len() < count {
         err(format!("there are {} users but {} were requested", users.len(), count))?
     }
 
+    // the users we will use
     let users = &users[..count];
 
+    // the connections
     let list = obtain_connections(proxy, &proxies_file, &host, port, users).await?;
 
-    let connections= Output {
+    let connections = Output {
         version,
-        connections: list
+        connections: list,
     };
 
     Ok(connections)

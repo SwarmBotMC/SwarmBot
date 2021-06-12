@@ -11,6 +11,7 @@ pub enum Error {
     CSV(csv::Error),
     Socks5(tokio_socks::Error),
     Reqwest(reqwest::Error),
+    Resolve(trust_dns_resolver::error::ResolveError),
     WrongPacket {
         state: PacketState,
         expected: u32,
@@ -45,6 +46,7 @@ impl Display for Error {
             Error::Socks5(socks) => socks.fmt(f),
             Error::Mojang(inner) => inner.fmt(f),
             Error::WrongPacket { state, actual, expected } => f.write_fmt(format_args!("wrong packet. Expected ID {}, got {} in state {}", expected, actual, state)),
+            Error::Resolve(r) => r.fmt(f)
         }
     }
 }
@@ -59,6 +61,12 @@ pub fn err(str: String) -> Result<(), ErrorContext<Error>> {
 impl From<csv::Error> for Error {
     fn from(err: csv::Error) -> Self {
         Self::CSV(err)
+    }
+}
+
+impl From<trust_dns_resolver::error::ResolveError> for Error {
+    fn from(err: trust_dns_resolver::error::ResolveError) -> Self {
+        Self::Resolve(err)
     }
 }
 
