@@ -90,7 +90,7 @@ impl PacketWriter {
 
         tokio::task::spawn_local(async move {
             while let Some(mut elem) = rx.recv().await {
-                writer.write_all(&mut elem).await;
+                writer.write_all(&mut elem).await.unwrap();
             }
         });
 

@@ -82,6 +82,8 @@ pub async fn init() -> ResContext<Output> {
         err(format!("there are {} users but {} were requested", users.len(), count))?
     }
 
+    println!("starting with {} users", count);
+
     // the users we will use
     let users = &users[..count];
 

@@ -12,14 +12,17 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u1
     let addr = format!("{}:{}", host, port);
 
     let count = users.len();
+    println!("count is {}", count);
     let streams = {
         let mut inner = Vec::with_capacity(count);
 
         match proxy {
             false => {
-                let stream = TcpStream::connect(&addr).await.context(|| format!("connecting to server"))?;
-                let mojang = Mojang::default();
-                inner.push((stream, mojang))
+                for _ in 0..count {
+                    let stream = TcpStream::connect(&addr).await.context(|| format!("connecting to server"))?;
+                    let mojang = Mojang::default();
+                    inner.push((stream, mojang));
+                }
             }
             true => {
                 let file = File::open(proxies).context(|| format!("opening proxy ({})", proxies))?;
@@ -30,8 +33,8 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u1
                     let stream = Socks5Stream::connect_with_password(addr.as_str(), addr.as_str(), &proxy.user, &proxy.pass);
                     let stream = stream.await.context(|| format!("connecting to proxy {}", proxy.address()))?;
 
-                    let mojang = Mojang::socks5(&addr, &proxy.user, &proxy.pass).context(||format!("generating mojang https client"))?;
-                    inner.push((stream.into_inner(), mojang))
+                    let mojang = Mojang::socks5(&addr, &proxy.user, &proxy.pass).context(|| format!("generating mojang https client"))?;
+                    inner.push((stream.into_inner(), mojang));
                 }
             }
         }

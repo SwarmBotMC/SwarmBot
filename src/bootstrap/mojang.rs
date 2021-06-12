@@ -16,7 +16,9 @@ impl Mojang {
     pub fn socks5(address: &str, user: &str, pass: &str) -> Res<Mojang> {
         let full_address = format!("socks5://{}", address);
 
-        let proxy = reqwest::Proxy::http(full_address)?.basic_auth(user, pass);
+        println!("address {}", full_address);
+        let proxy = reqwest::Proxy::https(full_address)?
+            .basic_auth(user, pass);
 
         let client = reqwest::Client::builder()
             .proxy(proxy)
@@ -69,7 +71,7 @@ struct RawAuthResponse {
 pub struct AuthResponse {
     pub access_token: String,
     pub username: String,
-    pub uuid: UUID
+    pub uuid: UUID,
 }
 
 impl Mojang {
@@ -105,7 +107,7 @@ impl Mojang {
         let auth = AuthResponse {
             access_token: auth.access_token,
             username: auth.selected_profile.name,
-            uuid: UUID::from(&auth.selected_profile.id)
+            uuid: UUID::from(&auth.selected_profile.id),
         };
         Ok(auth)
     }

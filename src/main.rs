@@ -1,3 +1,5 @@
+#![allow(unused)]
+#![deny(unused_must_use)]
 #![feature(async_closure)]
 #![feature(never_type)]
 #![feature(in_band_lifetimes)]

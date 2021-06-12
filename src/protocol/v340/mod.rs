@@ -133,10 +133,10 @@ impl McProtocol for Protocol {
                     if let Some(os_tx) = oneshot.take() {
                         let mut packet = packet.clone();
                         let processed: JoinGame = packet.read();
-                        os_tx.send(processed.entity_id);
+                        os_tx.send(processed.entity_id).unwrap();
                     }
                 }
-                tx.send(packet);
+                tx.send(packet).unwrap();
             }
         });
 
@@ -176,7 +176,6 @@ impl Protocol {
         match data.id {
             JoinGame::ID => println!("player joined"),
             KeepAlive::ID => {
-
                 println!("kept alive");
                 let KeepAlive { id } = data.read();
 

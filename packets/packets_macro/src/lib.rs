@@ -1,8 +1,7 @@
 use proc_macro::TokenStream;
 
-use proc_macro2::TokenTree::Literal;
 use quote::quote;
-use syn::{DeriveInput, Expr, ItemEnum, ItemStruct, parse_macro_input, Token};
+use syn::{DeriveInput, ItemEnum, ItemStruct, parse_macro_input, Token};
 use syn::parse::{Parse, ParseStream};
 
 struct MyParams(syn::LitInt, syn::Ident);
@@ -115,10 +114,10 @@ pub fn enum_readable_count(input: TokenStream) -> TokenStream {
 
     // let mut discriminants = input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
 
-    let mut idents = input.variants.iter().map(|x| x.ident.clone());
-    let mut discriminants = input.variants.iter()
+    let idents = input.variants.iter().map(|x| x.ident.clone());
+    let discriminants = input.variants.iter()
         .enumerate()
-        .map(|(a, b)| proc_macro2::Literal::i32_unsuffixed(a as i32));
+        .map(|(a, _)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
     let expanded = quote! {
         impl packets::read::ByteReadable for #name {
@@ -147,9 +146,9 @@ pub fn enum_readable(input: TokenStream) -> TokenStream {
     // let mut discriminants = input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
 
 
-    let mut discriminants = input.variants.iter()
+    let discriminants = input.variants.iter()
         .enumerate()
-        .map(|(a, b)| proc_macro2::Literal::i32_unsuffixed(a as i32));
+        .map(|(a, _)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
     let mut variants_ts = Vec::new();
     for variant in input.variants.clone() {
@@ -192,9 +191,9 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
 
     let idents: Vec<_> = input.variants.clone().iter().map(|x|x.ident.clone()).collect();
 
-    let mut discriminants = input.variants.iter()
+    let discriminants = input.variants.iter()
         .enumerate()
-        .map(|(a, b)| proc_macro2::Literal::i32_unsuffixed(a as i32));
+        .map(|(a, _)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
     let mut variants_ts = Vec::new();
     for variant in input.variants.clone() {
