@@ -159,7 +159,7 @@ pub struct UpdateHealth {
 
 #[derive(Packet, Debug, Readable)]
 #[packet(0x1f, Play)]
-pub struct KeepAliveCb {
+pub struct KeepAlive {
     pub id: u64,
 }
 

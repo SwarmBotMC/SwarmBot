@@ -161,7 +161,7 @@ impl McProtocol for Protocol {
         Ok(login)
     }
 
-    fn apply_packets(&self, client: &mut State) {
+    fn apply_packets(&mut self, client: &mut State) {
         while let Ok(data) = self.rx.try_recv() {
             self.process_packet(data, client);
         }
@@ -171,11 +171,20 @@ impl McProtocol for Protocol {
 }
 
 impl Protocol {
-    fn process_packet(&self, data: PacketData, client: &mut State) {
+    fn process_packet(&mut self, mut data: PacketData, client: &mut State) {
         use clientbound::*;
         match data.id {
             JoinGame::ID => println!("player joined"),
-            KeepAliveCb::ID => println!("keep alive"),
+            KeepAlive::ID => {
+
+                println!("kept alive");
+                let KeepAlive { id } = data.read();
+
+                self.tx.write(serverbound::KeepAlive {
+                    id
+                });
+
+            },
             _ => {}
         }
     }

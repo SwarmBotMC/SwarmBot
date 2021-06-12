@@ -12,7 +12,7 @@ mod encrypt;
 #[async_trait::async_trait]
 pub trait McProtocol where Self: Sized {
     async fn login(conn: Connection) -> Res<Login<Self>>;
-    fn apply_packets(&self, client: &mut State);
+    fn apply_packets(&mut self, client: &mut State);
     fn teleport(&mut self);
 }
 
