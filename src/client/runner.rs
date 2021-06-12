@@ -9,6 +9,7 @@ use crate::client::instance::{Client, State};
 use crate::protocol::{Login, McProtocol};
 use crate::storage::world::WorldBlocks;
 use std::marker::PhantomData;
+use crate::error::Error;
 
 
 #[derive(Default)]
@@ -52,7 +53,13 @@ impl<T: McProtocol + 'static> Runner<T> {
                     let logins = pending_logins.clone();
                     tokio::task::spawn_local(async move {
                         println!("starting login of {}", connection.user.email);
-                        let login = T::login(connection).await.unwrap();
+                        let login = match T::login(connection).await {
+                            Ok(res) => res,
+                            Err(err) => {
+                                println!("Error logging in {}", err);
+                                return;
+                            }
+                        };
                         logins.borrow_mut().push(login);
                     });
                 }
@@ -78,7 +85,14 @@ impl<T: McProtocol + 'static> Runner<T> {
 
     fn game_iter(&mut self) {
 
-        // first step: turning pending logins into clients
+
+        let old_count = self.clients.len();
+        // first step: removing disconnected clients
+        {
+            self.clients.retain(|client| !client.protocol.disconnected());
+        }
+
+        // second step: turning pending logins into clients
         {
             let mut logins = self.pending_logins.borrow_mut();
 
@@ -94,9 +108,15 @@ impl<T: McProtocol + 'static> Runner<T> {
                 self.clients.push(client);
             }
         }
-        println!("{} clients", self.clients.len());
 
-        // process packets from game loop
+
+        let new_count = self.clients.len();
+
+        if new_count != old_count {
+            println!("{} clients", new_count);
+        }
+
+        // third step: process packets from game loop
         {
             for client in &mut self.clients {
                 client.protocol.apply_packets(&mut client.state, &mut self.global_state)

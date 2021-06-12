@@ -80,7 +80,7 @@ pub async fn init() -> ResContext<Output> {
 
     // we are requesting too many users
     if users.len() < count {
-        err(format!("there are {} users but {} were requested", users.len(), count))?
+        return Err(err(format!("there are {} users but {} were requested", users.len(), count).as_str())).context(|| "".to_string())?
     }
 
     println!("starting with {} users", count);

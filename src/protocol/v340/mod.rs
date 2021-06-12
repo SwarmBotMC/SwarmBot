@@ -15,6 +15,8 @@ use crate::protocol::types::PacketData;
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess, Disconnect};
 use crate::protocol::v340::serverbound::HandshakeNextState;
 use crate::client::runner::GlobalState;
+use std::sync::mpsc::{SendError, TryRecvError};
+use tokio::sync::oneshot::error::RecvError;
 
 mod clientbound;
 mod serverbound;
@@ -23,6 +25,7 @@ mod types;
 pub struct Protocol {
     rx: std::sync::mpsc::Receiver<PacketData>,
     tx: PacketWriteChannel,
+    disconnected: bool
 }
 
 #[async_trait::async_trait]
@@ -138,17 +141,29 @@ impl McProtocol for Protocol {
                         os_tx.send(processed.entity_id).unwrap();
                     }
                 }
-                tx.send(packet).unwrap();
+                match tx.send(packet) {
+                    Ok(ok) => {}
+                    Err(err) => {
+                        // the other end is stopped and should have printed the error
+                        return;
+                    }
+                }
             }
         });
 
         let tx = writer.into_channel();
 
-        let entity_id = os_rx.await.unwrap();
+        let entity_id = match os_rx.await {
+            Ok(inner) => inner,
+            Err(err) => {
+                return Err(crate::error::err("disconnected before join game packet"));
+            }
+        };
 
         let protocol = Protocol {
             rx,
             tx,
+            disconnected: false
         };
 
         let login = Login {
@@ -164,12 +179,28 @@ impl McProtocol for Protocol {
     }
 
     fn apply_packets(&mut self, client: &mut State, global: &mut GlobalState) {
-        while let Ok(data) = self.rx.try_recv() {
-            self.process_packet(data, client);
+        match self.rx.try_recv() {
+            Ok(data) => {
+                self.process_packet(data, client);
+            }
+            Err(err) => {
+                match err {
+                    TryRecvError::Empty => {}
+                    TryRecvError::Disconnected => {
+                        println!("disconnected because error");
+                        self.disconnected = true;
+                    }
+                }
+                return;
+            }
         }
     }
 
     fn teleport(&mut self) {}
+
+    fn disconnected(&self) -> bool {
+        self.disconnected
+    }
 }
 
 impl Protocol {
@@ -185,6 +216,11 @@ impl Protocol {
                 });
 
             },
+            PlayDisconnect::ID => {
+                let PlayDisconnect { reason } = data.read();
+                println!("player disconnected ... {}", reason);
+                self.disconnected = true;
+            }
             // ChatMessage::ID => {
             //     let ChatMessage { json, .. } = data.read();
             //     println!("chat {}", json);

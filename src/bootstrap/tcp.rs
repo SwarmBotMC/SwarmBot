@@ -18,7 +18,6 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u1
     let addr = format!("{}:{}", host, port);
 
     let count = users.len();
-    println!("count is {}", count);
 
     let (tx, rx) = tokio::sync::mpsc::channel(32);
 

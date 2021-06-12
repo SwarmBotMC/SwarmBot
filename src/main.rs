@@ -3,6 +3,7 @@
 #![feature(async_closure)]
 #![feature(never_type)]
 #![feature(in_band_lifetimes)]
+#![feature(drain_filter)]
 
 use tokio::runtime::Runtime;
 use tokio::task;

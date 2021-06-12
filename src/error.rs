@@ -1,6 +1,7 @@
-use std::fmt::{Display, Formatter, Debug};
-use reqwest::StatusCode;
+use std::fmt::{Debug, Display, Formatter};
+
 use packets::types::PacketState;
+use reqwest::StatusCode;
 
 pub type Res<T = ()> = Result<T, Error>;
 pub type ResContext<T = ()> = Result<T, ErrorContext<Error>>;
@@ -18,7 +19,7 @@ pub enum Error {
         actual: u32,
     },
     Simple(String),
-    Mojang(MojangErr)
+    Mojang(MojangErr),
 }
 
 #[derive(Debug)]
@@ -51,11 +52,8 @@ impl Display for Error {
     }
 }
 
-pub fn err(str: String) -> Result<(), ErrorContext<Error>> {
-    Err(ErrorContext {
-        inner: Error::Simple(str),
-        context: "".to_string(),
-    })
+pub fn err(str: &str) -> Error {
+    Error::Simple(str.to_string())
 }
 
 impl From<csv::Error> for Error {
