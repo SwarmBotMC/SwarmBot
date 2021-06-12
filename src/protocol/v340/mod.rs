@@ -10,19 +10,14 @@ use crate::error::Res;
 use crate::protocol::{Login, McProtocol};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
-use crate::protocol::io::writer::{PacketWriter, PacketWriteChannel};
+use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::types::PacketData;
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::HandshakeNextState;
 
 mod clientbound;
 mod serverbound;
-
-
-// struct PacketData {
-//     id: u32,
-//     data: Vec<u8>
-// }
+mod types;
 
 pub struct Protocol {
     rx: std::sync::mpsc::Receiver<PacketData>,
@@ -167,10 +162,21 @@ impl McProtocol for Protocol {
     }
 
     fn apply_packets(&self, client: &mut State) {
-        while let Ok(res) = self.rx.try_recv() {
-            println!("got packet {:#04x}", res.id);
+        while let Ok(data) = self.rx.try_recv() {
+            self.process_packet(data, client);
         }
     }
 
     fn teleport(&mut self) {}
+}
+
+impl Protocol {
+    fn process_packet(&self, data: PacketData, client: &mut State) {
+        use clientbound::*;
+        match data.id {
+            JoinGame::ID => println!("player joined"),
+            KeepAliveCb::ID => println!("keep alive"),
+            _ => {}
+        }
+    }
 }
