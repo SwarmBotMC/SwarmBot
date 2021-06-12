@@ -1,4 +1,19 @@
+use packets::types::{PacketState, UUID, VarInt};
+use packets::types::Packet;
+use tokio::time::{Duration, sleep};
 
+use crate::bootstrap::{Connection, User};
+use crate::bootstrap::mojang::{AuthResponse, calc_hash};
+use crate::client::instance::{ClientInfo, State};
+use crate::error::Error::WrongPacket;
+use crate::error::Res;
+use crate::protocol::{Login, McProtocol};
+use crate::protocol::encrypt::{rand_bits, RSA};
+use crate::protocol::io::reader::PacketReader;
+use crate::protocol::io::writer::PacketWriter;
+use crate::protocol::types::PacketData;
+use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
+use crate::protocol::v340::serverbound::HandshakeNextState;
 
 mod clientbound;
 mod serverbound;
@@ -9,40 +24,23 @@ mod serverbound;
 //     data: Vec<u8>
 // }
 
-use crate::error::Res;
-use crate::bootstrap::{Connection, User};
-use crate::client::instance::{State, ClientInfo};
-use crate::protocol::{McProtocol, Login};
-use crate::protocol::io::reader::PacketReader;
-use crate::protocol::io::writer::PacketWriter;
-use crate::protocol::types::PacketData;
-use crate::protocol::v340::serverbound::HandshakeNextState;
-use packets::types::{VarInt, PacketState, UUID};
-use crate::bootstrap::mojang::{AuthResponse, calc_hash};
-use crate::protocol::encrypt::{RSA, rand_bits};
-use tokio::time::{sleep, Duration};
-use packets::types::Packet;
-use crate::protocol::v340::clientbound::LoginSuccess;
-use crate::error::Error::WrongPacket;
-
 pub struct Protocol {
-    reader: PacketReader,
-    writer: PacketWriter
+    rx: std::sync::mpsc::Receiver<PacketData>,
+    writer: PacketWriter,
 }
 
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
     async fn login(conn: Connection) -> Res<Login<Self>> {
+        let Connection { user, online, mojang, port, read, write, host } = conn;
 
-        let Connection{user, online, mojang, port, read, write, host} = conn;
-
-        let User {email, password, online} = user;
+        let User { email, password, online } = user;
 
 
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
 
-        let AuthResponse {access_token, username, uuid} = if online {
+        let AuthResponse { access_token, username, uuid } = if online {
             mojang.authenticate(&email, &password).await?
         } else {
             let mut response = AuthResponse::default();
@@ -55,7 +53,7 @@ impl McProtocol for Protocol {
             protocol_version: VarInt(340),
             host,
             port,
-            next_state: HandshakeNextState::Login
+            next_state: HandshakeNextState::Login,
         }).await;
 
         // START: login
@@ -101,7 +99,7 @@ impl McProtocol for Protocol {
 
             let LoginSuccess { username, uuid } = match data.id {
                 clientbound::SetCompression::ID => {
-                    let clientbound::SetCompression{ threshold } = data.read();
+                    let clientbound::SetCompression { threshold } = data.read();
 
                     reader.compression(threshold.into());
                     writer.compression(threshold.into());
@@ -125,10 +123,31 @@ impl McProtocol for Protocol {
             };
         }
 
+        let (tx, rx) = std::sync::mpsc::channel();
+        let (os_tx, os_rx) = tokio::sync::oneshot::channel();
+
+        tokio::task::spawn_local(async move {
+
+            let mut oneshot = Some(os_tx);
+            loop {
+                let packet = reader.read().await;
+                if packet.id == clientbound::JoinGame::ID {
+                    if let Some(os_tx) = oneshot.take() {
+                        let mut packet = packet.clone();
+                        let processed: JoinGame = packet.read();
+                        os_tx.send(processed.entity_id);
+                    }
+                }
+                tx.send(packet);
+            }
+        });
+
+
+        let entity_id = os_rx.await.unwrap();
 
         let protocol = Protocol {
-            reader,
-            writer
+            rx,
+            writer,
         };
 
         let login = Login {
@@ -136,19 +155,14 @@ impl McProtocol for Protocol {
             info: ClientInfo {
                 username,
                 uuid,
-                entity_id: 0
-            }
+                entity_id
+            },
         };
 
         Ok(login)
-
     }
 
-    fn apply_packets(&self, client: &mut State) {
+    fn apply_packets(&self, client: &mut State) {}
 
-    }
-
-    fn teleport(&mut self) {
-
-    }
+    fn teleport(&mut self) {}
 }

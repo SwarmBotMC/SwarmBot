@@ -8,6 +8,32 @@ pub struct Disconnect {
     pub reason: String,
 }
 
+
+#[derive(EnumReadable, Debug)]
+pub enum GameMode {
+    Survival,
+    Creative,
+    Adventure,
+    Spectator,
+}
+
+#[derive(Packet, Debug, Readable)]
+#[packet(0x23, Play)]
+pub struct JoinGame {
+    pub entity_id: u32,
+    pub is_hardcore: bool,
+    pub game_mode: GameMode,
+    // pub previous_game_mode: GameMode,
+    // pub world_names: Vec<String>,
+    // pub dimension_codec: String,
+    // TODO: add rest of data
+    // pub entity_id: Int,
+    // pub entity_id: Int,
+    // pub entity_id: Int,
+    // pub entity_id: Int,
+    // pub entity_id: Int,
+}
+
 #[derive(Packet, Readable)]
 #[packet(0x03, Login)]
 pub struct SetCompression {

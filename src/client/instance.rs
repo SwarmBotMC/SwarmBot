@@ -2,6 +2,7 @@ use crate::storage::world::WorldBlocks;
 use crate::protocol::McProtocol;
 use packets::types::UUID;
 
+#[derive(Debug)]
 pub struct ClientInfo {
     pub username: String,
     pub uuid: UUID,

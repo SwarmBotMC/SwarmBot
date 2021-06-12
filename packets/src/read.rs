@@ -2,6 +2,7 @@ use std::io::{Cursor, Read};
 use bytes::Buf;
 use crate::types::{VarUInt, BitField};
 
+#[derive(Clone)]
 pub struct ByteReader {
     bytes: Cursor<Vec<u8>>,
 }
