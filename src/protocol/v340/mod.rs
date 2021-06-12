@@ -14,6 +14,7 @@ use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::types::PacketData;
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::HandshakeNextState;
+use crate::client::runner::GlobalState;
 
 mod clientbound;
 mod serverbound;
@@ -161,7 +162,7 @@ impl McProtocol for Protocol {
         Ok(login)
     }
 
-    fn apply_packets(&mut self, client: &mut State) {
+    fn apply_packets(&mut self, client: &mut State, global: &mut GlobalState) {
         while let Ok(data) = self.rx.try_recv() {
             self.process_packet(data, client);
         }
@@ -176,7 +177,6 @@ impl Protocol {
         match data.id {
             JoinGame::ID => println!("player joined"),
             KeepAlive::ID => {
-                println!("kept alive");
                 let KeepAlive { id } = data.read();
 
                 self.tx.write(serverbound::KeepAlive {

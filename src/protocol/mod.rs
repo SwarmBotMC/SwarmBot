@@ -1,6 +1,7 @@
 use crate::bootstrap::Connection;
 use crate::client::instance::{Client, ClientInfo, State};
 use crate::error::Res;
+use crate::client::runner::GlobalState;
 
 pub mod v340;
 
@@ -12,7 +13,7 @@ mod encrypt;
 #[async_trait::async_trait]
 pub trait McProtocol where Self: Sized {
     async fn login(conn: Connection) -> Res<Login<Self>>;
-    fn apply_packets(&mut self, client: &mut State);
+    fn apply_packets(&mut self, client: &mut State, global: &mut GlobalState);
     fn teleport(&mut self);
 }
 

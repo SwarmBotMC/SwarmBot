@@ -56,7 +56,7 @@ impl Proxy {
 
 pub struct Output {
     pub version: usize,
-    pub connections: Vec<Connection>,
+    pub connections: tokio::sync::mpsc::Receiver<Connection>,
 }
 
 pub async fn init() -> ResContext<Output> {
@@ -88,12 +88,12 @@ pub async fn init() -> ResContext<Output> {
     let users = &users[..count];
 
     // the connections
-    let list = obtain_connections(proxy, &proxies_file, &host, port, users).await?;
+    let connections = obtain_connections(proxy, &proxies_file, &host, port, users).await?;
 
-    let connections = Output {
+    let output = Output {
         version,
-        connections: list,
+        connections,
     };
 
-    Ok(connections)
+    Ok(output)
 }

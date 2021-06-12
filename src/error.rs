@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Debug};
 use reqwest::StatusCode;
 use packets::types::PacketState;
 
@@ -39,14 +39,14 @@ impl Display for MojangErr {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::IO(io) => io.fmt(f),
-            Error::CSV(csv) => csv.fmt(f),
+            Error::IO(io) => std::fmt::Display::fmt(io, f),
+            Error::CSV(csv) => std::fmt::Display::fmt(csv, f),
             Error::Simple(str) => f.write_str(str),
-            Error::Reqwest(inner) => inner.fmt(f),
-            Error::Socks5(socks) => socks.fmt(f),
-            Error::Mojang(inner) => inner.fmt(f),
+            Error::Reqwest(inner) => std::fmt::Display::fmt(inner, f),
+            Error::Socks5(socks) => std::fmt::Display::fmt(socks, f),
+            Error::Mojang(inner) => std::fmt::Display::fmt(inner, f),
             Error::WrongPacket { state, actual, expected } => f.write_fmt(format_args!("wrong packet. Expected ID {}, got {} in state {}", expected, actual, state)),
-            Error::Resolve(r) => r.fmt(f)
+            Error::Resolve(r) => std::fmt::Display::fmt(r, f)
         }
     }
 }
@@ -106,18 +106,19 @@ impl From<tokio_socks::Error> for Error {
 //     }
 // }
 
-pub struct ErrorContext<T> {
+#[derive(Debug)]
+pub struct ErrorContext<T: Debug> {
     inner: T,
     context: String,
 }
 
-impl<T: Display> Display for ErrorContext<T> {
+impl<T: Display + Debug> Display for ErrorContext<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("Error {} : {}", self.context, self.inner))
     }
 }
 
-pub trait HasContext<T, E> {
+pub trait HasContext<T, E: Debug> {
     fn context(self, f: impl Fn() -> String) -> Result<T, ErrorContext<E>>;
 }
 
