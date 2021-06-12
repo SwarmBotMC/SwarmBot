@@ -10,7 +10,7 @@ use crate::error::Res;
 use crate::protocol::{Login, McProtocol};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
-use crate::protocol::io::writer::PacketWriter;
+use crate::protocol::io::writer::{PacketWriter, PacketWriteChannel};
 use crate::protocol::types::PacketData;
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::HandshakeNextState;
@@ -26,7 +26,7 @@ mod serverbound;
 
 pub struct Protocol {
     rx: std::sync::mpsc::Receiver<PacketData>,
-    writer: PacketWriter,
+    tx: PacketWriteChannel,
 }
 
 #[async_trait::async_trait]
@@ -62,8 +62,7 @@ impl McProtocol for Protocol {
             username: username.clone()
         }).await;
 
-        writer.flush().await;
-
+        // writer.flush().await;
 
         if online {
             let clientbound::EncryptionRequest { public_key_der, verify_token, server_id } = reader.read_exact_packet().await?;
@@ -90,7 +89,7 @@ impl McProtocol for Protocol {
                 verify_token: encrypted_verify,
             }).await;
 
-            writer.flush().await;
+            // writer.flush().await;
 
             // we now do everything encrypted
             writer.encryption(&shared_secret);
@@ -132,7 +131,6 @@ impl McProtocol for Protocol {
         let (os_tx, os_rx) = tokio::sync::oneshot::channel();
 
         tokio::task::spawn_local(async move {
-
             let mut oneshot = Some(os_tx);
             loop {
                 let packet = reader.read().await;
@@ -147,12 +145,13 @@ impl McProtocol for Protocol {
             }
         });
 
+        let tx = writer.into_channel();
 
         let entity_id = os_rx.await.unwrap();
 
         let protocol = Protocol {
             rx,
-            writer,
+            tx,
         };
 
         let login = Login {
@@ -160,7 +159,7 @@ impl McProtocol for Protocol {
             info: ClientInfo {
                 username,
                 uuid,
-                entity_id
+                entity_id,
             },
         };
 

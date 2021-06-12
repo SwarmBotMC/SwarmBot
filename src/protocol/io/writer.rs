@@ -1,11 +1,13 @@
-use std::task::{Poll};
+use std::task::Poll;
 
-use tokio::io::{ReadBuf, BufWriter, AsyncWrite, AsyncWriteExt};
-use tokio::net::tcp::OwnedWriteHalf;
-use crate::protocol::io::{ZLib, AES};
-use crate::error::Res;
 use packets::types::{Packet, RawVec, VarInt};
-use packets::write::{ByteWritable, ByteWriter, ByteWritableLike};
+use packets::write::{ByteWritable, ByteWritableLike, ByteWriter};
+use tokio::io::{AsyncWrite, AsyncWriteExt, BufWriter, ReadBuf};
+use tokio::net::tcp::OwnedWriteHalf;
+use tokio::sync::mpsc::UnboundedSender;
+
+use crate::error::Res;
+use crate::protocol::io::{AES, ZLib};
 
 pub struct PacketWriter {
     writer: EncryptedWriter,
@@ -13,7 +15,7 @@ pub struct PacketWriter {
 }
 
 struct EncryptedWriter {
-    writer: BufWriter<OwnedWriteHalf>,
+    writer: OwnedWriteHalf,
     cipher: Option<AES>,
 }
 
@@ -28,23 +30,45 @@ impl EncryptedWriter {
 }
 
 impl From<OwnedWriteHalf> for PacketWriter {
-    fn from(write: OwnedWriteHalf) -> PacketWriter {
-        let writer = BufWriter::new(write);
-
+    fn from(writer: OwnedWriteHalf) -> PacketWriter {
         let writer = EncryptedWriter {
             writer,
-            cipher: None
+            cipher: None,
         };
 
         PacketWriter {
             writer,
-            compression: None
+            compression: None,
         }
     }
 }
 
-impl PacketWriter {
+fn data<T: Packet + ByteWritable>(packet: T, compression: &Option<ZLib>) -> Vec<u8> {
+    let data = PktData::from(packet);
 
+    let complete_packet = CompletePacket {
+        data
+    };
+
+    let mut writer = ByteWriter::new();
+
+    complete_packet.write_to_bytes_like(&mut writer, compression);
+    writer.freeze()
+}
+
+pub struct PacketWriteChannel {
+    tx: UnboundedSender<Vec<u8>>,
+    compression: Option<ZLib>,
+}
+
+impl PacketWriteChannel {
+    pub fn write<T: Packet + ByteWritable>(&mut self, packet: T) {
+        let mut data = data(packet, &self.compression);
+        self.tx.send(data).unwrap();
+    }
+}
+
+impl PacketWriter {
     pub fn encryption(&mut self, key: &[u8]) {
         self.writer.cipher = Some(AES::new(key));
     }
@@ -53,30 +77,34 @@ impl PacketWriter {
         self.compression = Some(ZLib::new(threshold))
     }
 
+
     pub async fn write<T: Packet + ByteWritable>(&mut self, packet: T) {
-        let data = PktData::from(packet);
-
-        let complete_packet = CompletePacket {
-            data
-        };
-
-        let mut writer = ByteWriter::new();
-
-        complete_packet.write_to_bytes_like(&mut writer, &self.compression);
-
-        let mut data = writer.freeze();
+        let mut data = data(packet, &self.compression);
         self.writer.write_all(&mut data).await.unwrap();
     }
 
-    pub async fn flush(&mut self){
-        self.writer.writer.flush().await;
+    pub fn into_channel(self) -> PacketWriteChannel {
+        let compression = self.compression;
+        let mut writer = self.writer;
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
+
+        tokio::task::spawn_local(async move {
+            while let Some(mut elem) = rx.recv().await {
+                writer.write_all(&mut elem);
+            }
+        });
+
+        PacketWriteChannel {
+            tx,
+            compression,
+        }
     }
 }
 
 
 struct PktData {
     pub id: VarInt,
-    pub data: RawVec
+    pub data: RawVec,
 }
 
 impl<T: Packet + ByteWritable> From<T> for PktData {
