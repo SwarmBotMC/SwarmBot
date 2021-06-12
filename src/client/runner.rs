@@ -20,16 +20,16 @@ pub struct Runner<T: McProtocol> {
     pending_logins: Rc<RefCell<Vec<Login<T>>>>,
     global_state: GlobalState,
     clients: Vec<Client<T>>,
-    handles: Vec<JoinHandle<()>>,
+    // handles: Rc<RefCell<Vec<JoinHandle<()>>>>
 }
 
-impl<T: McProtocol> Drop for Runner<T> {
-    fn drop(&mut self) {
-        for handle in &self.handles {
-            handle.abort();
-        }
-    }
-}
+// impl<T: McProtocol> Drop for Runner<T> {
+//     fn drop(&mut self) {
+//         for handle in &self.handles {
+//             handle.abort();
+//         }
+//     }
+// }
 
 impl<T: McProtocol + 'static> Runner<T> {
 
@@ -41,22 +41,27 @@ impl<T: McProtocol + 'static> Runner<T> {
 
 
     async fn new(mut connections: tokio::sync::mpsc::Receiver<Connection>) -> Runner<T> {
-        let logins = Rc::new(RefCell::new(Vec::new()));
-        let mut handles = Vec::new();
 
-        while let Some(connection) = connections.recv().await {
-            let logins = logins.clone();
-            let handle = tokio::task::spawn_local(async move {
-                println!("starting login of {}", connection.user.email);
-                let login = T::login(connection).await.unwrap();
-                logins.borrow_mut().push(login);
+        let pending_logins = Rc::new(RefCell::new(Vec::new()));
+        // let handles = Rc::new(RefCell::new(Vec::new()));
+
+        {
+            let pending_logins = pending_logins.clone();
+            tokio::task::spawn_local(async move {
+                while let Some(connection) = connections.recv().await {
+                    let logins = pending_logins.clone();
+                    tokio::task::spawn_local(async move {
+                        println!("starting login of {}", connection.user.email);
+                        let login = T::login(connection).await.unwrap();
+                        logins.borrow_mut().push(login);
+                    });
+                }
             });
-            handles.push(handle);
         }
 
+
         Runner {
-            pending_logins: logins,
-            handles,
+            pending_logins,
             global_state: GlobalState::default(),
             clients: Vec::new(),
         }
@@ -89,6 +94,7 @@ impl<T: McProtocol + 'static> Runner<T> {
                 self.clients.push(client);
             }
         }
+        println!("{} clients", self.clients.len());
 
         // process packets from game loop
         {

@@ -40,7 +40,7 @@ impl McProtocol for Protocol {
             mojang.authenticate(&email, &password).await?
         } else {
             let mut response = AuthResponse::default();
-            response.username = email;
+            response.username = email.clone();
             response
         };
 
@@ -121,6 +121,7 @@ impl McProtocol for Protocol {
                     });
                 }
             };
+            // println!("login success for {}", email);
         }
 
         let (tx, rx) = std::sync::mpsc::channel();
@@ -184,10 +185,10 @@ impl Protocol {
                 });
 
             },
-            ChatMessage::ID => {
-                let ChatMessage { json, .. } = data.read();
-                println!("chat {}", json);
-            }
+            // ChatMessage::ID => {
+            //     let ChatMessage { json, .. } = data.read();
+            //     println!("chat {}", json);
+            // }
             _ => {}
         }
     }
