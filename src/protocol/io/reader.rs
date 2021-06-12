@@ -4,9 +4,10 @@ use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
 use crate::protocol::io::{ZLib, AES};
-use crate::protocol::types::{PacketData, VarInt, RawVec};
-use crate::protocol::serialization::read::{ByteReader, LenRead};
 use crate::protocol::transform::ReadableExt;
+use packets::read::{ByteReader, LenRead};
+use crate::protocol::types::PacketData;
+use packets::types::{VarInt, RawVec};
 
 pub struct PacketReader {
     reader: EncryptedReader,
@@ -48,6 +49,7 @@ impl From<OwnedReadHalf> for PacketReader {
         }
     }
 }
+
 
 impl PacketReader {
 

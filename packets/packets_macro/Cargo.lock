@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "packet_macro"
+name = "packets-macro"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",

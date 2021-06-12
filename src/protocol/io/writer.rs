@@ -3,9 +3,9 @@ use std::task::{Poll};
 use tokio::io::{ReadBuf, BufWriter, AsyncWrite, AsyncWriteExt};
 use tokio::net::tcp::OwnedWriteHalf;
 use crate::protocol::io::{ZLib, AES};
-use crate::protocol::types::{VarInt, RawVec, Packet};
-use crate::protocol::serialization::write::{ByteWritable, ByteWritableLike, ByteWriter};
 use crate::error::Res;
+use packets::types::{Packet, RawVec, VarInt};
+use packets::write::{ByteWritable, ByteWriter, ByteWritableLike};
 
 pub struct PacketWriter {
     writer: EncryptedWriter,

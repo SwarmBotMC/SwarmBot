@@ -1,5 +1,6 @@
 use std::io::{Cursor, Read};
 use bytes::Buf;
+use crate::types::{VarUInt, BitField};
 
 pub struct ByteReader {
     bytes: Cursor<Vec<u8>>,
@@ -126,3 +127,24 @@ impl ByteReadable for u128 {
     }
 }
 
+impl<T: ByteReadable> ByteReadable for Vec<T> {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let VarUInt(length) = byte_reader.read();
+        (0..length).map(|_| byte_reader.read()).collect()
+    }
+}
+
+
+impl ByteReadable for String {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let bytes = byte_reader.read();
+        String::from_utf8(bytes).unwrap()
+    }
+}
+
+impl ByteReadable for BitField {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let raw_byte: u8 = byte_reader.read();
+        BitField::from(raw_byte)
+    }
+}

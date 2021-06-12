@@ -35,9 +35,9 @@ pub fn packet(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
 
-        impl crate::packet::Packet for #name {
+        impl packets::types::Packet for #name {
             const ID: u32 = #id;
-            const STATE: PacketState = PacketState::#kind;
+            const STATE: packets::types::PacketState = packets::types::PacketState::#kind;
         }
     };
 
@@ -56,8 +56,8 @@ pub fn writable(input: TokenStream) -> TokenStream {
     });
 
     let expanded = quote! {
-        impl crate::packet::serialization::ByteWritable for #name {
-            fn write_to_bytes(self, writer: &mut crate::packet::serialization::ByteWriter) {
+        impl packets::write::ByteWritable for #name {
+            fn write_to_bytes(self, writer: &mut packets::write::ByteWriter) {
                 writer.#(write(self.#idents)).*;
             }
         }
@@ -77,8 +77,8 @@ pub fn readable(input: TokenStream) -> TokenStream {
     });
 
     let expanded = quote! {
-        impl crate::packet::serialization::ByteReadable for #name {
-            fn read_from_bytes(byte_reader: &mut crate::packet::serialization::ByteReader) -> Self {
+        impl packets::read::ByteReadable for #name {
+            fn read_from_bytes(byte_reader: &mut packets::reader::ByteReader) -> Self {
                 #name {
                     #(#idents: byte_reader.read()),*
                 }
@@ -121,8 +121,8 @@ pub fn enum_readable_count(input: TokenStream) -> TokenStream {
         .map(|(a, b)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
     let expanded = quote! {
-        impl crate::packet::serialization::ByteReadable for #name {
-            fn read_from_bytes(byte_reader: &mut crate::packet::serialization::ByteReader) -> Self {
+        impl packets::read::ByteReadable for #name {
+            fn read_from_bytes(byte_reader: &mut packets::read::ByteReader) -> Self {
                 let VarInt(inner) = byte_reader.read();
 
                 let res = match inner {
@@ -165,8 +165,8 @@ pub fn enum_readable(input: TokenStream) -> TokenStream {
 
 
     let expanded = quote! {
-        impl crate::packet::serialization::ByteReadable for #name {
-            fn read_from_bytes(byte_reader: &mut crate::packet::serialization::ByteReader) -> Self {
+        impl packets::read::ByteReadable for #name {
+            fn read_from_bytes(byte_reader: &mut packets::read::ByteReader) -> Self {
                 let VarInt(inner) = byte_reader.read();
 
                 let res = match inner {
@@ -210,8 +210,8 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
 
 
     let expanded = quote! {
-        impl crate::packet::serialization::ByteWritable for #name {
-            fn write_to_bytes(self, writer: &mut crate::packet::serialization::ByteWriter) {
+        impl packets::write::ByteWritable for #name {
+            fn write_to_bytes(self, writer: &mut packets::write::ByteWriter) {
 
                 let id = match self {
                     #(#name::#idents{..} => #discriminants),*,

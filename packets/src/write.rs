@@ -1,4 +1,5 @@
 use bytes::{BytesMut, BufMut};
+use crate::types::VarInt;
 
 pub struct ByteWriter {
     bytes: BytesMut,
@@ -84,4 +85,33 @@ impl ByteWriter {
         self.bytes.freeze().to_vec()
     }
 
+}
+
+
+impl ByteWritable for &[u8] {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        for &x in self {
+            writer.write(x);
+        }
+    }
+}
+
+impl ByteWritable for String {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        let bytes = self.as_bytes();
+        let byte_len = self.bytes().len();
+
+        writer.write(VarInt::from(byte_len))
+            .write(bytes);
+    }
+}
+
+impl ByteWritable for Vec<u8> {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        let len: VarInt = self.len().into();
+        writer.write(len);
+        for x in self {
+            writer.write(x);
+        }
+    }
 }

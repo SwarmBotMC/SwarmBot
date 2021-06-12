@@ -5,7 +5,6 @@
 use crate::bootstrap::Output;
 use crate::client::runner::Runner;
 use crate::error::ResContext;
-use crate::storage::world::WorldBlocks;
 
 mod error;
 mod bootstrap;

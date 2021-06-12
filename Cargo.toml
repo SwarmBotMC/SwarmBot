@@ -39,7 +39,7 @@ bytes = "1.0.1"
 rayon = "1.5.1"
 #byteorder = "1.4.3"
 
-packet_macro = { path = "packet_macro" } # from a path in the local filesystem
+packets = { path = "packets" } # from a path in the local filesystem
 
 [profile.release]
 debug = 1
