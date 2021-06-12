@@ -8,6 +8,7 @@ use crate::bootstrap::{Connection, User};
 use crate::bootstrap::csv::read_proxies;
 use crate::bootstrap::mojang::Mojang;
 use crate::error::{HasContext, ResContext};
+use rand::seq::SliceRandom;
 
 pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u16, users: &[User]) -> ResContext<tokio::sync::mpsc::Receiver<Connection>> {
     let host = String::from(host);
@@ -33,7 +34,10 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u1
         }
         true => {
             let file = File::open(proxies).context(|| format!("opening proxy ({})", proxies))?;
-            let proxies = read_proxies(file).context(|| format!("opening proxies ({})", proxies))?;
+            let mut proxies = read_proxies(file).context(|| format!("opening proxies ({})", proxies))?;
+
+            // use random proxies
+            proxies.shuffle(&mut rand::thread_rng());
 
             tokio::task::spawn_local(async move {
                 for (proxy, user) in proxies.iter().cycle().zip(users) {

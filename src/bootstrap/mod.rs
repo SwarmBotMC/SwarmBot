@@ -9,6 +9,7 @@ use crate::bootstrap::mojang::Mojang;
 use crate::bootstrap::opts::Opts;
 use crate::bootstrap::tcp::obtain_connections;
 use crate::error::{err, HasContext, ResContext};
+use rand::seq::SliceRandom;
 
 mod opts;
 mod csv;
@@ -72,7 +73,7 @@ pub async fn init() -> ResContext<Output> {
     });
 
     // list users we want to login
-    let users = {
+    let mut users = {
         let file = File::open(&users_file).context(|| format!("opening users ({})", users_file))?;
         read_users(file).context(|| format!("reading users ({})", users_file))?
     };
@@ -85,6 +86,9 @@ pub async fn init() -> ResContext<Output> {
     println!("starting with {} users", count);
 
     // the users we will use
+
+
+    users.shuffle(&mut rand::thread_rng());
     let users = &users[..count];
 
     // the connections
