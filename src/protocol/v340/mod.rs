@@ -9,19 +9,18 @@
 
 use crate::error::Res;
 use crate::bootstrap::Connection;
-use crate::client::instance::Client;
-use crate::protocol::{McProtocol, ClientProtocol};
+use crate::client::instance::{Client, State};
+use crate::protocol::{McProtocol, Login};
 
 pub struct Protocol;
 
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
-    async fn login(conn: &Connection) -> Res<ClientProtocol<Self>> {
+    async fn login(conn: Connection) -> Res<Login<Self>> {
         todo!()
     }
 
-
-    fn apply_packets(&self, client: &mut Client) {
+    fn apply_packets(&self, client: &mut State) {
         todo!()
     }
 

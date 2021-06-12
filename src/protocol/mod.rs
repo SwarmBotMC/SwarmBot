@@ -1,5 +1,5 @@
-use crate::client::instance::Client;
 use crate::bootstrap::Connection;
+use crate::client::instance::{Client, ClientInfo, State};
 use crate::error::Res;
 
 pub mod v340;
@@ -11,19 +11,13 @@ mod serialization;
 
 #[async_trait::async_trait]
 pub trait McProtocol where Self: Sized {
-    async fn login(conn: &Connection) -> Res<ClientProtocol<Self>>;
-    fn apply_packets(&self, client: &mut Client);
+    async fn login(conn: Connection) -> Res<Login<Self>>;
+    fn apply_packets(&self, client: &mut State);
     fn teleport(&mut self);
 }
 
-pub struct ClientProtocol<T: McProtocol> {
+
+pub struct Login<T: McProtocol> {
     pub protocol: T,
-    pub client: Client,
+    pub info: ClientInfo
 }
-
-impl<T: McProtocol> ClientProtocol<T> {
-    pub async fn login(conn: Connection) -> Res<ClientProtocol<T>> {
-        T::login(&conn).await
-    }
-}
-

@@ -1,33 +1,13 @@
-use async_trait::async_trait;
-
-use crate::data::{BlockState, AIR};
-use crate::pathfind::context::Context;
-use crate::pathfind::moves::Movements::TraverseCardinal;
-use crate::pathfind::BlockLocation;
-use std::sync::Arc;
-use super::BlockLocation;
 use crate::client::pathfind::context::Context;
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
-
-trait Move {
-    #[async_trait]
-    fn on_move(&self, from: BlockLocation, context: &Context) -> MoveResult;
-}
-
-struct Realized {
-    result_location: BlockLocation,
-    cost: f64,
-}
+use crate::client::pathfind::progress_checker::{Neighbor, Progression};
+use crate::storage::block::{AIR, BlockApprox, BlockLocation, SimpleType};
+use crate::storage::block::SimpleType::WalkThrough;
 
 enum MoveResult {
     Edge,
     Invalid,
-    Realized(Realized),
-}
-
-enum MoveResults {
-    Edge,
-    Realized(Vec<Realized>),
+    Realized(Neighbor<BlockLocation>),
 }
 
 pub enum Movements {
@@ -35,9 +15,8 @@ pub enum Movements {
 }
 
 impl Movements {
-    const ALL: Vec<Movements> = {
-        use crate::pathfind::moves::Movements::*;
-        vec![
+    const ALL: [Movements; 4] = {
+        [
             TraverseCardinal(CardinalDirection::NORTH),
             TraverseCardinal(CardinalDirection::WEST),
             TraverseCardinal(CardinalDirection::SOUTH),
@@ -45,12 +24,12 @@ impl Movements {
         ]
     };
 
-    async fn obtain_all(from: BlockLocation, ctx: &Context) -> MoveResults {
-        // type OptBS = Optional<BlockState>;
+    pub fn obtain_all(from: BlockLocation, ctx: &Context) -> Progression<BlockLocation> {
+        let w = ctx.world;
 
         macro_rules! get_block {
-            ($x: expr, $y:expr, $z:expr) => {{
-                let res: Option<BlockState> = ctx.world.get_block(BlockLocation($x, $y, $z)).await;
+            ($x: expr, $y: expr, $z:expr) => {{
+                let res: Option<BlockApprox> = w.get_block(BlockLocation($x,$y,$z));
                 res
             }};
         }
@@ -68,17 +47,16 @@ impl Movements {
             let Change { dx, dz, .. } = direction.unit_change();
 
             let legs = get_block!(x + dx, y, z + dz);
-            let head = get_block!(x + dx, y + 1, z + dz);
+            let head = get_block!(x + dx, y, z + dz);
 
-            let res = match (legs, head) {
+            match (legs, head) {
                 (Some(legs), Some(head)) => {
                     adj_legs[idx] = legs;
                     adj_head[idx] = head;
-                    can_move_adj[idx] = legs.walk_through() || head.walk_through();
+                    can_move_adj[idx] = legs.s_type() == WalkThrough && head.s_type() == WalkThrough;
                 }
-                _ => return MoveResults::Edge,
+                _ => return Progression::Edge,
             };
-
         }
 
         let mut res = vec![];
@@ -91,13 +69,13 @@ impl Movements {
 
         // traversing
         for (idx, direction) in CardinalDirection::ALL.into_iter().enumerate() {
-            let CardinalDirection { dx, dz } = direction;
+            let Change { dx, dz, .. } = direction.unit_change();
             if can_move_adj[idx] {
-                let floor = get_block!(ctx, x + dx, y - 1, z + dz).unwrap();
-                let floor_walkable = floor.full_block();
+                let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
+                let floor_walkable = floor.s_type() == SimpleType::Solid;
                 can_traverse_no_block[idx] = floor_walkable;
-                res.push(Realized {
-                    result_location: BlockLocation(x + dx, y - 1, z + dz),
+                res.push(Neighbor {
+                    value: BlockLocation(x + dx, y - 1, z + dz),
                     cost: ctx.costs.block_walk,
                 })
             }
@@ -105,27 +83,14 @@ impl Movements {
 
         // falling
         for (idx, direction) in CardinalDirection::ALL.into_iter().enumerate() {
-            let CardinalDirection { dx, dz } = direction;
+            let Change { dx, dz, .. } = direction.unit_change();
             if can_move_adj[idx] {
-                let floor = get_block!(ctx, x + dx, y - 1, z + dz).unwrap();
-                can_traverse_no_block[idx] = floor.full_block();
+                let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
+                can_traverse_no_block[idx] = floor.s_type() == SimpleType::Solid;
             }
         }
 
-        todo!()
-    }
-}
-
-struct MovementCache {}
-
-impl Move for Movements {
-    fn on_move(&self, from: BlockLocation, context: &Context) -> MoveResult {
-        match self {
-            TraverseCardinal(&direction) => MoveCardinal { direction }.on_move(from, context),
-            _ => {
-                panic!("dasd")
-            }
-        }
+        Progression::Movements(res)
     }
 }
 
@@ -143,10 +108,10 @@ pub enum CardinalDirection3D {
 }
 
 impl CardinalDirection3D {
-    pub const ALL: Vec<CardinalDirection3D> = {
+    pub const ALL: [CardinalDirection3D; 6] = {
         use CardinalDirection::*;
         use CardinalDirection3D::*;
-        vec![
+        [
             Plane(NORTH),
             Plane(SOUTH),
             Plane(EAST),
@@ -156,24 +121,24 @@ impl CardinalDirection3D {
         ]
     };
 
-    pub const ALL_BUT_UP: Vec<CardinalDirection3D> = {
+    pub const ALL_BUT_UP: [CardinalDirection3D; 5] = {
         use CardinalDirection::*;
         use CardinalDirection3D::*;
-        vec![Plane(NORTH), Plane(SOUTH), Plane(EAST), Plane(WEST), DOWN]
+        [Plane(NORTH), Plane(SOUTH), Plane(EAST), Plane(WEST), DOWN]
     };
 }
 
 impl CardinalDirection {
-    pub const ALL: Vec<CardinalDirection> = {
+    pub const ALL: [CardinalDirection; 4] = {
         use CardinalDirection::*;
-        vec![NORTH, SOUTH, EAST, WEST]
+        [NORTH, SOUTH, EAST, WEST]
     };
 }
 
 pub struct Change {
-    pub dx: u8,
-    pub dy: u8,
-    pub dz: u8,
+    pub dx: i64,
+    pub dy: i64,
+    pub dz: i64,
 }
 
 impl CardinalDirection3D {

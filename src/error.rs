@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 pub type Res<T = ()> = Result<T, Error>;
-pub type ResContext<T = ()> = Result<T, Context<Error>>;
+pub type ResContext<T = ()> = Result<T, ErrorContext<Error>>;
 
 #[derive(Debug)]
 pub enum Error {
@@ -22,8 +22,8 @@ impl Display for Error {
     }
 }
 
-pub fn err(str: String) -> Result<(), Context<Error>> {
-    Err(Context {
+pub fn err(str: String) -> Result<(), ErrorContext<Error>> {
+    Err(ErrorContext {
         inner: Error::Simple(str),
         context: "".to_string(),
     })
@@ -59,29 +59,29 @@ impl From<tokio_socks::Error> for Error {
 //     }
 // }
 
-pub struct Context<T> {
+pub struct ErrorContext<T> {
     inner: T,
     context: String,
 }
 
-impl<T: Display> Display for Context<T> {
+impl<T: Display> Display for ErrorContext<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("Error {} : {}", self.context, self.inner))
     }
 }
 
 pub trait HasContext<T, E> {
-    fn context(self, f: impl Fn() -> String) -> Result<T, Context<E>>;
+    fn context(self, f: impl Fn() -> String) -> Result<T, ErrorContext<E>>;
 }
 
 impl<T, E: Into<Error>> HasContext<T, Error> for Result<T, E> {
-    fn context(self, f: impl Fn() -> String) -> Result<T, Context<Error>> {
+    fn context(self, f: impl Fn() -> String) -> Result<T, ErrorContext<Error>> {
         match self {
             Ok(res) => Ok(res),
             Err(inner) => {
                 let inner = inner.into();
                 let context = f();
-                Err(Context {
+                Err(ErrorContext {
                     inner,
                     context,
                 })

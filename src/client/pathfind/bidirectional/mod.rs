@@ -1,9 +1,11 @@
 use std::collections::{BinaryHeap, HashMap};
 
-use crate::pathfind::{BlockLocation, HeapNode, Path};
-use crate::pathfind::bidirectional::middleman::Middleman;
-use crate::pathfind::bidirectional::path_constructor::PathConstructor;
-use crate::pathfind::progress_checker::{Heuristic, Progression, Progressor};
+use super::{HeapNode, Path};
+use super::bidirectional::middleman::Middleman;
+use super::bidirectional::path_constructor::PathConstructor;
+use super::progress_checker::{Progression};
+use crate::storage::block::BlockLocation;
+use crate::client::pathfind::progress_checker::{Progressor, Heuristic};
 
 mod middleman;
 mod path_constructor;
@@ -106,7 +108,7 @@ async fn bi_path_helper(
         let origin = origin.contents;
         let origin_g_score = g_scores[&origin];
 
-        let progression = progressor.progressions(origin).await;
+        let progression = progressor.progressions(origin);
 
         let progression = match progression {
             Progression::Edge => {
@@ -122,7 +124,7 @@ async fn bi_path_helper(
         };
 
         for neighbor in progression {
-            let tentative_g_score = origin_g_score + neighbor.distance;
+            let tentative_g_score = origin_g_score + neighbor.cost;
             match g_scores.get_mut(&neighbor.value) {
                 Some(prev_score) => if tentative_g_score < *prev_score {
                     *prev_score = tentative_g_score;
