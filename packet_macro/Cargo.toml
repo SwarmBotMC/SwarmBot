@@ -1,0 +1,15 @@
+[package]
+name = "packet_macro"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[dependencies]
+syn = {version="1.0.57",features=["full","fold"]}
+quote = "1.0.8"
+proc-macro2 = "1.0.27"
+
+[lib]
+proc-macro = true

@@ -14,6 +14,15 @@ pub struct PacketData {
 
 pub trait Packet {
     const ID: u32;
+    const STATE: PacketState;
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum PacketState {
+    Handshake,
+    Status,
+    Login,
+    Play,
 }
 
 #[derive(Copy, Clone, Debug)]
