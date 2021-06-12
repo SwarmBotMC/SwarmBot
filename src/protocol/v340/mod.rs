@@ -1,7 +1,7 @@
 
 
 mod clientbound;
-mod severbound;
+mod serverbound;
 
 
 // struct PacketData {
@@ -15,6 +15,9 @@ use crate::client::instance::{State};
 use crate::protocol::{McProtocol, Login};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::PacketWriter;
+use crate::protocol::types::PacketData;
+use crate::protocol::v340::serverbound::HandshakeNextState;
+use packets::types::VarInt;
 
 pub struct Protocol {
     reader: PacketReader,
@@ -25,10 +28,21 @@ pub struct Protocol {
 impl McProtocol for Protocol {
     async fn login(conn: Connection) -> Res<Login<Self>> {
 
-        let reader = PacketReader::from(conn.read);
-        let writer = PacketWriter::from(conn.write);
+        let host = conn.host;
+        let port = conn.port;
 
-        todo!()
+        let mut reader = PacketReader::from(conn.read);
+        let mut writer = PacketWriter::from(conn.write);
+
+        writer.write(serverbound::Handshake {
+            protocol_version: VarInt(340),
+            host,
+            port,
+            next_state: HandshakeNextState::Login
+        }).await;
+
+
+        todo!();
 
 
     }

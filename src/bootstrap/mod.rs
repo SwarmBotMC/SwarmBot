@@ -10,10 +10,13 @@ use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 mod opts;
 mod csv;
 mod tcp;
+mod mojang;
 
 #[derive(Debug)]
 pub struct Connection {
     pub user: User,
+    pub host: String,
+    pub port: u16,
     pub read: OwnedReadHalf,
     pub write: OwnedWriteHalf,
 }

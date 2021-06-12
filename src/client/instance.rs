@@ -17,6 +17,7 @@ pub struct Client<'a, T: McProtocol> {
     pub state: State,
     pub protocol: T,
     pub world_blocks: &'a WorldBlocks,
+
 }
 
 impl <T: McProtocol> Client<'a, T> {

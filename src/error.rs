@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use reqwest::StatusCode;
 
 pub type Res<T = ()> = Result<T, Error>;
 pub type ResContext<T = ()> = Result<T, ErrorContext<Error>>;
@@ -8,8 +9,25 @@ pub enum Error {
     IO(std::io::Error),
     CSV(csv::Error),
     Socks5(tokio_socks::Error),
+    Reqwest(reqwest::Error),
     Simple(String),
+    Mojang(MojangErr)
 }
+
+#[derive(Debug)]
+pub enum MojangErr {
+    InvalidCredentials {
+        error_code: StatusCode,
+        info: Option<String>,
+    },
+}
+
+impl Display for MojangErr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str("yes")
+    }
+}
+
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -17,7 +35,9 @@ impl Display for Error {
             Error::IO(io) => io.fmt(f),
             Error::CSV(csv) => csv.fmt(f),
             Error::Simple(str) => f.write_str(str),
+            Error::Reqwest(inner) => inner.fmt(f),
             Error::Socks5(socks) => socks.fmt(f),
+            Error::Mojang(inner) => inner.fmt(f),
         }
     }
 }
@@ -35,9 +55,21 @@ impl From<csv::Error> for Error {
     }
 }
 
+impl From<MojangErr> for Error {
+    fn from(err: MojangErr) -> Self {
+        Self::Mojang(err)
+    }
+}
+
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Self::IO(err)
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        Self::Reqwest(err)
     }
 }
 

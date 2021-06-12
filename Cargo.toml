@@ -26,7 +26,7 @@ tokio = { version = "1.5.0", features = ["full"] }
 async-trait = "0.1.50"
 
 
-# encruption
+# encryption
 aes = "0.7.4"
 cfb8 = "0.7.1"
 
@@ -36,10 +36,23 @@ flate2 = "1.0"
 # get_u8, etc extensions
 bytes = "1.0.1"
 
+# threads
 rayon = "1.5.1"
-#byteorder = "1.4.3"
+
+# mojang https api
+reqwest = { version = "0.11", features = ["json"] }
+
+# mojang hash
+num-bigint = "0.4"
+
+# mojang hash
+sha1 = "0.6"
+
+# json parsing (particularly for mojang api)
+serde_json = "1.0"
 
 packets = { path = "packets" } # from a path in the local filesystem
+packets-macro = { path = "packets/packets_macro" } # from a path in the local filesystem
 
 [profile.release]
 debug = 1

@@ -78,7 +78,7 @@ pub fn readable(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         impl packets::read::ByteReadable for #name {
-            fn read_from_bytes(byte_reader: &mut packets::reader::ByteReader) -> Self {
+            fn read_from_bytes(byte_reader: &mut packets::read::ByteReader) -> Self {
                 #name {
                     #(#idents: byte_reader.read()),*
                 }
