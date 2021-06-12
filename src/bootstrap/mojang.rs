@@ -1,13 +1,31 @@
 use num_bigint::BigInt;
+use packets::types::UUID;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha1::Sha1;
-use crate::error::{Res, MojangErr};
-use packets::types::UUID;
-use reqwest::StatusCode;
 
+use crate::error::{MojangErr, Res};
+
+#[derive(Debug)]
 pub struct Mojang {
     client: reqwest::Client,
+}
+
+impl Mojang {
+    pub fn socks5(address: &str, user: &str, pass: &str) -> Res<Mojang> {
+        let full_address = format!("socks5://{}", address);
+
+        let proxy = reqwest::Proxy::http(full_address)?.basic_auth(user, pass);
+
+        let client = reqwest::Client::builder()
+            .proxy(proxy)
+            .build()?;
+
+        Ok(Mojang {
+            client
+        })
+    }
 }
 
 impl Default for Mojang {
@@ -33,12 +51,11 @@ fn hexdigest(bytes: &[u8]) -> String {
 }
 
 
-
 #[derive(Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectedProfile {
     pub name: String,
-    pub id: String
+    pub id: String,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -73,11 +90,11 @@ impl Mojang {
         if status != 200 {
             return Err(MojangErr::InvalidCredentials {
                 error_code: status,
-                info: res.text().await.ok()
+                info: res.text().await.ok(),
             }.into());
         }
 
-        let auth: AuthResponse  = res.json().await?;
+        let auth: AuthResponse = res.json().await?;
         Ok(auth)
     }
 
@@ -99,11 +116,10 @@ impl Mojang {
 
         let status = res.status();
         if status != 204 {
-
             println!("uuid invalid {}", uuid_str);
             return Err(MojangErr::InvalidCredentials {
                 error_code: status,
-                info: res.text().await.ok()
+                info: res.text().await.ok(),
             }.into());
         }
 
@@ -116,8 +132,8 @@ impl Mojang {
 mod tests {
     use sha1::Sha1;
 
-    use crate::mojang::hexdigest;
     use crate::bootstrap::mojang::hexdigest;
+    use crate::mojang::hexdigest;
 
     fn sha1(input: &[u8]) -> String {
         let mut sha1 = Sha1::new();

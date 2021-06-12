@@ -9,6 +9,9 @@ pub struct Opts {
     #[clap(short, long, default_value = "1")]
     pub count: usize,
 
+    #[clap(long, default_value = "25565")]
+    pub port: u16,
+
     #[clap(short, long)]
     pub online: bool,
 

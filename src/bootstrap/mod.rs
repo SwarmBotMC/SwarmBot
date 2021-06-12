@@ -6,6 +6,7 @@ use crate::bootstrap::tcp::{obtain_connections};
 use serde::Deserialize;
 use crate::error::{err, HasContext, ResContext};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+use crate::bootstrap::mojang::Mojang;
 
 mod opts;
 mod csv;
@@ -17,6 +18,7 @@ pub struct Connection {
     pub user: User,
     pub host: String,
     pub port: u16,
+    pub mojang: Mojang,
     pub read: OwnedReadHalf,
     pub write: OwnedWriteHalf,
 }
@@ -47,7 +49,7 @@ pub struct Output {
 }
 
 pub async fn init() -> ResContext<Output> {
-    let Opts { users_file, proxy, proxies_file, host, count, version, .. } = Opts::get();
+    let Opts { users_file, proxy, proxies_file, host, count, version, port, .. } = Opts::get();
 
     let users = {
         let file = File::open(&users_file).context(|| format!("opening users ({})", users_file))?;
@@ -60,9 +62,7 @@ pub async fn init() -> ResContext<Output> {
 
     let users = &users[..count];
 
-    let host = format!("{}:{}", host, 25565);
-
-    let list = obtain_connections(proxy, &proxies_file, &host, users).await?;
+    let list = obtain_connections(proxy, &proxies_file, &host, port, users).await?;
 
     let connections= Output {
         version,
