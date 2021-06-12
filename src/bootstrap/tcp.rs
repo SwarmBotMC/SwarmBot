@@ -40,11 +40,13 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u1
     };
 
     Ok(users.iter().zip(streams).map(|(user, (stream, mojang))| {
+        let online = user.online;
         let user = user.clone();
         let (read, write) = stream.into_split();
         Connection {
             mojang,
             user,
+            online,
             host: host.to_string(),
             read,
             write,

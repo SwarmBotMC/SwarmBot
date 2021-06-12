@@ -1,12 +1,14 @@
+use std::fmt::{Display, Formatter};
+use std::io::{Read, Write};
+
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
+
 use crate::read::ByteReadable;
 use crate::read::ByteReadableLike;
 use crate::read::ByteReader;
 use crate::write::ByteWritable;
 use crate::write::ByteWritableLike;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use crate::write::ByteWriter;
-use std::fmt::{Display, Formatter};
-use std::io::{Read, Write};
 
 pub trait Packet {
     const ID: u32;
@@ -21,6 +23,18 @@ pub enum PacketState {
     Play,
 }
 
+impl Display for PacketState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let res = match self {
+            PacketState::Handshake => "handshake",
+            PacketState::Status => "status",
+            PacketState::Login => "login",
+            PacketState::Play => "play"
+        };
+        f.write_str(res)
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct VarInt(pub i32);
 
@@ -31,6 +45,7 @@ pub type Chat = String;
 pub struct BitField {
     pub values: [bool; 8],
 }
+
 impl From<u8> for BitField {
     fn from(mut byte: u8) -> BitField {
         let mut values = [false; 8];
@@ -45,7 +60,6 @@ impl From<u8> for BitField {
             values
         }
     }
-
 }
 
 
@@ -237,6 +251,26 @@ impl ByteReadable for VarInt {
         loop {
             let b: u8 = byte_reader.read();
             let b = b as u32;
+            val |= (b & PART) << (size * 7);
+            size += 1;
+            if size > 5 {
+                panic!("oop");
+            }
+            if (b & 0x80) == 0 {
+                break;
+            }
+        }
+        VarInt(val as i32)
+    }
+}
+
+impl VarInt {
+    pub async fn read_async<R: AsyncRead + Unpin>(reader: &mut R) -> VarInt {
+        const PART: u32 = 0x7F;
+        let mut size = 0;
+        let mut val = 0u32;
+        loop {
+            let b = reader.read_u8().await.unwrap() as u32;
             val |= (b & PART) << (size * 7);
             size += 1;
             if size > 5 {

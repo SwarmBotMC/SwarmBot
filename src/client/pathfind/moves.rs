@@ -43,7 +43,7 @@ impl Movements {
 
         // let edge_blocks = [B]
         // movement directions
-        for (idx, direction) in CardinalDirection::ALL.into_iter().enumerate() {
+        for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
             let Change { dx, dz, .. } = direction.unit_change();
 
             let legs = get_block!(x + dx, y, z + dz);
@@ -68,7 +68,7 @@ impl Movements {
         let mut adj_floor = [AIR; 4];
 
         // traversing
-        for (idx, direction) in CardinalDirection::ALL.into_iter().enumerate() {
+        for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
             let Change { dx, dz, .. } = direction.unit_change();
             if can_move_adj[idx] {
                 let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
@@ -82,7 +82,7 @@ impl Movements {
         }
 
         // falling
-        for (idx, direction) in CardinalDirection::ALL.into_iter().enumerate() {
+        for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
             let Change { dx, dz, .. } = direction.unit_change();
             if can_move_adj[idx] {
                 let floor = get_block!(x + dx, y - 1, z + dz).unwrap();

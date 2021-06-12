@@ -11,11 +11,12 @@ use crate::bootstrap::mojang::Mojang;
 mod opts;
 mod csv;
 mod tcp;
-mod mojang;
+pub mod mojang;
 
 #[derive(Debug)]
 pub struct Connection {
     pub user: User,
+    pub online: bool,
     pub host: String,
     pub port: u16,
     pub mojang: Mojang,
@@ -27,6 +28,7 @@ pub struct Connection {
 pub struct User {
     pub email: String,
     pub password: String,
+    pub online: bool
 }
 
 #[derive(Debug, Deserialize)]

@@ -40,6 +40,7 @@ impl<'a, T: McProtocol + 'static> Runner<'a, T> {
         for connection in connections {
             let logins = logins.clone();
             let handle = tokio::task::spawn_local(async move {
+                println!("starting login of {}", connection.user.email);
                 let login = T::login(connection).await.unwrap();
                 logins.borrow_mut().push(login);
             });
@@ -59,6 +60,7 @@ impl<'a, T: McProtocol + 'static> Runner<'a, T> {
         loop {
             self.game_iter();
             // TODO: delay 50 ms
+            tokio::time::sleep(core::time::Duration::from_millis(50)).await;
         }
     }
 

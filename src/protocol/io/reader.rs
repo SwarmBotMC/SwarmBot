@@ -5,9 +5,11 @@ use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
 use crate::protocol::io::{ZLib, AES};
 use crate::protocol::transform::ReadableExt;
-use packets::read::{ByteReader, LenRead};
+use packets::read::{ByteReader, LenRead, ByteReadable};
 use crate::protocol::types::PacketData;
-use packets::types::{VarInt, RawVec};
+use packets::types::{VarInt, RawVec, Packet, PacketState};
+use crate::error::Res;
+use crate::error::Error::WrongPacket;
 
 pub struct PacketReader {
     reader: EncryptedReader,
@@ -66,7 +68,9 @@ impl PacketReader {
 
         // ignore 0-sized packets
         loop {
-            let VarInt(len) = self.reader.read().await;
+
+            let len = VarInt::read_async(&mut self.reader).await;
+            let len = len.0;
             if len != 0 {
                 pkt_len = len as usize;
                 break;
@@ -90,6 +94,26 @@ impl PacketReader {
         PacketData {
             id: id as u32,
             reader,
+        }
+    }
+
+    pub async fn read_exact_packet<T>(&mut self) -> Res<T> where T: Packet, T: ByteReadable {
+        let PacketData { id, mut reader } = self.read().await;
+
+        // if id == 0 && T::STATE == PacketState::Login {
+        //     let Disconnect {reason} = reader.read();
+        //     return Err(crate::Error::Disconnect(reason))
+        // }
+
+        if id != T::ID {
+            Err(WrongPacket {
+                state: T::STATE,
+                expected: T::ID,
+                actual: id,
+            })
+        } else {
+            let packet = T::read_from_bytes(&mut reader);
+            Ok(packet)
         }
     }
 }

@@ -60,9 +60,16 @@ pub struct SelectedProfile {
 
 #[derive(Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct AuthResponse {
+struct RawAuthResponse {
     pub access_token: String,
     pub selected_profile: SelectedProfile,
+}
+
+#[derive(Default)]
+pub struct AuthResponse {
+    pub access_token: String,
+    pub name: String,
+    pub uuid: String
 }
 
 impl Mojang {
@@ -94,7 +101,12 @@ impl Mojang {
             }.into());
         }
 
-        let auth: AuthResponse = res.json().await?;
+        let auth: RawAuthResponse = res.json().await?;
+        let auth = AuthResponse {
+            access_token: auth.access_token,
+            name: auth.selected_profile.name,
+            uuid: auth.selected_profile.id
+        };
         Ok(auth)
     }
 
@@ -133,7 +145,6 @@ mod tests {
     use sha1::Sha1;
 
     use crate::bootstrap::mojang::hexdigest;
-    use crate::mojang::hexdigest;
 
     fn sha1(input: &[u8]) -> String {
         let mut sha1 = Sha1::new();
