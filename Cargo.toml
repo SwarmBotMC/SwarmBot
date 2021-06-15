@@ -17,7 +17,10 @@ csv = "1.1"
 serde = {version = "1.0", features =["derive"]}
 
 # socket5
-tokio-socks = "0.5.1"
+tokio-socks = "0.5"
+
+# for database stuff
+tokio-stream = "0.1"
 
 # tokio
 tokio = { version = "1.5.0", features = ["full"] }
@@ -62,6 +65,9 @@ serde_json = "1.0"
 
 # quite a few uses
 itertools = "0.10.1"
+
+
+sqlx = { version = "0.5.5", features = ["runtime-tokio-native-tls", "postgres"]}
 
 packets = { path = "packets" } # from a path in the local filesystem
 

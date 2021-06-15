@@ -1,10 +1,15 @@
+use std::sync::mpsc::{SendError, TryRecvError};
+
 use packets::types::{PacketState, UUID, VarInt};
 use packets::types::Packet;
+use tokio::sync::oneshot::error::RecvError;
 use tokio::time::{Duration, sleep};
 
 use crate::bootstrap::{Connection, User};
-use crate::bootstrap::mojang::{AuthResponse, calc_hash};
+use crate::bootstrap::mojang::{AuthResponse, calc_hash, Mojang};
 use crate::client::instance::{ClientInfo, State};
+use crate::client::runner::GlobalState;
+use crate::db::CachedUser;
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
 use crate::protocol::{Login, McProtocol};
@@ -12,11 +17,8 @@ use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::types::PacketData;
-use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess, Disconnect};
+use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::HandshakeNextState;
-use crate::client::runner::GlobalState;
-use std::sync::mpsc::{SendError, TryRecvError};
-use tokio::sync::oneshot::error::RecvError;
 
 mod clientbound;
 mod serverbound;
@@ -25,27 +27,22 @@ mod types;
 pub struct Protocol {
     rx: std::sync::mpsc::Receiver<PacketData>,
     tx: PacketWriteChannel,
-    disconnected: bool
+    disconnected: bool,
 }
 
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
     async fn login(conn: Connection) -> Res<Login<Self>> {
-        let Connection { user, online, mojang, port, read, write, host } = conn;
 
-        let User { email, password, online } = user;
+        let Connection { user, host, port, mojang, read, write } = conn;
+        let CachedUser { email, access_token, client_token, username, uuid, password } = user;
 
+        let uuid = UUID::from(&uuid);
 
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
 
-        let AuthResponse { access_token, username, uuid } = if online {
-            mojang.authenticate(&email, &password).await?
-        } else {
-            let mut response = AuthResponse::default();
-            response.username = email.clone();
-            response
-        };
+        let online = true;
 
         // START: handshake
         writer.write(serverbound::Handshake {
@@ -63,37 +60,30 @@ impl McProtocol for Protocol {
 
         // writer.flush().await;
 
-        if online {
-            let clientbound::EncryptionRequest { public_key_der, verify_token, server_id } = reader.read_exact_packet().await?;
+        let clientbound::EncryptionRequest { public_key_der, verify_token, server_id } = reader.read_exact_packet().await?;
 
-            let rsa = RSA::from_der(&public_key_der);
+        let rsa = RSA::from_der(&public_key_der);
 
-            let shared_secret = rand_bits();
+        let shared_secret = rand_bits();
 
-            let encrypted_ss = rsa.encrypt(&shared_secret).unwrap();
-            let encrypted_verify = rsa.encrypt(&verify_token).unwrap();
+        let encrypted_ss = rsa.encrypt(&shared_secret).unwrap();
+        let encrypted_verify = rsa.encrypt(&verify_token).unwrap();
 
-            // Mojang online mode requests
-            if online {
-                let hash = calc_hash(&server_id, &shared_secret, &public_key_der);
-                mojang.join(uuid, &hash, &access_token).await?;
-            }
+        // Mojang online mode requests
+        let hash = calc_hash(&server_id, &shared_secret, &public_key_der);
+        mojang.join(uuid, &hash, &access_token).await?;
 
-            // why sleep?
-            sleep(Duration::from_secs(1)).await;
+        // id = 1
+        writer.write(serverbound::EncryptionResponse {
+            shared_secret: encrypted_ss,
+            verify_token: encrypted_verify,
+        }).await;
 
-            // id = 1
-            writer.write(serverbound::EncryptionResponse {
-                shared_secret: encrypted_ss,
-                verify_token: encrypted_verify,
-            }).await;
+        // writer.flush().await;
 
-            // writer.flush().await;
-
-            // we now do everything encrypted
-            writer.encryption(&shared_secret);
-            reader.encryption(&shared_secret);
-        }
+        // we now do everything encrypted
+        writer.encryption(&shared_secret);
+        reader.encryption(&shared_secret);
 
 
         // set compression or login success
@@ -163,7 +153,7 @@ impl McProtocol for Protocol {
         let protocol = Protocol {
             rx,
             tx,
-            disconnected: false
+            disconnected: false,
         };
 
         let login = Login {
@@ -216,8 +206,7 @@ impl Protocol {
                 self.tx.write(serverbound::KeepAlive {
                     id
                 });
-
-            },
+            }
             PlayDisconnect::ID => {
                 let PlayDisconnect { reason } = data.read();
                 println!("player disconnected ... {}", reason);

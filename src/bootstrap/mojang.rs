@@ -63,12 +63,14 @@ pub struct SelectedProfile {
 #[serde(rename_all = "camelCase")]
 struct RawAuthResponse {
     pub access_token: String,
+    pub client_token: String,
     pub selected_profile: SelectedProfile,
 }
 
 #[derive(Default)]
 pub struct AuthResponse {
     pub access_token: String,
+    pub client_token: String,
     pub username: String,
     pub uuid: UUID,
 }
@@ -103,10 +105,26 @@ impl Mojang {
         let auth: RawAuthResponse = res.json().await?;
         let auth = AuthResponse {
             access_token: auth.access_token,
+            client_token: auth.client_token,
             username: auth.selected_profile.name,
             uuid: UUID::from(&auth.selected_profile.id),
         };
         Ok(auth)
+    }
+
+    pub async fn validate(&self, access_token: &str, client_token: &str) -> Res<bool> {
+        let payload = json!({
+            "accessToken": access_token, // this is not a mistake... the username now takes in email
+            "clientToken": client_token,
+        }).to_string();
+
+        let res = self.client.post("https://authserver.mojang.com/validate")
+            .body(payload)
+            .send()
+            .await?;
+
+        let status = res.status();
+        Ok(status == 204)
     }
 
     pub async fn join(&self, uuid: UUID, server_hash: &str, access_token: &str) -> Res<()> {
@@ -128,10 +146,13 @@ impl Mojang {
         let status = res.status();
         if status != 204 {
             println!("uuid invalid {}", uuid_str);
-            return Err(MojangErr::InvalidCredentials {
+            let err= Err(MojangErr::InvalidCredentials {
                 error_code: status,
                 info: res.text().await.ok(),
             }.into());
+
+            println!("err {:?}", err);
+            return err;
         }
 
         Ok(())

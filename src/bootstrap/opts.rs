@@ -24,6 +24,9 @@ pub struct Opts {
     #[clap(long, default_value = "proxies.csv")]
     pub proxies_file: String,
 
+    #[clap(long, default_value = "mcbot")]
+    pub db: String,
+
     #[clap(short, long)]
     pub proxy: bool,
 

@@ -17,6 +17,7 @@ mod bootstrap;
 mod protocol;
 mod client;
 mod storage;
+mod db;
 
 
 fn main() {

@@ -1,15 +1,19 @@
 use std::fs::File;
 
+use rand::seq::SliceRandom;
 use serde::Deserialize;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 
 use crate::bootstrap::csv::read_users;
 use crate::bootstrap::dns::dns_lookup;
-use crate::bootstrap::mojang::Mojang;
+use crate::bootstrap::mojang::{AuthResponse, Mojang};
 use crate::bootstrap::opts::Opts;
 use crate::bootstrap::tcp::obtain_connections;
-use crate::error::{err, HasContext, ResContext};
-use rand::seq::SliceRandom;
+use crate::db::{Db, ValidDbUser, CachedUser};
+use crate::error::{err, Error, HasContext, ResContext};
+use std::time::Duration;
+use itertools::Itertools;
+use packets::types::UUID;
 
 mod opts;
 mod csv;
@@ -25,8 +29,7 @@ pub struct Address {
 
 #[derive(Debug)]
 pub struct Connection {
-    pub user: User,
-    pub online: bool,
+    pub user: CachedUser,
     pub host: String,
     pub port: u16,
     pub mojang: Mojang,
@@ -38,7 +41,6 @@ pub struct Connection {
 pub struct User {
     pub email: String,
     pub password: String,
-    pub online: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -57,13 +59,14 @@ impl Proxy {
 
 pub struct Output {
     pub version: usize,
-    pub connections: tokio::sync::mpsc::Receiver<Connection>,
+    pub connections: tokio::sync::mpsc::UnboundedReceiver<Connection>,
 }
 
 pub async fn init() -> ResContext<Output> {
 
     // read from config
-    let Opts { users_file, proxy, proxies_file, host, count, version, port, .. } = Opts::get();
+    let Opts { users_file, proxy, proxies_file, host, count, version, port, db, .. } = Opts::get();
+
 
 
     // DNS Lookup
@@ -78,20 +81,12 @@ pub async fn init() -> ResContext<Output> {
         read_users(file).context(|| format!("reading users ({})", users_file))?
     };
 
-    // we are requesting too many users
-    if users.len() < count {
-        return Err(err(format!("there are {} users but {} were requested", users.len(), count).as_str())).context(|| "".to_string())?
-    }
+    let users = users.into_iter().skip(87).collect_vec();
 
-    println!("starting with {} users", count);
-
-    // the users we will use
-
-
-    let users = &users[..count];
+    let db = Db::init().await;
 
     // the connections
-    let connections = obtain_connections(proxy, &proxies_file, &host, port, users).await?;
+    let connections = obtain_connections(proxy, &proxies_file, &host, port, count, &db).await?;
 
     let output = Output {
         version,
@@ -99,4 +94,20 @@ pub async fn init() -> ResContext<Output> {
     };
 
     Ok(output)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use crate::db::Db;
+    use crate::bootstrap::mojang::Mojang;
+
+    #[tokio::test]
+    async fn update_db(){
+        println!("start");
+        let users = super::csv::read_users(File::open("users.csv").unwrap()).unwrap();
+        let db = Db::init().await;
+        let mojang = Mojang::default();
+        db.update_users(&users, &mojang).await;
+    }
 }

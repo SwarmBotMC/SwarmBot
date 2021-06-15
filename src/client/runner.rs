@@ -10,6 +10,7 @@ use crate::protocol::{Login, McProtocol};
 use crate::storage::world::WorldBlocks;
 use std::marker::PhantomData;
 use crate::error::Error;
+use std::time::Duration;
 
 
 #[derive(Default)]
@@ -34,14 +35,14 @@ pub struct Runner<T: McProtocol> {
 
 impl<T: McProtocol + 'static> Runner<T> {
 
-    pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>) {
+    pub async fn run(connections: tokio::sync::mpsc::UnboundedReceiver<Connection>) {
         let blocks = WorldBlocks::default();
         let mut runner = Runner::<T>::new(connections).await;
         runner.game_loop().await;
     }
 
 
-    async fn new(mut connections: tokio::sync::mpsc::Receiver<Connection>) -> Runner<T> {
+    async fn new(mut connections: tokio::sync::mpsc::UnboundedReceiver<Connection>) -> Runner<T> {
 
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
         // let handles = Rc::new(RefCell::new(Vec::new()));
@@ -52,7 +53,7 @@ impl<T: McProtocol + 'static> Runner<T> {
                 while let Some(connection) = connections.recv().await {
                     let logins = pending_logins.clone();
                     tokio::task::spawn_local(async move {
-                        println!("starting login of {}", connection.user.email);
+                        println!("starting login of {}", connection.user.username);
                         let login = match T::login(connection).await {
                             Ok(res) => res,
                             Err(err) => {
@@ -62,6 +63,7 @@ impl<T: McProtocol + 'static> Runner<T> {
                         };
                         logins.borrow_mut().push(login);
                     });
+                    tokio::time::sleep(Duration::from_secs(1)).await;
                 }
             });
         }
