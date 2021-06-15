@@ -11,7 +11,7 @@ use crate::bootstrap::mojang::Mojang;
 use crate::db::{CachedUser, Db};
 use crate::error::{HasContext, ResContext};
 
-pub async fn obtain_connections(use_proxy: bool, proxies: &str, host: &str, port: u16, user_count: usize, db: &Db) -> ResContext<tokio::sync::mpsc::UnboundedReceiver<Connection>> {
+pub async fn obtain_connections(use_proxy: bool, proxies: &str, host: &str, port: u16, user_count: usize, db: &Db) -> ResContext<tokio::sync::mpsc::Receiver<Connection>> {
     let host = String::from(host);
     let users = db.obtain_users(user_count).await;
 
@@ -19,7 +19,7 @@ pub async fn obtain_connections(use_proxy: bool, proxies: &str, host: &str, port
 
     let count = users.len();
 
-    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, rx) = tokio::sync::mpsc::channel(1);
 
     let file = File::open(proxies).context(|| format!("opening proxy ({})", proxies))?;
     let mut proxies = read_proxies(file).context(|| format!("opening proxies ({})", proxies))?;
@@ -39,7 +39,7 @@ pub async fn obtain_connections(use_proxy: bool, proxies: &str, host: &str, port
             let mojang = Mojang::socks5(&proxy_addr, &proxy.user, &proxy.pass).unwrap();
             // let mojang = Mojang::socks5(proxy_addr.as_str(), &proxy.user, &proxy.pass).context(|| format!("generating mojang https client")).unwrap();
 
-            tx.send(combine(user, stream, mojang, host.clone(), port)).unwrap();
+            tx.send(combine(user, stream, mojang, host.clone(), port)).await.unwrap();
         }
     });
 

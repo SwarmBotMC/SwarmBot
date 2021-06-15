@@ -9,7 +9,7 @@ use tokio::runtime::Runtime;
 use tokio::task;
 
 use crate::bootstrap::Output;
-use crate::client::runner::Runner;
+use crate::client::runner::{Runner, RunnerOptions};
 use crate::error::ResContext;
 
 mod error;
@@ -32,10 +32,11 @@ fn run() -> ResContext<()> {
     let local = task::LocalSet::new();
 
     local.block_on(&rt, async move {
-        let Output { version, connections } = bootstrap::init().await?;
+        let Output { version, delay_millis, connections } = bootstrap::init().await?;
+        let opts = RunnerOptions {delay_millis};
 
         match version {
-            340 => Runner::<protocol::v340::Protocol>::run(connections).await,
+            340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await,
             _ => { panic!("version {} does not exist", version) }
         }
 

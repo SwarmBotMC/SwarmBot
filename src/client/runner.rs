@@ -33,16 +33,20 @@ pub struct Runner<T: McProtocol> {
 //     }
 // }
 
+pub struct RunnerOptions {
+    pub delay_millis: u64
+}
+
 impl<T: McProtocol + 'static> Runner<T> {
 
-    pub async fn run(connections: tokio::sync::mpsc::UnboundedReceiver<Connection>) {
+    pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) {
         let blocks = WorldBlocks::default();
-        let mut runner = Runner::<T>::new(connections).await;
+        let mut runner = Runner::<T>::new(connections, opts).await;
         runner.game_loop().await;
     }
 
 
-    async fn new(mut connections: tokio::sync::mpsc::UnboundedReceiver<Connection>) -> Runner<T> {
+    async fn new(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
 
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
         // let handles = Rc::new(RefCell::new(Vec::new()));
@@ -63,6 +67,9 @@ impl<T: McProtocol + 'static> Runner<T> {
                         };
                         logins.borrow_mut().push(login);
                     });
+
+                    tokio::time::sleep(Duration::from_millis(opts.delay_millis)).await;
+
                 }
             });
         }

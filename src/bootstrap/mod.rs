@@ -59,13 +59,14 @@ impl Proxy {
 
 pub struct Output {
     pub version: usize,
-    pub connections: tokio::sync::mpsc::UnboundedReceiver<Connection>,
+    pub delay_millis: u64,
+    pub connections: tokio::sync::mpsc::Receiver<Connection>,
 }
 
 pub async fn init() -> ResContext<Output> {
 
     // read from config
-    let Opts { users_file, proxy, proxies_file, host, count, version, port, db, .. } = Opts::get();
+    let Opts { users_file, proxy, proxies_file, host, count, version, port, db, delay , ..} = Opts::get();
 
 
 
@@ -90,6 +91,7 @@ pub async fn init() -> ResContext<Output> {
 
     let output = Output {
         version,
+        delay_millis: delay,
         connections,
     };
 
