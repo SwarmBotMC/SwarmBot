@@ -80,13 +80,13 @@ pub struct PlayerPositionAndRotation {
 
 #[derive(Writable, Packet)]
 #[packet(0x02, Play)]
-pub struct ChatSb {
+pub struct Chat {
     pub message: String
 }
 
-impl ChatSb {
-    pub fn message(message: &str) -> ChatSb {
-        ChatSb {
+impl Chat {
+    pub fn message(message: &str) -> Chat {
+        Chat {
             message: message.to_string()
         }
     }

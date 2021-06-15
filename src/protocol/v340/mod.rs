@@ -18,7 +18,7 @@ use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::types::PacketData;
 use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
-use crate::protocol::v340::serverbound::HandshakeNextState;
+use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
 
 mod clientbound;
 mod serverbound;
@@ -33,7 +33,6 @@ pub struct Protocol {
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
     async fn login(conn: Connection) -> Res<Login<Self>> {
-
         let Connection { user, host, port, mojang, read, write } = conn;
         let CachedUser { email, access_token, client_token, username, uuid, password } = user;
 
@@ -199,12 +198,33 @@ impl Protocol {
     fn process_packet(&mut self, mut data: PacketData, client: &mut State) {
         use clientbound::*;
         match data.id {
-            JoinGame::ID => println!("player joined"),
+            JoinGame::ID => println!("{} joined", client.info.username),
             KeepAlive::ID => {
                 let KeepAlive { id } = data.read();
 
                 self.tx.write(serverbound::KeepAlive {
                     id
+                });
+            }
+            UpdateHealth::ID => {
+                let UpdateHealth { health, .. } = data.read();
+                if health <= 0.0 {
+                    if client.alive {
+                        client.alive = false;
+                        self.tx.write(serverbound::ClientStatus {
+                            action: serverbound::ClientStatusAction::Respawn
+                        });
+                        self.tx.write(serverbound::Chat::message("I'm respawning"));
+                    }
+                } else {
+                    client.alive = true;
+                }
+            }
+
+            PlayerPositionAndLook::ID => {
+                let PlayerPositionAndLook { location, rotation, teleport_id } = data.read();
+                self.tx.write(serverbound::TeleportConfirm {
+                    teleport_id
                 });
             }
             PlayDisconnect::ID => {
@@ -214,7 +234,7 @@ impl Protocol {
             }
             ChatMessage::ID => {
                 let ChatMessage { json, .. } = data.read();
-                println!("chat {}", json);
+                // println!("chat {}", json);
             }
             _ => {}
         }

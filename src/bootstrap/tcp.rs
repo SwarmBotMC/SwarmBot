@@ -19,6 +19,7 @@ pub async fn obtain_connections(use_proxy: bool, proxies: &str, host: &str, port
 
     let count = users.len();
 
+    // this is 1 because if we have a delay we might get a closed socket because of timeouts
     let (tx, rx) = tokio::sync::mpsc::channel(1);
 
     let file = File::open(proxies).context(|| format!("opening proxy ({})", proxies))?;

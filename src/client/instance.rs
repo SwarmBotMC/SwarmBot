@@ -9,24 +9,13 @@ pub struct ClientInfo {
     pub entity_id: u32,
 }
 
-#[derive(Default)]
 pub struct State {
-
+    pub info: ClientInfo,
+    pub alive: bool
 }
 
 pub struct Client<T: McProtocol> {
-    pub info: ClientInfo,
     pub state: State,
     pub protocol: T,
 
-}
-
-impl <T: McProtocol> Client<T> {
-    pub fn new(info: ClientInfo, world_blocks: &'a WorldBlocks, protocol: T) -> Client<T> {
-        Client {
-            state: State::default(),
-            protocol,
-            info,
-        }
-    }
 }

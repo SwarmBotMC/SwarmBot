@@ -108,8 +108,10 @@ impl<T: McProtocol + 'static> Runner<T> {
                 let Login { protocol, info } = login;
 
                 let client = Client {
-                    info,
-                    state: Default::default(),
+                    state: State {
+                        alive: true,
+                        info
+                    },
                     protocol,
                 };
                 self.clients.push(client);
