@@ -19,6 +19,7 @@ use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::types::PacketData;
 use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
+use rand::{thread_rng, Rng};
 
 mod clientbound;
 mod serverbound;
@@ -32,6 +33,10 @@ pub struct Protocol {
 
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
+
+
+
+
     async fn login(conn: Connection) -> Res<Login<Self>> {
         let Connection { user, host, port, mojang, read, write } = conn;
         let CachedUser { email, access_token, client_token, username, uuid, password } = user;
@@ -187,6 +192,10 @@ impl McProtocol for Protocol {
         }
     }
 
+    fn send_chat(&mut self, message: &str) {
+        self.tx.write(serverbound::Chat::message(message));
+    }
+
     fn teleport(&mut self) {}
 
     fn disconnected(&self) -> bool {
@@ -233,8 +242,12 @@ impl Protocol {
                 self.disconnected = true;
             }
             ChatMessage::ID => {
-                let ChatMessage { json, .. } = data.read();
-                // println!("chat {}", json);
+
+                let rdm = thread_rng().gen_range(0..100);
+                if rdm == 0 {
+                    let ChatMessage { json, .. } = data.read();
+                    println!("chat {}", json);
+                }
             }
             _ => {}
         }

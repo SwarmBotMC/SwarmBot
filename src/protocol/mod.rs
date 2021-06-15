@@ -14,6 +14,7 @@ mod encrypt;
 pub trait McProtocol where Self: Sized {
     async fn login(conn: Connection) -> Res<Login<Self>>;
     fn apply_packets(&mut self, client: &mut State, global: &mut GlobalState);
+    fn send_chat(&mut self, message: &str);
     fn teleport(&mut self);
     fn disconnected(&self) -> bool;
 }

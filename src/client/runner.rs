@@ -1,21 +1,20 @@
 use std::cell::RefCell;
+use std::marker::PhantomData;
 use std::rc::Rc;
+use std::time::Duration;
 
 use rayon::Scope;
 use tokio::task::JoinHandle;
 
 use crate::bootstrap::Connection;
 use crate::client::instance::{Client, State};
+use crate::error::Error;
 use crate::protocol::{Login, McProtocol};
 use crate::storage::world::WorldBlocks;
-use std::marker::PhantomData;
-use crate::error::Error;
-use std::time::Duration;
-
 
 #[derive(Default)]
 pub struct GlobalState {
-    world_blocks: WorldBlocks
+    world_blocks: WorldBlocks,
 }
 
 pub struct Runner<T: McProtocol> {
@@ -34,11 +33,10 @@ pub struct Runner<T: McProtocol> {
 // }
 
 pub struct RunnerOptions {
-    pub delay_millis: u64
+    pub delay_millis: u64,
 }
 
 impl<T: McProtocol + 'static> Runner<T> {
-
     pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) {
         let blocks = WorldBlocks::default();
         let mut runner = Runner::<T>::new(connections, opts).await;
@@ -47,7 +45,6 @@ impl<T: McProtocol + 'static> Runner<T> {
 
 
     async fn new(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
-
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
         // let handles = Rc::new(RefCell::new(Vec::new()));
 
@@ -69,7 +66,6 @@ impl<T: McProtocol + 'static> Runner<T> {
                     });
 
                     tokio::time::sleep(Duration::from_millis(opts.delay_millis)).await;
-
                 }
             });
         }
@@ -92,7 +88,6 @@ impl<T: McProtocol + 'static> Runner<T> {
     }
 
     fn game_iter(&mut self) {
-
         let old_count = self.clients.len();
         // first step: removing disconnected clients
         {
@@ -109,8 +104,9 @@ impl<T: McProtocol + 'static> Runner<T> {
 
                 let client = Client {
                     state: State {
+                        ticks: 0,
                         alive: true,
-                        info
+                        info,
                     },
                     protocol,
                 };
@@ -126,25 +122,26 @@ impl<T: McProtocol + 'static> Runner<T> {
         }
 
         // third step: process packets from game loop
-        {
-            for client in &mut self.clients {
-                client.protocol.apply_packets(&mut client.state, &mut self.global_state)
-            }
+        for client in &mut self.clients {
+            // protocol-specific logic
+            client.protocol.apply_packets(&mut client.state, &mut self.global_state);
+
+            // general sync logic that isnt dependent on protocol implementation
+            client.run_sync(&mut self.global_state);
         }
 
-        {
-            let global_state = &self.global_state;
-            let states: Vec<_> = self.clients.iter_mut().map(|x| &mut x.state).collect();
 
-            rayon::scope(|s| {
-                for state in states {
-                    s.spawn(move |inner_scope| {
-                        run_client(inner_scope, state, global_state);
-                    });
-                }
-            });
-        }
+        // {
+        //     let global_state = &self.global_state;
+        //     let states: Vec<_> = self.clients.iter_mut().map(|x| &mut x.state).collect();
+        //
+        //     rayon::scope(|s| {
+        //         for state in states {
+        //             s.spawn(move |inner_scope| {
+        //                 run_client(inner_scope, state, global_state);
+        //             });
+        //         }
+        //     });
+        // }
     }
 }
-
-fn run_client(scope: &Scope, state: &mut State, global: &GlobalState) {}
