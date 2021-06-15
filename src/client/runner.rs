@@ -63,7 +63,6 @@ impl<T: McProtocol + 'static> Runner<T> {
                         };
                         logins.borrow_mut().push(login);
                     });
-                    tokio::time::sleep(Duration::from_secs(1)).await;
                 }
             });
         }
