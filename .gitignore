@@ -1,3 +1,5 @@
 /target
+config.toml
+storage.db
 users.csv
 proxies.csv

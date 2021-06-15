@@ -47,7 +47,8 @@ pub async fn obtain_connections(proxy: bool, proxies: &str, host: &str, port: u1
                     let stream = Socks5Stream::connect_with_password(proxy_addr.as_str(), actual_addr.as_str(), &proxy.user, &proxy.pass).await.unwrap();
                     let stream = stream.into_inner();
 
-                    let mojang = Mojang::socks5(proxy_addr.as_str(), &proxy.user, &proxy.pass).context(|| format!("generating mojang https client")).unwrap();
+                    let mojang = Mojang::default();
+                    // let mojang = Mojang::socks5(proxy_addr.as_str(), &proxy.user, &proxy.pass).context(|| format!("generating mojang https client")).unwrap();
 
                     tx.send(combine(user, stream, mojang, host.clone(), port)).await.unwrap();
                 }

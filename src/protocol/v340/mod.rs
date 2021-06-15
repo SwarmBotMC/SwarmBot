@@ -179,19 +179,21 @@ impl McProtocol for Protocol {
     }
 
     fn apply_packets(&mut self, client: &mut State, global: &mut GlobalState) {
-        match self.rx.try_recv() {
-            Ok(data) => {
-                self.process_packet(data, client);
-            }
-            Err(err) => {
-                match err {
-                    TryRecvError::Empty => {}
-                    TryRecvError::Disconnected => {
-                        println!("disconnected because error");
-                        self.disconnected = true;
-                    }
+        loop {
+            match self.rx.try_recv() {
+                Ok(data) => {
+                    self.process_packet(data, client);
                 }
-                return;
+                Err(err) => {
+                    match err {
+                        TryRecvError::Empty => {}
+                        TryRecvError::Disconnected => {
+                            println!("disconnected because error");
+                            self.disconnected = true;
+                        }
+                    }
+                    return;
+                }
             }
         }
     }
@@ -221,10 +223,10 @@ impl Protocol {
                 println!("player disconnected ... {}", reason);
                 self.disconnected = true;
             }
-            // ChatMessage::ID => {
-            //     let ChatMessage { json, .. } = data.read();
-            //     println!("chat {}", json);
-            // }
+            ChatMessage::ID => {
+                let ChatMessage { json, .. } = data.read();
+                println!("chat {}", json);
+            }
             _ => {}
         }
     }

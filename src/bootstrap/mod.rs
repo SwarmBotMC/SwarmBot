@@ -88,7 +88,6 @@ pub async fn init() -> ResContext<Output> {
     // the users we will use
 
 
-    users.shuffle(&mut rand::thread_rng());
     let users = &users[..count];
 
     // the connections

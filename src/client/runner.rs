@@ -85,7 +85,6 @@ impl<T: McProtocol + 'static> Runner<T> {
 
     fn game_iter(&mut self) {
 
-
         let old_count = self.clients.len();
         // first step: removing disconnected clients
         {
