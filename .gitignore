@@ -1,4 +1,5 @@
 /target
+.idea
 config.toml
 storage.db
 users.csv

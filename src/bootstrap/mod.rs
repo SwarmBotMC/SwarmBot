@@ -77,13 +77,6 @@ pub async fn init() -> ResContext<Output> {
     });
 
     // list users we want to login
-    let mut users = {
-        let file = File::open(&users_file).context(|| format!("opening users ({})", users_file))?;
-        read_users(file).context(|| format!("reading users ({})", users_file))?
-    };
-
-    let users = users.into_iter().skip(87).collect_vec();
-
     let db = Db::init().await;
 
     // the connections

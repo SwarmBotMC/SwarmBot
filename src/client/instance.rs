@@ -23,7 +23,7 @@ pub struct Client<T: McProtocol> {
 }
 
 const fn ticks_from_secs(seconds: usize) -> usize {
-    return seconds * 20;
+    seconds * 20
 }
 
 impl<T: McProtocol> Client<T> {
@@ -35,7 +35,7 @@ impl<T: McProtocol> Client<T> {
 
     fn anti_afk(&mut self) {
         const MESSAGE_TICKS: usize = ticks_from_secs(15); // every 15 seconds
-        if state.ticks % MESSAGE_TICKS == 0 {
+        if self.state.ticks % MESSAGE_TICKS == 0 {
             // throwaway command to prevent anti afk
             self.protocol.send_chat("/wot");
         }

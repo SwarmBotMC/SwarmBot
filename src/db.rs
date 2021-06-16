@@ -51,7 +51,7 @@ impl Db {
     pub async fn init() -> Db {
         let pool = PgPoolOptions::new()
             .max_connections(5)
-            .connect("postgres://andrewgazelka@localhost/mcbot").await.unwrap();
+            .connect("postgres://andrew:password@127.0.0.1/mcbot").await.unwrap();
 
         sqlx::query(r#"
         CREATE TABLE IF NOT EXISTS valid_users (

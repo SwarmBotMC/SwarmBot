@@ -34,9 +34,6 @@ pub struct Protocol {
 #[async_trait::async_trait]
 impl McProtocol for Protocol {
 
-
-
-
     async fn login(conn: Connection) -> Res<Login<Self>> {
         let Connection { user, host, port, mojang, read, write } = conn;
         let CachedUser { email, access_token, client_token, username, uuid, password } = user;
@@ -229,7 +226,6 @@ impl Protocol {
                     client.alive = true;
                 }
             }
-
             PlayerPositionAndLook::ID => {
                 let PlayerPositionAndLook { location, rotation, teleport_id } = data.read();
                 self.tx.write(serverbound::TeleportConfirm {

@@ -70,6 +70,3 @@ itertools = "0.10.1"
 sqlx = { version = "0.5.5", features = ["runtime-tokio-native-tls", "postgres"]}
 
 packets = { path = "packets" } # from a path in the local filesystem
-
-[build]
-rustflags = ["-C", "target-cpu=native"]
