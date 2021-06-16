@@ -18,6 +18,7 @@ mod protocol;
 mod client;
 mod storage;
 mod db;
+mod types;
 
 
 fn main() {

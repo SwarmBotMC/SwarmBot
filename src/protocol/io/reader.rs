@@ -5,7 +5,7 @@ use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
 use crate::protocol::io::{ZLib, AES};
 use packets::read::{ByteReader, LenRead, ByteReadable};
-use crate::protocol::types::PacketData;
+use crate::types::PacketData;
 use packets::types::{VarInt, RawVec, Packet, PacketState};
 use crate::error::Res;
 use crate::error::Error::WrongPacket;

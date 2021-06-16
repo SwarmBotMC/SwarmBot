@@ -9,6 +9,14 @@ pub struct HighMemoryChunkSection {
     pub palette: Palette,
 }
 
+impl HighMemoryChunkSection {
+    pub fn new(palette: Palette) -> Self {
+        HighMemoryChunkSection {
+            palette
+        }
+    }
+}
+
 #[repr(packed)]
 pub struct LowMemoryChunkSection {
     storage: [u8; SECTION_BYTES],
@@ -48,7 +56,7 @@ impl LowMemoryChunkSection {
 }
 
 pub struct ChunkData<T> {
-    pub section: [Option<T>; 16],
+    pub sections: [Option<T>; 16],
 }
 
 const SECTION_HEIGHT: usize = 16;
@@ -64,6 +72,22 @@ pub struct Palette {
 
 impl Palette {
 
+    pub fn direct(storage: Vec<u64>) -> Palette {
+        Palette {
+            bits_per_block: 13,
+            id_to_state: None,
+            storage
+        }
+    }
+
+    pub fn indirect(bits_per_block: u8, id_to_state: Vec<BlockState>, storage: Vec<u64>) -> Palette {
+        Palette {
+            bits_per_block,
+            id_to_state: Some(id_to_state),
+            storage
+        }
+    }
+
     // fn set_block_compressed_id(&self, x: u8, y: u8, z: u8, value: u32) {
     //
     //     let bits_per_block = self.bits_per_block;
@@ -76,7 +100,7 @@ impl Palette {
     //     let end_long = ((block_number + 1) * bits_per_block - 1) / 64;
     //
     //     let value = value & indv_value_mask;
-    //
+                //
     //     data[start_long] |= (value << start_offset);
     //
     //     if start_long != end_long {
@@ -127,13 +151,13 @@ impl Palette {
 }
 
 
-pub enum Chunk {
-    LowMemory { sections: ChunkData<LowMemoryChunkSection> },
-    HighMemory { sections: ChunkData<HighMemoryChunkSection> },
+pub enum ChunkColumn {
+    LowMemory { data: ChunkData<LowMemoryChunkSection> },
+    HighMemory { data: ChunkData<HighMemoryChunkSection> },
 }
 
 
-impl Chunk {
+impl ChunkColumn {
     pub fn get_block(&self, x: u8, y: u8, z: u8) -> BlockApprox {
         let section_idx = (y >> 4) as u8;
         let y_offset = y - (section_idx << 4);
@@ -141,15 +165,15 @@ impl Chunk {
         let section_idx = section_idx as usize;
 
         match self {
-            Chunk::LowMemory { sections } => {
-                let section = &sections.section[section_idx];
+            ChunkColumn::LowMemory { data: sections } => {
+                let section = &sections.sections[section_idx];
                 BlockApprox::Estimate(match section {
                     None => SimpleType::WalkThrough,
                     Some(section) => section.get_simple_type(x, y_offset, z)
                 })
             }
-            Chunk::HighMemory { sections } => {
-                let section = &sections.section[section_idx];
+            ChunkColumn::HighMemory { data: sections } => {
+                let section = &sections.sections[section_idx];
                 BlockApprox::Realized(match section {
                     None => BlockState(0),
                     Some(section) => section.palette.get_block(x, y_offset, z)

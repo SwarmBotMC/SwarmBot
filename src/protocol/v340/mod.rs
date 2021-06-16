@@ -16,14 +16,14 @@ use crate::protocol::{Login, McProtocol};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
-use crate::protocol::types::PacketData;
+use crate::types::PacketData;
 use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
 use rand::{thread_rng, Rng};
+use crate::storage::world::ChunkLocation;
 
 mod clientbound;
 mod serverbound;
-mod types;
 
 pub struct Protocol {
     rx: std::sync::mpsc::Receiver<PacketData>,
@@ -173,7 +173,7 @@ impl McProtocol for Protocol {
         loop {
             match self.rx.try_recv() {
                 Ok(data) => {
-                    self.process_packet(data, client);
+                    self.process_packet(data, client, global);
                 }
                 Err(err) => {
                     match err {
@@ -201,7 +201,7 @@ impl McProtocol for Protocol {
 }
 
 impl Protocol {
-    fn process_packet(&mut self, mut data: PacketData, client: &mut State) {
+    fn process_packet(&mut self, mut data: PacketData, client: &mut State, global: &mut GlobalState) {
         use clientbound::*;
         match data.id {
             JoinGame::ID => println!("{} joined", client.info.username),
@@ -226,8 +226,17 @@ impl Protocol {
                     client.alive = true;
                 }
             }
+            ChunkColumnPacket::ID => {
+                let ChunkColumnPacket{ chunk_x, chunk_z, column } = data.read();
+                global.world_blocks.add_column(ChunkLocation(chunk_x, chunk_z), column)
+            }
             PlayerPositionAndLook::ID => {
                 let PlayerPositionAndLook { location, rotation, teleport_id } = data.read();
+
+                // update the client's location
+                client.location.apply_change(location);
+
+                // "accept" the packet
                 self.tx.write(serverbound::TeleportConfirm {
                     teleport_id
                 });
@@ -237,14 +246,8 @@ impl Protocol {
                 println!("player disconnected ... {}", reason);
                 self.disconnected = true;
             }
-            ChatMessage::ID => {
-
-                let rdm = thread_rng().gen_range(0..100);
-                if rdm == 0 {
-                    let ChatMessage { json, .. } = data.read();
-                    println!("chat {}", json);
-                }
-            }
+            // ignore
+            ChatMessage::ID => {}
             _ => {}
         }
     }

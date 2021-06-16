@@ -109,6 +109,16 @@ impl ByteReadable for u64 {
     }
 }
 
+impl <const T: usize> ByteReadable for [u8; T] {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let mut bytes = [0; T];
+        for i in 0..T {
+            bytes[i] = byte_reader.read();
+        }
+        bytes
+    }
+}
+
 impl ByteReadable for bool {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let byte = byte_reader.bytes.get_u8();

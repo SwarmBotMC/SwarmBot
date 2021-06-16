@@ -1,13 +1,25 @@
-use std::f32::consts::PI;
-use std::ops::{Add, AddAssign, Sub};
-
-use packets::{Readable, Writable};
-
+use packets::read::{ByteReader, ByteReadable};
+use packets::*;
+use std::ops::{Sub, AddAssign, Add};
 use std::fmt::{Display, Formatter};
-use crate::protocol::v340::types::Origin::{Abs, Rel};
+use crate::types::Origin::{Abs, Rel};
+use std::f32::consts::PI;
 
+#[derive(Clone)]
+pub struct PacketData {
+    pub id: u32,
+    pub reader: ByteReader
+}
 
-#[derive(Writable, Readable, Debug, Copy, Clone)]
+impl PacketData {
+
+    #[inline]
+    pub fn read<T: ByteReadable>(&mut self) -> T{
+        self.reader.read()
+    }
+}
+
+#[derive(Writable, Readable, Debug, Copy, Clone, Default)]
 pub struct Location {
     pub x: f64,
     pub y: f64,

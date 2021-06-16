@@ -1,7 +1,7 @@
 use packets::*;
 use packets::types::{Packet, PacketState, VarInt};
 use packets::write::{ByteWritable, ByteWriter};
-use crate::protocol::v340::types::{Location, Direction};
+use crate::types::{Location, Direction};
 
 #[derive(Packet, Writable)]
 #[packet(0x00, Handshake)]
@@ -40,19 +40,6 @@ pub struct EncryptionResponse {
     pub shared_secret: Vec<u8>,
     pub verify_token: Vec<u8>,
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /// Respawning and show stats
 #[derive(Writable, Packet)]

@@ -11,10 +11,11 @@ use crate::client::instance::{Client, State};
 use crate::error::Error;
 use crate::protocol::{Login, McProtocol};
 use crate::storage::world::WorldBlocks;
+use crate::types::Location;
 
 #[derive(Default)]
 pub struct GlobalState {
-    world_blocks: WorldBlocks,
+    pub world_blocks: WorldBlocks,
 }
 
 pub struct Runner<T: McProtocol> {
@@ -107,6 +108,7 @@ impl<T: McProtocol + 'static> Runner<T> {
                         ticks: 0,
                         alive: true,
                         info,
+                        location: Location::default(),
                     },
                     protocol,
                 };

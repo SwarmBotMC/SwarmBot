@@ -1,11 +1,10 @@
 use crate::bootstrap::Connection;
 use crate::client::instance::{Client, ClientInfo, State};
-use crate::error::Res;
 use crate::client::runner::GlobalState;
+use crate::error::Res;
 
 pub mod v340;
 
-mod types;
 mod io;
 mod transform;
 mod encrypt;

@@ -1,17 +1,21 @@
 use std::collections::HashMap;
 
 use crate::storage::block::{BlockApprox, BlockLocation};
-use crate::storage::chunk::Chunk;
+use crate::storage::chunk::ChunkColumn;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
-struct ChunkLocation(i32, i32);
+pub struct ChunkLocation(pub i32, pub i32);
 
 #[derive(Default)]
 pub struct WorldBlocks {
-    storage: HashMap<ChunkLocation, Chunk>,
+    storage: HashMap<ChunkLocation, ChunkColumn>,
 }
 
 impl WorldBlocks {
+
+    pub fn add_column(&mut self, location: ChunkLocation, column: ChunkColumn){
+        self.storage.insert(location, column);
+    }
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
         let BlockLocation(x, y, z) = location;
 

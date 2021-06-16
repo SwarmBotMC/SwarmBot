@@ -1,7 +1,11 @@
-use packets::types::{VarInt, UUIDHyphenated, BitField, UUID, Angle, Identifier, RawVec, Position};
+use packets::types::{VarInt, UUIDHyphenated, BitField, UUID, Angle, Identifier, RawVec, Position, VarUInt};
 use packets::{Readable, Writable, Packet, EnumReadable};
-use crate::protocol::v340::types::{Location, Direction, ShortLoc, LocationOrigin, DirectionOrigin};
 use packets::read::{ByteReadable, ByteReader};
+use crate::types::{LocationOrigin, DirectionOrigin, Location, ShortLoc, Direction};
+use std::cmp::max;
+use crate::storage::chunk::{Palette, ChunkColumn, ChunkData, LowMemoryChunkSection, HighMemoryChunkSection};
+use crate::storage::block::BlockState;
+use itertools::Itertools;
 
 
 #[derive(Packet, Readable)]
@@ -146,7 +150,6 @@ pub struct BlockChange {
 }
 
 
-
 #[derive(Packet, Debug, Readable)]
 #[packet(0x41, Play)]
 pub struct UpdateHealth {
@@ -169,6 +172,83 @@ pub struct PlayDisconnect {
     pub reason: String
 }
 
+#[derive(Packet)]
+#[packet(0x20, Play)]
+pub struct ChunkColumnPacket {
+    pub chunk_x: i32,
+    pub chunk_z: i32,
+    pub column: ChunkColumn
+}
+
+pub struct ChunkSection {
+    palette: crate::storage::chunk::Palette,
+    block_light: [u8; 2048],
+
+    // TODO: fix overworld
+    sky_light: Option<[u8; 2048]>,
+}
+
+impl ByteReadable for ChunkSection {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let bits_per_block: u8 = byte_reader.read();
+        let palette=if bits_per_block <= 8 {
+            let bits_per_block = max(bits_per_block, 4);
+            let block_state_ids: Vec<VarInt> = byte_reader.read();
+            let block_state_ids = block_state_ids.into_iter().map(|id| BlockState(id.0 as u32)).collect_vec();
+            let storage: Vec<u64> = byte_reader.read();
+            Palette::indirect(bits_per_block, block_state_ids, storage)
+        } else {
+            let VarInt(_place_holder) = byte_reader.read();
+            let storage: Vec<u64> = byte_reader.read();
+            Palette::direct(storage)
+        };
+
+        let block_light = byte_reader.read();
+        let sky_light = byte_reader.read();
+        ChunkSection {
+            palette,
+            block_light,
+            sky_light: Some(sky_light)
+        }
+    }
+}
+
+impl ByteReadable for ChunkColumnPacket {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let chunk_x = byte_reader.read();
+        let chunk_z = byte_reader.read();
+        let ground_up_continuous: bool = byte_reader.read();
+        let VarUInt(mut primary_bitmask) = byte_reader.read();
+        let _size: VarUInt = byte_reader.read();
+
+        const INIT: Option<HighMemoryChunkSection> = None;
+        let mut sections = [INIT; 16];
+
+        let mut idx = 0;
+        while primary_bitmask != 0 {
+            if primary_bitmask == 1 {
+                let section: ChunkSection = byte_reader.read();
+                sections[idx] = Some(HighMemoryChunkSection::new(section.palette));
+            }
+            primary_bitmask <<= 1;
+            idx+=1;
+        }
+
+        let data = ChunkData {
+            sections
+        };
+
+        let column = ChunkColumn::HighMemory {
+            data
+        };
+
+        ChunkColumnPacket {
+            chunk_x,
+            chunk_z,
+            column
+        }
+    }
+}
 
 impl ByteReadable for PlayerPositionAndLook {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {

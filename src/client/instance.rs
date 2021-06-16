@@ -3,6 +3,7 @@ use packets::types::UUID;
 use crate::client::runner::GlobalState;
 use crate::protocol::McProtocol;
 use crate::storage::world::WorldBlocks;
+use crate::types::Location;
 
 #[derive(Debug)]
 pub struct ClientInfo {
@@ -15,6 +16,7 @@ pub struct State {
     pub ticks: usize,
     pub info: ClientInfo,
     pub alive: bool,
+    pub location: Location
 }
 
 pub struct Client<T: McProtocol> {
