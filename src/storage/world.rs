@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::storage::block::{BlockApprox, BlockLocation};
+use crate::storage::block::{BlockApprox, BlockLocation, SimpleType};
 use crate::storage::chunk::ChunkColumn;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
@@ -34,5 +34,9 @@ impl WorldBlocks {
         let chunk = self.storage.get(&loc)?;
         let block = chunk.get_block(x, y, z);
         Some(block)
+    }
+
+    pub fn get_block_simple(&self, location: BlockLocation) -> Option<SimpleType> {
+        self.get_block(location).map(|x| x.s_type())
     }
 }

@@ -16,7 +16,7 @@ use crate::protocol::{Login, McProtocol};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
-use crate::types::PacketData;
+use crate::types::{PacketData, Location};
 use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
 use rand::{thread_rng, Rng};
@@ -193,7 +193,12 @@ impl McProtocol for Protocol {
         self.tx.write(serverbound::Chat::message(message));
     }
 
-    fn teleport(&mut self) {}
+    fn teleport(&mut self, location: Location) {
+        self.tx.write(serverbound::PlayerPosition {
+            location,
+            on_ground: true
+        })
+    }
 
     fn disconnected(&self) -> bool {
         self.disconnected

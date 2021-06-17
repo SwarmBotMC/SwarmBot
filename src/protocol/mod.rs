@@ -2,6 +2,7 @@ use crate::bootstrap::Connection;
 use crate::client::instance::{Client, ClientInfo, State};
 use crate::client::runner::GlobalState;
 use crate::error::Res;
+use crate::types::Location;
 
 pub mod v340;
 
@@ -14,7 +15,7 @@ pub trait McProtocol where Self: Sized {
     async fn login(conn: Connection) -> Res<Login<Self>>;
     fn apply_packets(&mut self, client: &mut State, global: &mut GlobalState);
     fn send_chat(&mut self, message: &str);
-    fn teleport(&mut self);
+    fn teleport(&mut self, location: Location);
     fn disconnected(&self) -> bool;
 }
 

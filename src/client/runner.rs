@@ -7,31 +7,25 @@ use rayon::Scope;
 use tokio::task::JoinHandle;
 
 use crate::bootstrap::Connection;
-use crate::client::instance::{Client, State};
+use crate::client::instance::{Client, State, run_threaded};
 use crate::error::Error;
 use crate::protocol::{Login, McProtocol};
 use crate::storage::world::WorldBlocks;
 use crate::types::Location;
+use crate::client::pathfind::context::{GlobalContext, PathConfig};
+use crate::storage::block::BlockLocation;
 
 #[derive(Default)]
-pub struct GlobalState {
+pub struct GlobalState{
     pub world_blocks: WorldBlocks,
+    pub travel_config: PathConfig,
 }
 
 pub struct Runner<T: McProtocol> {
     pending_logins: Rc<RefCell<Vec<Login<T>>>>,
     global_state: GlobalState,
     clients: Vec<Client<T>>,
-    // handles: Rc<RefCell<Vec<JoinHandle<()>>>>
 }
-
-// impl<T: McProtocol> Drop for Runner<T> {
-//     fn drop(&mut self) {
-//         for handle in &self.handles {
-//             handle.abort();
-//         }
-//     }
-// }
 
 pub struct RunnerOptions {
     pub delay_millis: u64,
@@ -107,8 +101,11 @@ impl<T: McProtocol + 'static> Runner<T> {
                     state: State {
                         ticks: 0,
                         alive: true,
+                        follower: None,
                         info,
                         location: Location::default(),
+                        destination: BlockLocation(119, 72, 226),
+                        finder_problem: None
                     },
                     protocol,
                 };
@@ -130,6 +127,11 @@ impl<T: McProtocol + 'static> Runner<T> {
 
             // general sync logic that isnt dependent on protocol implementation
             client.run_sync(&mut self.global_state);
+        }
+
+        // fourth step: run threaded
+        for client in &mut self.clients {
+            run_threaded(&mut client.state, &self.global_state);
         }
 
 

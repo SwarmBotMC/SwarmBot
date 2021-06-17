@@ -1,19 +1,11 @@
 use std::fmt::{Debug, Formatter};
 
-use crate::client::pathfind::context::Context;
+use crate::client::pathfind::context::{MoveContext, GlobalContext};
 use crate::client::pathfind::moves::{Movements};
 use crate::storage::block::BlockLocation;
 
 pub trait Heuristic<T> {
-    fn heuristic(&self, input: &T, goal_node: &T) -> f64;
-}
-
-pub struct BlockHeuristic;
-
-impl Heuristic<BlockLocation> for BlockHeuristic {
-    fn heuristic(&self, input: &BlockLocation, goal_node: &BlockLocation) -> f64 {
-        input.dist(*goal_node)
-    }
+    fn heuristic(&self, input: &T) -> f64;
 }
 
 pub struct Neighbor<T> {
@@ -32,29 +24,66 @@ pub enum Progression<T> {
     Movements(Vec<Neighbor<T>>),
 }
 
-pub trait Progressor {
-    type Unit;
-    fn progressions(&self, input: Self::Unit) -> Progression<Self::Unit>;
+pub trait Progressor<T> {
+    fn progressions(&self, input: &T) -> Progression<T>;
 }
 
-
-#[derive(Clone)]
-pub struct ProgressChecker<'a, 'b: 'a> {
-    ctx: &'a Context<'b>,
+pub struct NoVehicleHeuristic {
+    pub move_cost: f64,
+    pub goal: BlockLocation
 }
 
-impl Progressor for ProgressChecker<'_, '_> {
-    type Unit = BlockLocation;
-
-    fn progressions(&self, location: BlockLocation) -> Progression<BlockLocation> {
-        Movements::obtain_all(location, self.ctx)
+impl Heuristic<MoveContext> for NoVehicleHeuristic {
+    fn heuristic(&self, input: &MoveContext) -> f64 {
+        let current = input.location;
+        current.dist(self.goal) * self.move_cost
     }
 }
 
-impl<'a, 'b: 'a> ProgressChecker<'a, 'b> {
-    pub fn new(ctx: &'a Context<'b>) -> ProgressChecker<'a, 'b> {
-        ProgressChecker {
+pub trait GoalCheck<T> {
+    fn is_goal(&self, input: &T) -> bool;
+}
+
+pub struct NoVehicleGoalCheck {
+    goal: BlockLocation
+}
+
+impl NoVehicleGoalCheck {
+    pub fn new(goal: BlockLocation) -> Self {
+        Self {
+            goal
+        }
+    }
+}
+
+impl GoalCheck<MoveContext> for NoVehicleGoalCheck {
+    fn is_goal(&self, input: &MoveContext) -> bool {
+        input.location == self.goal
+    }
+}
+
+#[derive(Clone)]
+pub struct NoVehicleProgressor<'a> {
+    ctx: GlobalContext<'a>,
+}
+
+impl Progressor<MoveContext> for NoVehicleProgressor<'_> {
+    fn progressions(&self, location: &MoveContext) -> Progression<MoveContext> {
+        Movements::obtain_all(location, &self.ctx)
+    }
+}
+
+impl<'a> NoVehicleProgressor<'a> {
+    pub fn new(ctx: GlobalContext<'a>) -> NoVehicleProgressor<'a> {
+        NoVehicleProgressor {
             ctx
         }
     }
+}
+
+struct NoVehicleProblem<'a> {
+    progressor: NoVehicleProgressor<'a>,
+    goal_check: NoVehicleGoalCheck,
+
+
 }

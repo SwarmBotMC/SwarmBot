@@ -1,8 +1,9 @@
-use crate::client::pathfind::context::Context;
+use crate::client::pathfind::context::{MoveContext, GlobalContext};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{AIR, BlockApprox, BlockLocation, SimpleType};
-use crate::storage::block::SimpleType::WalkThrough;
+use crate::storage::world::WorldBlocks;
+use crate::client::runner::GlobalState;
 
 enum MoveResult {
     Edge,
@@ -24,25 +25,37 @@ impl Movements {
         ]
     };
 
-    pub fn obtain_all(from: BlockLocation, ctx: &Context) -> Progression<BlockLocation> {
+    pub fn obtain_all(on: &MoveContext, ctx: &GlobalContext) -> Progression<MoveContext> {
+        let BlockLocation(x,y,z) = on.location;
         let w = ctx.world;
+        let blocks_can_place = on.blocks_can_place;
 
         macro_rules! get_block {
             ($x: expr, $y: expr, $z:expr) => {{
-                let res: Option<BlockApprox> = w.get_block(BlockLocation($x,$y,$z));
+                let res: Option<SimpleType> = w.get_block_simple(BlockLocation($x,$y,$z));
                 res
             }};
         }
 
-        let mut can_move_adj = [false; 4];
+        macro_rules! wrap {
+            ($block_loc: expr) => {{
+                MoveContext {
+                    blocks_can_place,
+                    location: $block_loc
+                }
+            }};
+        }
 
-        let mut adj_legs = [AIR; 4];
-        let mut adj_head = [AIR; 4];
 
-        let BlockLocation(x, y, z) = from;
+        use crate::storage::block::SimpleType::*;
 
-        // let edge_blocks = [B]
-        // movement directions
+        // cache adjacent leg block types
+        let mut adj_legs = [WalkThrough; 4];
+        let mut adj_head = [WalkThrough; 4];
+
+        // if adj_legs && adj_head is true for any idx
+        let mut can_move_adj_noplace = [false; 4];
+
         for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
             let Change { dx, dz, .. } = direction.unit_change();
 
@@ -53,45 +66,107 @@ impl Movements {
                 (Some(legs), Some(head)) => {
                     adj_legs[idx] = legs;
                     adj_head[idx] = head;
-                    can_move_adj[idx] = legs.s_type() == WalkThrough && head.s_type() == WalkThrough;
+                    can_move_adj_noplace[idx] = legs == WalkThrough && head == WalkThrough;
                 }
                 _ => return Progression::Edge,
             };
         }
 
+        // what we are going to turn for progressoins
         let mut res = vec![];
 
-        let mut can_traverse_no_block = [false; 4];
+        let mut traverse_possible_no_place = [false; 4];
 
         let current_floor = get_block!(x, y, z).unwrap();
 
         let mut adj_floor = [AIR; 4];
 
-        // traversing
+        // moving adjacent without changing elevation
         for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
             let Change { dx, dz, .. } = direction.unit_change();
-            if can_move_adj[idx] {
+            if can_move_adj_noplace[idx] {
                 let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
-                let floor_walkable = floor.s_type() == SimpleType::Solid;
-                can_traverse_no_block[idx] = floor_walkable;
+                let floor_walkable = floor == Solid;
+                traverse_possible_no_place[idx] = floor_walkable;
                 res.push(Neighbor {
-                    value: BlockLocation(x + dx, y - 1, z + dz),
-                    cost: ctx.costs.block_walk,
+                    value: wrap!(BlockLocation(x + dx, y - 1, z + dz)),
+                    cost: ctx.path_config.costs.block_walk,
                 })
             }
         }
 
-        // falling
+        // descending adjacent
         for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
             let Change { dx, dz, .. } = direction.unit_change();
-            if can_move_adj[idx] {
-                let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
-                can_traverse_no_block[idx] = floor.s_type() == SimpleType::Solid;
+
+            if can_move_adj_noplace[idx] && !traverse_possible_no_place[idx] {
+                let start = BlockLocation(x + dx, y, z + dz);
+                let collided_y = can_fall(start, w);
+                if let Some(collided_y) = collided_y {
+                    let new_pos = BlockLocation(x + dx, collided_y + 1, z + dz);
+
+                    res.push(Neighbor {
+                        value: wrap!(new_pos),
+                        cost: ctx.path_config.costs.fall,
+                    })
+                }
+            }
+        }
+
+        let can_jump = matches!(get_block!(x, y + 2, z).unwrap(), WalkThrough | Water);
+
+        // ascending adjacent
+        if can_jump {
+            for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
+                let Change { dx, dz, .. } = direction.unit_change();
+
+                // we can only move if we couldn't move adjacent without changing elevation
+                if !can_move_adj_noplace[idx] {
+                    let can_jump = get_block!(x+dx,y+1,z+dz).unwrap() == Solid;
+                    if can_jump {
+                        res.push(Neighbor {
+                            value: wrap!(BlockLocation(x+dx,y+1,z+dz)),
+                            cost: ctx.path_config.costs.ascend,
+                        });
+                    }
+                }
             }
         }
 
         Progression::Movements(res)
     }
+}
+
+fn can_fall(start: BlockLocation, world: &WorldBlocks) -> Option<i64> {
+    let BlockLocation(x, init_y, z) = start;
+
+    // only falling we could do would be into the void
+    if init_y < 2 {
+        return None;
+    }
+
+    let mut travelled = 1;
+    for y in (0..=(init_y - 2)).rev() {
+        let loc = BlockLocation(x, y, z);
+        let block_type = world.get_block_simple(loc).unwrap();
+        match block_type {
+            SimpleType::Solid => {
+                return (travelled <= 3).then(|| y);
+            }
+            SimpleType::Water => {
+                return Some(y);
+            }
+            SimpleType::Avoid => {
+                return None;
+            }
+            SimpleType::WalkThrough => {}
+        }
+
+        travelled += 1;
+    }
+
+
+    return None;
 }
 
 pub enum CardinalDirection {

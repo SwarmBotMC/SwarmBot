@@ -3,7 +3,8 @@ use std::cmp::Ordering;
 pub mod progress_checker;
 pub mod bidirectional;
 pub mod moves;
-mod context;
+pub mod context;
+pub mod incremental;
 
 pub struct HeapNode<T> {
     pub contents: T,
