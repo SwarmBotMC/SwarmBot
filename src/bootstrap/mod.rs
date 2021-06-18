@@ -7,8 +7,6 @@ use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use crate::bootstrap::csv::read_users;
 use crate::bootstrap::mojang::{AuthResponse, Mojang};
 use crate::bootstrap::opts::Opts;
-use crate::bootstrap::tcp::obtain_connections;
-use crate::db::{Db, ValidDbUser, CachedUser};
 use crate::error::{err, Error, HasContext, ResContext};
 use std::time::Duration;
 use itertools::Itertools;
@@ -19,21 +17,20 @@ use tokio::sync::mpsc::Receiver;
 
 pub mod opts;
 pub mod csv;
-pub mod tcp;
 pub mod dns;
 pub mod storage;
 pub mod mojang;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Address {
-    host: String,
-    port: u16,
+    pub host: String,
+    pub port: u16,
 }
 
-impl Into<&String> for Address {
-    fn into(self) -> String {
-        format!("{}:{}", self.host, self.port)
+impl From<&Address> for String {
+    fn from(addr: &Address) -> Self {
+        format!("{}:{}", addr.host, addr.port)
     }
 }
 
@@ -48,20 +45,20 @@ pub struct Connection {
 
 impl Connection {
     pub fn stream(address: Address, mut users: tokio::sync::mpsc::Receiver<ProxyUser>) -> Receiver<Connection> {
-        
+
         let (tx,rx) = tokio::sync::mpsc::channel(1);
         tokio::spawn(async move {
-           for user in users.recv().await {
-               let ProxyUser {proxy, user, mojang} = user.proxy;
-               let conn = Socks5Stream::connect_with_password(proxy.address(), (&address).into(), &proxy.user, &proxy.pass).await.unwrap();
+           while let Some(user) = users.recv().await {
+               let ProxyUser {proxy, user, mojang} = user;
+               let target = String::from(&address);
+               let conn = Socks5Stream::connect_with_password(proxy.address().as_str(), target.as_str(), &proxy.user, &proxy.pass).await.unwrap();
                let (read, write) = conn.into_inner().into_split();
                tx.send(Connection {
-                   user, address, mojang, read, write
-               })
-               
-           } 
+                   user, address: address.clone(), mojang, read, write
+               }).await.unwrap();
+           }
         });
-        
+
         rx
     }
 }
@@ -91,4 +88,3 @@ pub struct Output {
     pub delay_millis: u64,
     pub connections: tokio::sync::mpsc::Receiver<Connection>,
 }
-

@@ -120,8 +120,11 @@ impl<T: Display + Debug> Display for ErrorContext<T> {
     }
 }
 
-pub trait HasContext<T, E: Debug> {
+pub trait HasContext<T, E: Debug>: Sized {
     fn context(self, f: impl Fn() -> String) -> Result<T, ErrorContext<E>>;
+    fn context_str(self, str: &str) -> Result<T, ErrorContext<E>> {
+        self.context(|| str.to_string())
+    }
 }
 
 impl<T, E: Into<Error>> HasContext<T, Error> for Result<T, E> {

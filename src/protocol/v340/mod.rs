@@ -5,11 +5,10 @@ use packets::types::Packet;
 use tokio::sync::oneshot::error::RecvError;
 use tokio::time::{Duration, sleep};
 
-use crate::bootstrap::{Connection, CSVUser};
+use crate::bootstrap::{Connection, CSVUser, Address};
 use crate::bootstrap::mojang::{AuthResponse, calc_hash, Mojang};
 use crate::client::instance::{ClientInfo, State};
 use crate::client::runner::GlobalState;
-use crate::db::CachedUser;
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
 use crate::protocol::{Login, McProtocol};
@@ -21,6 +20,7 @@ use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
 use rand::{thread_rng, Rng};
 use crate::storage::world::ChunkLocation;
+use crate::bootstrap::storage::ValidUser;
 
 mod clientbound;
 mod serverbound;
@@ -35,10 +35,11 @@ pub struct Protocol {
 impl McProtocol for Protocol {
 
     async fn login(conn: Connection) -> Res<Login<Self>> {
-        let Connection { user, host, port, mojang, read, write } = conn;
-        let CachedUser { email, access_token, client_token, username, uuid, password } = user;
+        let Connection { user, address, mojang, read, write } = conn;
+        let ValidUser { email, username, password, last_checked, uuid, access_id, client_id } = user;
 
-        let uuid = UUID::from(&uuid);
+        let Address { host, port } = address;
+        let uuid = UUID(uuid);
 
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
@@ -72,7 +73,7 @@ impl McProtocol for Protocol {
 
         // Mojang online mode requests
         let hash = calc_hash(&server_id, &shared_secret, &public_key_der);
-        mojang.join(uuid, &hash, &access_token).await?;
+        mojang.join(uuid, &hash, &access_id).await?;
 
         // id = 1
         writer.write(serverbound::EncryptionResponse {

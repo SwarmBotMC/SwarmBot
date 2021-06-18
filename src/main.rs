@@ -18,9 +18,8 @@ use crate::bootstrap::mojang::AuthResponse;
 use crate::bootstrap::opts::Opts;
 use crate::bootstrap::{Output, Connection};
 use crate::bootstrap::storage::UserCache;
-use crate::bootstrap::tcp::obtain_connections;
 use crate::client::runner::{Runner, RunnerOptions};
-use crate::error::{Error, ResContext};
+use crate::error::{Error, ResContext, HasContext};
 use crate::error::Error::Mojang;
 
 mod error;
@@ -50,8 +49,11 @@ async fn run() -> ResContext<()> {
 
     // A list of users we will login
     let proxy_users = {
-        let csv_users = bootstrap::csv::read_users(File::open(&users_file)?)?;
-        let proxies = bootstrap::csv::read_proxies(File::open(&proxies_file)?)?;
+        let csv_file = File::open(&users_file).context(||format!("could not open users file {}", users_file))?;
+        let csv_users = bootstrap::csv::read_users(csv_file).context_str("could not open users file")?;
+
+        let proxies_file = File::open(&proxies_file).context(||format!("could not open proxies file {}", proxies_file))?;
+        let proxies = bootstrap::csv::read_proxies(proxies_file).context_str("could not open proxies file")?;
 
         let mut cache = UserCache::load("cache.db".into());
         cache.obtain_users(count, csv_users, proxies)

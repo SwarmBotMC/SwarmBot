@@ -12,6 +12,8 @@ use crate::error::Error;
 use std::cmp::min;
 use tokio::sync::mpsc::Receiver;
 use tokio_socks::tcp::Socks5Stream;
+use std::io::{Read, BufReader};
+use itertools::Itertools;
 
 #[derive(Serialize, Deserialize)]
 struct Root {
@@ -30,13 +32,13 @@ struct InvalidUser {
     password: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ValidUser {
     pub email: String,
     pub username: String,
     pub password: String,
     pub last_checked: u128,
-    pub uuid: UUID,
+    pub uuid: u128,
     pub access_id: String,
     pub client_id: String,
 }
@@ -59,6 +61,7 @@ pub struct UserCache {
 
 /// A proxy user holds the "Mojang" object used in cache to verify that the user is valid along with
 /// data about what the proxy address is and the valid user information
+#[derive(Debug)]
 pub struct ProxyUser {
     pub user: ValidUser,
     pub proxy: Proxy,
@@ -89,9 +92,9 @@ impl UserCache {
     pub fn load(file_path: PathBuf) -> UserCache {
 
         let file = File::open(&file_path).unwrap();
-        let mut s = flexbuffers::FlexbufferSerializer::new();
-
-        let r = flexbuffers::Reader::get_root(file).unwrap();
+        let bytes: Result<Vec<_>, _> = file.bytes().collect();
+        let bytes = bytes.unwrap();
+        let r = flexbuffers::Reader::get_root(&*bytes).unwrap();
         let Root { users } = Root::deserialize(r).unwrap();
 
         let cache: HashMap<_, _> = users.into_iter().map(|user| (user.email().clone(), user)).collect();
@@ -101,7 +104,7 @@ impl UserCache {
         }
     }
 
-    async fn get_or_put(&mut self, user: &CSVUser, iter: &mut impl Iterator<Item=Proxy>) -> (Option<Mojang>, Proxy, &User) {
+    async fn get_or_put(&mut self, user: &CSVUser, iter: &mut impl Iterator<Item=Proxy>) -> Option<(Mojang, Proxy, ValidUser)> {
         match self.cache.get_mut(&user.email) {
             None => {
                 let proxy = iter.next().unwrap();
@@ -113,11 +116,13 @@ impl UserCache {
                             username: res.username,
                             password: user.password.clone(),
                             last_checked: time(),
-                            uuid: res.uuiid,
-                            access_id: res.access_id,
-                            client_id: res.client_id,
+                            uuid: res.uuid.0,
+                            access_id: res.access_token,
+                            client_id: res.client_token,
                         };
-                        (Some(mojang), proxy,self.cache.entry(valid.email.clone()).insert(User::Valid(valid_user)).get())
+                        let valid_user = valid_user;
+                        self.cache.insert(valid_user.email.clone(), User::Valid(valid_user.clone()));
+                        Some((mojang, proxy, valid_user))
                     }
 
                     // we cannot do anything more -> change to invalid
@@ -126,37 +131,38 @@ impl UserCache {
                             email: user.email.clone(),
                             password: user.password.clone(),
                         };
-                        (Some(mojang), proxy, self.cache.entry(invalid.email.clone()).insert(User::Invalid(invalid)).get())
+                        self.cache.insert(invalid.email.clone(), User::Invalid(invalid));
+                        None
                     }
                 }
             }
             Some(cached) => {
-                let mut mojang_res = None;
                 match cached {
                     User::Valid(valid) => {
-                        let mojang = Mojang::socks5(proxy).unwrap();
+                        let proxy = iter.next().unwrap();
+                        let mojang = Mojang::socks5(&proxy).unwrap();
                         let is_valid = mojang.validate(&valid.access_id, &valid.client_id).await.unwrap();
                         if !is_valid {
                             match mojang.refresh(&valid.access_id, &valid.client_id).await {
                                 Ok(auth) => {
                                     valid.access_id = auth.access_token;
                                     valid.username = auth.username;
-                                    valid.uuid = auth.uuid;
+                                    valid.uuid = auth.uuid.0;
                                     valid.client_id = auth.client_token;
                                     valid.last_checked = time();
-                                    mojang_res = Some(mojang);
+                                    return Some((mojang, proxy, valid.clone()))
                                 }
 
                                 // we could not refresh -> try to authenticate
                                 Err(_) => {
                                     match mojang.authenticate(&valid.email, &valid.password).await {
-                                        Ok(res) => {
+                                        Ok(auth) => {
                                             valid.access_id = auth.access_token;
                                             valid.username = auth.username;
-                                            valid.uuid = auth.uuid;
+                                            valid.uuid = auth.uuid.0;
                                             valid.client_id = auth.client_token;
                                             valid.last_checked = time();
-                                            mojang_res = Some(mojang);
+                                            return Some((mojang, proxy, valid.clone()))
                                         }
 
                                         // we cannot do anything more -> change to invalid
@@ -173,33 +179,29 @@ impl UserCache {
                     }
                     User::Invalid(invalid) => {}
                 }
-                (mojang_res, proxy, cached)
+                None
             }
         }
     }
 
-    pub fn obtain_users(&mut self, count: usize, users: Vec<CSVUser>, proxies: Vec<Proxy>) -> Receiver<ProxyUser> {
+    pub fn obtain_users(mut self, count: usize, users: Vec<CSVUser>, proxies: Vec<Proxy>) -> Receiver<ProxyUser> {
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(1);
 
         tokio::task::spawn_local(async move {
-            for csv_user in users {
-                match self.get_or_put(user, &mut proxies).await {
-                    (Some(mojang), proxy, User::Valid(valid_user)) => {
+            for csv_user in users.into_iter().take(count) {
+                match self.get_or_put(&csv_user, &mut proxies).await {
+                    Some((mojang, proxy, user)) => {
                         tx.send(ProxyUser {
-                            user: valid_user.clone(),
+                            user,
                             proxy,
                             mojang
-                        });
-                        if valid_users.len() >= count {
-                            return;
-                        }
+                        }).await.unwrap();
                     }
                     _ => {}
                 }
             }
-
         });
 
         rx
