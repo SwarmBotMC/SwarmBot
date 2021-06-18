@@ -13,6 +13,9 @@ use crate::error::{err, Error, HasContext, ResContext};
 use std::time::Duration;
 use itertools::Itertools;
 use packets::types::UUID;
+use crate::bootstrap::storage::{ProxyUser, ValidUser};
+use tokio_socks::tcp::Socks5Stream;
+use tokio::sync::mpsc::Receiver;
 
 pub mod opts;
 pub mod csv;
@@ -22,19 +25,45 @@ pub mod storage;
 pub mod mojang;
 
 
+#[derive(Clone)]
 pub struct Address {
     host: String,
     port: u16,
 }
 
+impl Into<&String> for Address {
+    fn into(self) -> String {
+        format!("{}:{}", self.host, self.port)
+    }
+}
+
 #[derive(Debug)]
 pub struct Connection {
-    pub user: CachedUser,
-    pub host: String,
-    pub port: u16,
+    pub user: ValidUser,
+    pub address: Address,
     pub mojang: Mojang,
     pub read: OwnedReadHalf,
     pub write: OwnedWriteHalf,
+}
+
+impl Connection {
+    pub fn stream(address: Address, mut users: tokio::sync::mpsc::Receiver<ProxyUser>) -> Receiver<Connection> {
+        
+        let (tx,rx) = tokio::sync::mpsc::channel(1);
+        tokio::spawn(async move {
+           for user in users.recv().await {
+               let ProxyUser {proxy, user, mojang} = user.proxy;
+               let conn = Socks5Stream::connect_with_password(proxy.address(), (&address).into(), &proxy.user, &proxy.pass).await.unwrap();
+               let (read, write) = conn.into_inner().into_split();
+               tx.send(Connection {
+                   user, address, mojang, read, write
+               })
+               
+           } 
+        });
+        
+        rx
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -63,39 +92,3 @@ pub struct Output {
     pub connections: tokio::sync::mpsc::Receiver<Connection>,
 }
 
-pub async fn init() -> ResContext<Output> {
-
-    // read from config
-    let Opts { users_file, proxy, proxies_file, host, count, version, port, db, delay , ..} = Opts::get();
-
-    // DNS Lookup
-    let Address { host, port } = dns_lookup(&host).await.unwrap_or(Address {
-        host,
-        port,
-    });
-
-
-    let output = Output {
-        version,
-        delay_millis: delay,
-        connections,
-    };
-
-    Ok(output)
-}
-
-#[cfg(test)]
-mod tests {
-    use std::fs::File;
-    use crate::db::Db;
-    use crate::bootstrap::mojang::Mojang;
-
-    #[tokio::test]
-    async fn update_db(){
-        println!("start");
-        let users = super::csv::read_users(File::open("users.csv").unwrap()).unwrap();
-        let db = Db::init().await;
-        let mojang = Mojang::default();
-        db.update_users(&users, &mojang).await;
-    }
-}

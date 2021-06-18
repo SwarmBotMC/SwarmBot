@@ -12,7 +12,7 @@ pub struct Opts {
     #[clap(long, default_value = "25565")]
     pub port: u16,
 
-    #[clap(short, long, default_value = "500")]
+    #[clap(short, long, default_value = "0")]
     pub delay: u64,
 
     #[clap(short, long)]
