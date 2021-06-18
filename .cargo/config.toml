@@ -1,0 +1,4 @@
+# https://deterministic.space/high-performance-rust.html
+
+[build]
+rustflags = ["-C", "target-cpu=native"]

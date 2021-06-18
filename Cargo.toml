@@ -68,3 +68,7 @@ itertools = "0.10.1"
 
 flexbuffers = "2.0"
 packets = { path = "packets" } # from a path in the local filesystem
+
+[profile.release]
+lto = "fat"
+codegen-units = 1

@@ -47,7 +47,6 @@ async fn run() -> ResContext<()> {
 
     let address = normalize_address(&host, port).await;
 
-
     // A list of users we will login
     let proxy_users = {
         let csv_file = File::open(&users_file).context(||format!("could not open users file {}", users_file))?;
