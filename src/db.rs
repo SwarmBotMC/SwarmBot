@@ -2,7 +2,7 @@ use sqlx::{Error, PgPool};
 use sqlx::postgres::PgPoolOptions;
 use tokio::time::Duration;
 use tokio_stream::StreamExt;
-use crate::bootstrap::mojang::Mojang;
+use crate::bootstrap::mojang::{Mojang, AuthResponse};
 use crate::bootstrap::User;
 
 pub struct Db {
@@ -127,32 +127,59 @@ impl Db {
     pub async fn update_users(&self, users: &[User], mojang: &Mojang) {
         for user in users {
             let creds = self.get_credentials(&user.email).await;
-            if creds.is_none() {
-                match mojang.authenticate(&user.email, &user.password).await {
-                    Ok(res) => {
-                        self.update_valid(ValidDbUser {
-                            email: &user.email,
-                            access_token: &res.access_token,
-                            client_token: &res.client_token,
-                            username: &res.username,
-                            password: &user.password,
-                            uuid: &res.uuid.to_string(),
-                        }).await;
+            match creds {
+                None => {
+                    match mojang.authenticate(&user.email, &user.password).await {
+                        Ok(res) => {
+                            self.update_valid(ValidDbUser {
+                                email: &user.email,
+                                access_token: &res.access_token,
+                                client_token: &res.client_token,
+                                username: &res.username,
+                                password: &user.password,
+                                uuid: &res.uuid.to_string(),
+                            }).await;
 
-                        println!("updating {}", user.email);
+                            println!("updating {}", user.email);
+                        }
+                        Err(err) => {
+                            println!("could not authenticate {} reason {:?}", user.email, err);
+                            self.update_invalid(InvalidDbUser {
+                                email: &user.email,
+                                password: &user.password,
+                            }).await;
+                        }
+                    };
+                }
+                Some(creds) => {
+                    match creds {
+                        Credentials::Invalid => {
+                            println!("invalid creds for {}", user.email);
+                        }
+                        Credentials::Valid(creds) => {
+                            // println!("validating creds for {}", user.email);
+                            // let valid = mojang.validate(&creds.access_token, &creds.client_token).await.unwrap();
+                            //
+                            // if !valid {
+                            //     println!("invalid ... trying to refresh");
+                            //     match mojang.refresh(&creds.access_token, &creds.client_token).await {
+                            //         Ok(res) => {
+                            //             println!("refresh valid... updating credentials");
+                            //         }
+                            //         Err(err) => {
+                            //             println!("refresh invalid... tryning to login again");
+                            //             let auth = mojang.authenticate(&user.email, &user.password).await;
+                            //             println!("auth response worked? {}", auth.is_ok());
+                            //         }
+                            //     }
+                            // }
+                        }
                     }
-                    Err(err) => {
-                        println!("could not authenticate {} reason {:?}", user.email, err);
-                        self.update_invalid(InvalidDbUser {
-                            email: &user.email,
-                            password: &user.password,
-                        }).await;
-                    }
-                };
-                tokio::time::sleep(Duration::from_secs(5)).await;
-            } else {
-                println!("have creds for {}", user.email);
+                }
             }
+            println!();
+            tokio::time::sleep(Duration::from_secs(5)).await;
+
         }
     }
 }

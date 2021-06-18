@@ -112,6 +112,29 @@ impl Mojang {
         Ok(auth)
     }
 
+    pub async fn refresh(&self, access_token: &str, client_token: &str) -> Res<AuthResponse> {
+        let payload = json!({
+            "accessToken": access_token, // this is not a mistake... the username now takes in email
+            "clientToken": client_token,
+            "requestUser": false,
+        }).to_string();
+
+        let res = self.client.post("https://authserver.mojang.com/refresh")
+            .body(payload)
+            .send()
+            .await?;
+
+        let status = res.status();
+        let auth: RawAuthResponse = res.json().await?;
+        let auth = AuthResponse {
+            access_token: auth.access_token,
+            client_token: auth.client_token,
+            username: auth.selected_profile.name,
+            uuid: UUID::from(&auth.selected_profile.id),
+        };
+        Ok(auth)
+    }
+
     pub async fn validate(&self, access_token: &str, client_token: &str) -> Res<bool> {
         let payload = json!({
             "accessToken": access_token, // this is not a mistake... the username now takes in email
@@ -124,6 +147,7 @@ impl Mojang {
             .await?;
 
         let status = res.status();
+        println!("validate got {}", status);
         Ok(status == 204)
     }
 

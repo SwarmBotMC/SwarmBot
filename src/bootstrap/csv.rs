@@ -4,6 +4,7 @@ use serde::de::DeserializeOwned;
 
 use crate::error::Res;
 use crate::bootstrap::{User, Proxy};
+use serde::Serialize;
 
 fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
     csv::ReaderBuilder::new()
@@ -16,6 +17,19 @@ fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
             Ok(elem)
         })
         .collect()
+}
+
+fn write_csv<T: Serialize>(file: File, elements: Vec<T>) -> Res {
+    let mut writer = csv::WriterBuilder::new()
+        .delimiter(b':')
+        .has_headers(false)
+        .from_writer(file);
+
+    for element in elements {
+        writer.serialize(element)?;
+    }
+
+    Ok(())
 }
 
 pub fn read_users(file: File) -> Res<Vec<User>> {

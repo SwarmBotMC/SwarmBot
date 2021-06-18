@@ -15,10 +15,10 @@ use std::time::Duration;
 use itertools::Itertools;
 use packets::types::UUID;
 
-mod opts;
-mod csv;
-mod tcp;
-mod dns;
+pub mod opts;
+pub mod csv;
+pub mod tcp;
+pub mod dns;
 pub mod mojang;
 
 

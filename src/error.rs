@@ -32,7 +32,11 @@ pub enum MojangErr {
 
 impl Display for MojangErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str("yes")
+        match self {
+            MojangErr::InvalidCredentials { error_code, info } => {
+                f.write_fmt(format_args!("mojang err #{} info {}", error_code, info.clone().unwrap_or(String::new())))
+            }
+        }
     }
 }
 
