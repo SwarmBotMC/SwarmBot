@@ -5,6 +5,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(drain_filter)]
 #![feature(entry_insert)]
+#![feature(path_try_exists)]
 
 use std::fs::File;
 use std::path::PathBuf;

@@ -4,7 +4,6 @@ const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
 const SECTION_BYTES: usize = SECTION_ELEMENTS * BITS_PER_ENUM / 8;
 
-#[repr(packed)]
 pub struct HighMemoryChunkSection {
     pub palette: Palette,
 }
@@ -63,7 +62,6 @@ const SECTION_HEIGHT: usize = 16;
 const SECTION_WIDTH: usize = 16;
 
 
-#[repr(packed)]
 pub struct Palette {
     bits_per_block: u8,
     id_to_state: Option<Vec<BlockState>>,

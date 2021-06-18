@@ -1,19 +1,19 @@
+use std::cmp::min;
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, Read, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use itertools::Itertools;
 use packets::types::UUID;
 use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc::Receiver;
+use tokio_socks::tcp::Socks5Stream;
 
 use crate::bootstrap::{CSVUser, Proxy};
 use crate::bootstrap::mojang::{AuthResponse, Mojang};
 use crate::error::Error;
-use std::cmp::min;
-use tokio::sync::mpsc::Receiver;
-use tokio_socks::tcp::Socks5Stream;
-use std::io::{Read, BufReader};
-use itertools::Itertools;
 
 #[derive(Serialize, Deserialize)]
 struct Root {
@@ -58,14 +58,13 @@ pub struct UserCache {
 }
 
 
-
 /// A proxy user holds the "Mojang" object used in cache to verify that the user is valid along with
 /// data about what the proxy address is and the valid user information
 #[derive(Debug)]
 pub struct ProxyUser {
     pub user: ValidUser,
     pub proxy: Proxy,
-    pub mojang: Mojang
+    pub mojang: Mojang,
 }
 
 
@@ -81,26 +80,46 @@ fn time() -> u128 {
 
 impl Drop for UserCache {
     fn drop(&mut self) {
-        let file = File::open(&self.file_path).unwrap();
+        // TODO: create if does not exist
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&self.file_path)
+            .unwrap();
+
+        let users = self.cache.drain().map(|(_, v)| v).collect();
+
+        let root = Root {
+            users
+        };
+
         let mut s = flexbuffers::FlexbufferSerializer::new();
-        // TODO:
+        root.serialize(&mut s).unwrap();
+        let data = s.view();
+        file.write_all(data).unwrap();
     }
 }
 
 impl UserCache {
-
     pub fn load(file_path: PathBuf) -> UserCache {
+        let exists = std::fs::try_exists(&file_path).unwrap();
+        if !exists {
+            UserCache {
+                file_path,
+                cache: HashMap::new(),
+            }
+        } else {
+            let file = File::open(&file_path).unwrap();
+            let bytes: Result<Vec<_>, _> = file.bytes().collect();
+            let bytes = bytes.unwrap();
+            let r = flexbuffers::Reader::get_root(&*bytes).unwrap();
+            let Root { users } = Root::deserialize(r).unwrap();
 
-        let file = File::open(&file_path).unwrap();
-        let bytes: Result<Vec<_>, _> = file.bytes().collect();
-        let bytes = bytes.unwrap();
-        let r = flexbuffers::Reader::get_root(&*bytes).unwrap();
-        let Root { users } = Root::deserialize(r).unwrap();
-
-        let cache: HashMap<_, _> = users.into_iter().map(|user| (user.email().clone(), user)).collect();
-        UserCache {
-            file_path,
-            cache,
+            let cache: HashMap<_, _> = users.into_iter().map(|user| (user.email().clone(), user)).collect();
+            UserCache {
+                file_path,
+                cache,
+            }
         }
     }
 
@@ -150,7 +169,7 @@ impl UserCache {
                                     valid.uuid = auth.uuid.0;
                                     valid.client_id = auth.client_token;
                                     valid.last_checked = time();
-                                    return Some((mojang, proxy, valid.clone()))
+                                    return Some((mojang, proxy, valid.clone()));
                                 }
 
                                 // we could not refresh -> try to authenticate
@@ -162,7 +181,7 @@ impl UserCache {
                                             valid.uuid = auth.uuid.0;
                                             valid.client_id = auth.client_token;
                                             valid.last_checked = time();
-                                            return Some((mojang, proxy, valid.clone()))
+                                            return Some((mojang, proxy, valid.clone()));
                                         }
 
                                         // we cannot do anything more -> change to invalid
@@ -196,7 +215,7 @@ impl UserCache {
                         tx.send(ProxyUser {
                             user,
                             proxy,
-                            mojang
+                            mojang,
                         }).await.unwrap();
                     }
                     _ => {}
