@@ -6,6 +6,7 @@ use serde_json::json;
 use sha1::Sha1;
 
 use crate::error::{MojangErr, Res};
+use crate::bootstrap::Proxy;
 
 #[derive(Debug)]
 pub struct Mojang {
@@ -13,7 +14,11 @@ pub struct Mojang {
 }
 
 impl Mojang {
-    pub fn socks5(address: &str, user: &str, pass: &str) -> Res<Mojang> {
+    pub fn socks5(proxy: &Proxy) -> Res<Mojang> {
+        
+        let address = proxy.address();
+        let user = &proxy.user;
+        let pass = &proxy.pass;
         let full_address = format!("socks5://{}", address);
 
         let proxy = reqwest::Proxy::https(full_address)?

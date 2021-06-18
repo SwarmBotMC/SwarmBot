@@ -3,7 +3,7 @@ use std::fs::File;
 use serde::de::DeserializeOwned;
 
 use crate::error::Res;
-use crate::bootstrap::{User, Proxy};
+use crate::bootstrap::{CSVUser, Proxy};
 use serde::Serialize;
 
 fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
@@ -19,20 +19,7 @@ fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
         .collect()
 }
 
-fn write_csv<T: Serialize>(file: File, elements: Vec<T>) -> Res {
-    let mut writer = csv::WriterBuilder::new()
-        .delimiter(b':')
-        .has_headers(false)
-        .from_writer(file);
-
-    for element in elements {
-        writer.serialize(element)?;
-    }
-
-    Ok(())
-}
-
-pub fn read_users(file: File) -> Res<Vec<User>> {
+pub fn read_users(file: File) -> Res<Vec<CSVUser>> {
     read_csv(file)
 }
 

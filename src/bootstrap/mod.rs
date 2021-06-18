@@ -5,7 +5,6 @@ use serde::Deserialize;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 
 use crate::bootstrap::csv::read_users;
-use crate::bootstrap::dns::dns_lookup;
 use crate::bootstrap::mojang::{AuthResponse, Mojang};
 use crate::bootstrap::opts::Opts;
 use crate::bootstrap::tcp::obtain_connections;
@@ -19,6 +18,7 @@ pub mod opts;
 pub mod csv;
 pub mod tcp;
 pub mod dns;
+pub mod storage;
 pub mod mojang;
 
 
@@ -38,12 +38,12 @@ pub struct Connection {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct User {
+pub struct CSVUser {
     pub email: String,
     pub password: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Proxy {
     pub host: String,
     pub port: u32,
@@ -68,19 +68,12 @@ pub async fn init() -> ResContext<Output> {
     // read from config
     let Opts { users_file, proxy, proxies_file, host, count, version, port, db, delay , ..} = Opts::get();
 
-
-
     // DNS Lookup
     let Address { host, port } = dns_lookup(&host).await.unwrap_or(Address {
         host,
         port,
     });
 
-    // list users we want to login
-    let db = Db::init().await;
-
-    // the connections
-    let connections = obtain_connections(proxy, &proxies_file, &host, port, count, &db).await?;
 
     let output = Output {
         version,

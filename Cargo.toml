@@ -66,7 +66,5 @@ serde_json = "1.0"
 # quite a few uses
 itertools = "0.10.1"
 
-
-sqlx = { version = "0.5.5", features = ["runtime-tokio-native-tls", "postgres"]}
-
+flexbuffers = "2.0"
 packets = { path = "packets" } # from a path in the local filesystem

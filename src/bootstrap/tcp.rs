@@ -5,13 +5,14 @@ use rand::seq::SliceRandom;
 use tokio::net::TcpStream;
 use tokio_socks::tcp::Socks5Stream;
 
-use crate::bootstrap::{Connection, User};
+use crate::bootstrap::{Connection, CSVUser};
 use crate::bootstrap::csv::read_proxies;
 use crate::bootstrap::mojang::Mojang;
 use crate::db::{CachedUser, Db};
 use crate::error::{HasContext, ResContext};
 
 pub async fn obtain_connections(use_proxy: bool, proxies: &str, host: &str, port: u16, user_count: usize, db: &Db) -> ResContext<tokio::sync::mpsc::Receiver<Connection>> {
+
     let host = String::from(host);
     let users = db.obtain_users(user_count).await;
 

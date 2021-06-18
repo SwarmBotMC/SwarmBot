@@ -5,7 +5,7 @@ use packets::types::Packet;
 use tokio::sync::oneshot::error::RecvError;
 use tokio::time::{Duration, sleep};
 
-use crate::bootstrap::{Connection, User};
+use crate::bootstrap::{Connection, CSVUser};
 use crate::bootstrap::mojang::{AuthResponse, calc_hash, Mojang};
 use crate::client::instance::{ClientInfo, State};
 use crate::client::runner::GlobalState;
