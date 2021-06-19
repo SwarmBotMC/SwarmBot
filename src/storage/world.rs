@@ -16,6 +16,7 @@ impl WorldBlocks {
     pub fn add_column(&mut self, location: ChunkLocation, column: ChunkColumn){
         self.storage.insert(location, column);
     }
+
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
         let BlockLocation(x, y, z) = location;
 

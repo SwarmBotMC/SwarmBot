@@ -37,5 +37,5 @@ pub struct GlobalContext<'a> {
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub struct MoveContext {
     pub location: BlockLocation,
-    pub blocks_can_place: u32
+    pub blocks_can_place: usize
 }

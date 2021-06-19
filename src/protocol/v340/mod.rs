@@ -7,8 +7,7 @@ use tokio::time::{Duration, sleep};
 
 use crate::bootstrap::{Connection, CSVUser, Address};
 use crate::bootstrap::mojang::{AuthResponse, calc_hash, Mojang};
-use crate::client::instance::{ClientInfo, State};
-use crate::client::runner::GlobalState;
+use crate::client::instance::{ClientInfo};
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
 use crate::protocol::{Login, McProtocol};
@@ -21,6 +20,8 @@ use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
 use rand::{thread_rng, Rng};
 use crate::storage::world::ChunkLocation;
 use crate::bootstrap::storage::ValidUser;
+use crate::client::state::local::State;
+use crate::client::state::global::GlobalState;
 
 mod clientbound;
 mod serverbound;
@@ -39,7 +40,7 @@ impl McProtocol for Protocol {
         let ValidUser { email, username, password, last_checked, uuid, access_id, client_id } = user;
 
         let Address { host, port } = address;
-        let uuid = UUID(uuid);
+        let uuid = UUID::from(&uuid);
 
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);

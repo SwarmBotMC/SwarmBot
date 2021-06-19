@@ -30,7 +30,7 @@ impl LowMemoryChunkSection {
         let offset = block_number - (idx << 2);
 
         let mut res = self.storage[idx];
-        res = res >> offset;
+        res >>= offset;
         res &= 0b11;
 
         SimpleType::from(res)

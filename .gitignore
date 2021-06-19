@@ -1,5 +1,6 @@
 /target
 .idea
 storage.db
+cache.db
 users.csv
 proxies.csv

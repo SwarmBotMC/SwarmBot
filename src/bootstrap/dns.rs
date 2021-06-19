@@ -8,6 +8,7 @@ use crate::error::Res;
 async fn dns_lookup(host: &str) -> Result<Address, ResolveError> {
     let resolver = AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default()).unwrap();
 
+    println!("performing srv lookup");
     resolver.srv_lookup(format!("_minecraft._tcp.{}", host)).await.map(|res| {
         let srv = res.iter().next().unwrap();
         Address {

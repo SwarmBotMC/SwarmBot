@@ -6,6 +6,9 @@ use clap::{AppSettings, Clap};
 pub struct Opts {
     pub host: String,
 
+    #[clap(long)]
+    pub load: bool,
+
     #[clap(short, long, default_value = "1")]
     pub count: usize,
 

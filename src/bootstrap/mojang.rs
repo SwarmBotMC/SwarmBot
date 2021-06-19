@@ -15,7 +15,7 @@ pub struct Mojang {
 
 impl Mojang {
     pub fn socks5(proxy: &Proxy) -> Res<Mojang> {
-        
+
         let address = proxy.address();
         let user = &proxy.user;
         let pass = &proxy.pass;
@@ -152,7 +152,6 @@ impl Mojang {
             .await?;
 
         let status = res.status();
-        println!("validate got {}", status);
         Ok(status == 204)
     }
 

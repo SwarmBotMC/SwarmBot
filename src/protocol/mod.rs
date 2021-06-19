@@ -1,8 +1,9 @@
 use crate::bootstrap::Connection;
-use crate::client::instance::{Client, ClientInfo, State};
-use crate::client::runner::GlobalState;
+use crate::client::instance::{Client, ClientInfo};
 use crate::error::Res;
 use crate::types::Location;
+use crate::client::state::local::State;
+use crate::client::state::global::GlobalState;
 
 pub mod v340;
 

@@ -37,8 +37,8 @@ pub struct ValidUser {
     pub email: String,
     pub username: String,
     pub password: String,
-    pub last_checked: u128,
-    pub uuid: u128,
+    pub last_checked: u64,
+    pub uuid: String,
     pub access_id: String,
     pub client_id: String,
 }
@@ -70,12 +70,12 @@ pub struct ProxyUser {
 
 async fn validate_user(user: &ValidUser, proxy: &Proxy) {}
 
-fn time() -> u128 {
+fn time() -> u64 {
     let start = SystemTime::now();
     let since_the_epoch = start
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards");
-    since_the_epoch.as_millis()
+    since_the_epoch.as_secs()
 }
 
 impl Drop for UserCache {
@@ -135,7 +135,7 @@ impl UserCache {
                             username: res.username,
                             password: user.password.clone(),
                             last_checked: time(),
-                            uuid: res.uuid.0,
+                            uuid: res.uuid.to_string(),
                             access_id: res.access_token,
                             client_id: res.client_token,
                         };
@@ -160,13 +160,19 @@ impl UserCache {
                     User::Valid(valid) => {
                         let proxy = iter.next().unwrap();
                         let mojang = Mojang::socks5(&proxy).unwrap();
+
+                        // if verified in last day don't even check to verify
+                        if time() - valid.last_checked < 3600 * 24 {
+                            return Some((mojang, proxy, valid.clone()));
+                        }
+
                         let is_valid = mojang.validate(&valid.access_id, &valid.client_id).await.unwrap();
                         if !is_valid {
                             match mojang.refresh(&valid.access_id, &valid.client_id).await {
                                 Ok(auth) => {
                                     valid.access_id = auth.access_token;
                                     valid.username = auth.username;
-                                    valid.uuid = auth.uuid.0;
+                                    valid.uuid = auth.uuid.to_string();
                                     valid.client_id = auth.client_token;
                                     valid.last_checked = time();
                                     return Some((mojang, proxy, valid.clone()));
@@ -178,7 +184,7 @@ impl UserCache {
                                         Ok(auth) => {
                                             valid.access_id = auth.access_token;
                                             valid.username = auth.username;
-                                            valid.uuid = auth.uuid.0;
+                                            valid.uuid = auth.uuid.to_string();
                                             valid.client_id = auth.client_token;
                                             valid.last_checked = time();
                                             return Some((mojang, proxy, valid.clone()));
@@ -194,6 +200,8 @@ impl UserCache {
                                     }
                                 }
                             }
+                        } else {
+                            return Some((mojang, proxy, valid.clone()));
                         }
                     }
                     User::Invalid(invalid) => {}
@@ -204,21 +212,29 @@ impl UserCache {
     }
 
     pub fn obtain_users(mut self, count: usize, users: Vec<CSVUser>, proxies: Vec<Proxy>) -> Receiver<ProxyUser> {
+        println!("obtaining users");
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(1);
 
         tokio::task::spawn_local(async move {
-            for csv_user in users.into_iter().take(count) {
-                match self.get_or_put(&csv_user, &mut proxies).await {
-                    Some((mojang, proxy, user)) => {
-                        tx.send(ProxyUser {
-                            user,
-                            proxy,
-                            mojang,
-                        }).await.unwrap();
-                    }
-                    _ => {}
+            let mut local_count = 0;
+            for csv_user in users.into_iter() {
+                if let Some((mojang, proxy, user)) = self.get_or_put(&csv_user, &mut proxies).await {
+                    local_count += 1;
+                    println!("valid user {}", user.email);
+                    tx.send(ProxyUser {
+                        user,
+                        proxy,
+                        mojang,
+                    }).await.unwrap();
+                } else {
+                    println!("invalid user {}", csv_user.email);
+                }
+
+                if local_count >= count {
+                    println!("ret");
+                    return;
                 }
             }
         });

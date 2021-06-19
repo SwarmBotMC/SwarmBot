@@ -3,7 +3,6 @@ use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{AIR, BlockApprox, BlockLocation, SimpleType};
 use crate::storage::world::WorldBlocks;
-use crate::client::runner::GlobalState;
 
 enum MoveResult {
     Edge,

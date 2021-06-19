@@ -1,9 +1,9 @@
 use std::collections::VecDeque;
 use crate::client::pathfind::context::MoveContext;
-use crate::client::instance::State;
 use crate::protocol::McProtocol;
 use crate::storage::block::BlockLocation;
 use crate::types::Location;
+use crate::client::state::local::State;
 
 pub struct Follower {
     head: MoveContext,
