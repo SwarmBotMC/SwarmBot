@@ -67,7 +67,8 @@ serde_json = "1.0"
 itertools = "0.10.1"
 
 # for data storage
-flexbuffers = "2.0"
+#flexbuffers = "2.0"
+bincode = "1.3"
 
 # chat parsing
 regex = "1.5"

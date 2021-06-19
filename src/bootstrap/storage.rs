@@ -15,18 +15,18 @@ use crate::bootstrap::{CSVUser, Proxy};
 use crate::bootstrap::mojang::{AuthResponse, Mojang};
 use crate::error::Error;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Root {
     users: Vec<User>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 enum User {
     Valid(ValidUser),
     Invalid(InvalidUser),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct InvalidUser {
     email: String,
     password: String,
@@ -90,8 +90,7 @@ impl UserCache {
             let file = File::open(&file_path).unwrap();
             let bytes: Result<Vec<_>, _> = file.bytes().collect();
             let bytes = bytes.unwrap();
-            let r = flexbuffers::Reader::get_root(&*bytes).unwrap();
-            let Root { users } = Root::deserialize(r).unwrap();
+            let Root{users} = bincode::deserialize(&bytes).unwrap();
 
             let cache: HashMap<_, _> = users.into_iter().map(|user| (user.email().clone(), user)).collect();
             UserCache {
@@ -213,7 +212,6 @@ impl UserCache {
                 }
 
                 if local_count >= count {
-                    println!("ret");
                     break 'user_loop;
                 }
             }
@@ -231,10 +229,9 @@ impl UserCache {
                 users
             };
 
-            let mut s = flexbuffers::FlexbufferSerializer::new();
-            root.serialize(&mut s).unwrap();
-            let data = s.view();
-            file.write_all(data).unwrap();
+            let data = bincode::serialize(&root).unwrap();
+            file.write_all(&data).unwrap();
+            file.flush().unwrap();
 
         });
 
