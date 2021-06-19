@@ -15,7 +15,7 @@ use crate::types::Location;
 use crate::client::pathfind::context::{GlobalContext, PathConfig, Costs};
 use crate::storage::block::BlockLocation;
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::State;
+use crate::client::state::local::LocalState;
 use crate::client::state::Dimension;
 use crate::client::state::inventory::Inventory;
 
@@ -97,7 +97,7 @@ impl<T: McProtocol + 'static> Runner<T> {
                 let Login { protocol, info } = login;
 
                 let client = Client {
-                    state: State {
+                    state: LocalState {
                         ticks: 0,
                         inventory: Inventory {},
                         alive: true,

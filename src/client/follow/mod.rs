@@ -3,7 +3,7 @@ use crate::client::pathfind::context::MoveContext;
 use crate::protocol::McProtocol;
 use crate::storage::block::BlockLocation;
 use crate::types::Location;
-use crate::client::state::local::State;
+use crate::client::state::local::LocalState;
 
 pub struct Follower {
     head: MoveContext,
@@ -20,7 +20,7 @@ impl Follower {
             })
         }
     }
-    pub fn follow(&mut self, state: &State, protocol: &mut impl McProtocol){
+    pub fn follow(&mut self, state: &LocalState, protocol: &mut impl McProtocol){
         let next = self.xs.pop_front();
         let next = match next {
             None => return,

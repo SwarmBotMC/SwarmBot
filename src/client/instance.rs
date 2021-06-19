@@ -13,7 +13,7 @@ use crate::protocol::McProtocol;
 use crate::storage::block::BlockLocation;
 use crate::storage::world::WorldBlocks;
 use crate::types::Location;
-use crate::client::state::local::State;
+use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
 
 
@@ -42,7 +42,7 @@ impl Drop for TravelProblem {
 }
 
 pub struct Client<T: McProtocol> {
-    pub state: State,
+    pub state: LocalState,
     pub protocol: T,
 }
 
@@ -68,7 +68,7 @@ impl<T: McProtocol> Client<T> {
 }
 
 
-pub fn run_threaded(client: &mut State, global: &GlobalState) {
+pub fn run_threaded(client: &mut LocalState, global: &GlobalState) {
     if let Some(traverse) = client.travel_problem.as_mut() {
         let ctx = GlobalContext {
             path_config: &global.travel_config,

@@ -10,7 +10,7 @@ use tokio::sync::Notify;
 use std::rc::Rc;
 use crate::client::pathfind::progress_checker::{NoVehicleHeuristic, NoVehicleGoalCheck};
 
-pub struct State {
+pub struct LocalState {
     pub ticks: usize,
     pub inventory: Inventory,
     pub costs: Costs,
@@ -23,7 +23,7 @@ pub struct State {
     pub location: Location,
 }
 
-impl State {
+impl LocalState {
     pub fn block_location(&self) -> BlockLocation {
         let Location { x, y, z } = self.location;
         BlockLocation(x.floor() as i64, y.floor() as i64, z.floor() as i64)

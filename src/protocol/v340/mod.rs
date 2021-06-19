@@ -20,7 +20,7 @@ use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
 use rand::{thread_rng, Rng};
 use crate::storage::world::ChunkLocation;
 use crate::bootstrap::storage::ValidUser;
-use crate::client::state::local::State;
+use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
 
 mod clientbound;
@@ -171,7 +171,7 @@ impl McProtocol for Protocol {
         Ok(login)
     }
 
-    fn apply_packets(&mut self, client: &mut State, global: &mut GlobalState) {
+    fn apply_packets(&mut self, client: &mut LocalState, global: &mut GlobalState) {
         loop {
             match self.rx.try_recv() {
                 Ok(data) => {
@@ -208,7 +208,7 @@ impl McProtocol for Protocol {
 }
 
 impl Protocol {
-    fn process_packet(&mut self, mut data: PacketData, client: &mut State, global: &mut GlobalState) {
+    fn process_packet(&mut self, mut data: PacketData, client: &mut LocalState, global: &mut GlobalState) {
         use clientbound::*;
         match data.id {
             JoinGame::ID => println!("{} joined", client.info.username),
