@@ -6,6 +6,7 @@
 #![feature(drain_filter)]
 #![feature(entry_insert)]
 #![feature(path_try_exists)]
+#![feature(once_cell)]
 
 use std::fs::File;
 use std::path::PathBuf;

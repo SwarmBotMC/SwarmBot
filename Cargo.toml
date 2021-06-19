@@ -72,8 +72,8 @@ flexbuffers = "2.0"
 # chat parsing
 regex = "1.5"
 
-# for regex among other things
-lazy_static = "1.4"
+# for regex among other things .. this is included in std now
+#once_cell = "1.8"
 
 
 

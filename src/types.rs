@@ -2,8 +2,6 @@ use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::io::Read;
 use std::ops::{Add, AddAssign, Sub};
-
-use lazy_static::lazy_static;
 use packets::*;
 use packets::read::{ByteReadable, ByteReader};
 use serde::{Deserialize, Serialize};
@@ -11,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::types::Origin::{Abs, Rel};
 use regex::{Regex, Captures};
 use std::borrow::Borrow;
+use std::lazy::{Lazy, SyncLazy};
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -38,21 +37,29 @@ pub struct Chat {
 }
 
 
+#[derive(Debug)]
+pub struct PlayerMessage<'a> {
+    pub player: &'a str,
+    pub message: &'a str
+}
 
 impl Chat {
-    pub fn player_name(&self) -> Option<String> {
+    pub fn player_message(&self) -> Option<PlayerMessage> {
 
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^<([A-Za-z_]+)>").unwrap();
-        }
+        static RE: SyncLazy<Regex> = SyncLazy::new(||{
+            Regex::new(r"^<([A-Za-z_]+)> (.*)").unwrap()
+        });
 
         let text = &self.extra.first()?.text;
 
         let captures: Captures = RE.captures(text)?;
 
-        let res = captures.get(1)?;
+        let player = captures.get(1)?.as_str();
+        let message = captures.get(2)?.as_str();
 
-        Some(res.as_str().to_string())
+        Some(PlayerMessage {
+            player, message
+        })
     }
 }
 

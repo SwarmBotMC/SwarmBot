@@ -256,7 +256,7 @@ impl Protocol {
             // ignore
             ChatMessage::ID => {
                 let ChatMessage{ chat, position } = data.read();
-                println!("player {:?}", chat.player_name());
+                println!("player {:?}", chat.player_message());
             }
             _ => {}
         }

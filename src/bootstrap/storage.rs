@@ -78,28 +78,6 @@ fn time() -> u64 {
     since_the_epoch.as_secs()
 }
 
-impl Drop for UserCache {
-    fn drop(&mut self) {
-        // TODO: create if does not exist
-        let mut file = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(&self.file_path)
-            .unwrap();
-
-        let users = self.cache.drain().map(|(_, v)| v).collect();
-
-        let root = Root {
-            users
-        };
-
-        let mut s = flexbuffers::FlexbufferSerializer::new();
-        root.serialize(&mut s).unwrap();
-        let data = s.view();
-        file.write_all(data).unwrap();
-    }
-}
-
 impl UserCache {
     pub fn load(file_path: PathBuf) -> UserCache {
         let exists = std::fs::try_exists(&file_path).unwrap();
@@ -219,6 +197,8 @@ impl UserCache {
 
         tokio::task::spawn_local(async move {
             let mut local_count = 0;
+
+            'user_loop:
             for csv_user in users.into_iter() {
                 if let Some((mojang, proxy, user)) = self.get_or_put(&csv_user, &mut proxies).await {
                     local_count += 1;
@@ -234,9 +214,28 @@ impl UserCache {
 
                 if local_count >= count {
                     println!("ret");
-                    return;
+                    break 'user_loop;
                 }
             }
+
+            let mut file = OpenOptions::new()
+                .create(true)
+                .append(false)
+                .write(true)
+                .open(&self.file_path)
+                .unwrap();
+
+            let users = self.cache.drain().map(|(_, v)| v).collect();
+
+            let root = Root {
+                users
+            };
+
+            let mut s = flexbuffers::FlexbufferSerializer::new();
+            root.serialize(&mut s).unwrap();
+            let data = s.view();
+            file.write_all(data).unwrap();
+
         });
 
         rx
