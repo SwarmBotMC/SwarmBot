@@ -1,21 +1,66 @@
-use packets::read::{ByteReader, ByteReadable};
-use packets::*;
-use std::ops::{Sub, AddAssign, Add};
-use std::fmt::{Display, Formatter};
-use crate::types::Origin::{Abs, Rel};
 use std::f32::consts::PI;
+use std::fmt::{Display, Formatter};
+use std::io::Read;
+use std::ops::{Add, AddAssign, Sub};
+
+use lazy_static::lazy_static;
+use packets::*;
+use packets::read::{ByteReadable, ByteReader};
+use serde::{Deserialize, Serialize};
+
+use crate::types::Origin::{Abs, Rel};
+use regex::{Regex, Captures};
+use std::borrow::Borrow;
 
 #[derive(Clone)]
 pub struct PacketData {
     pub id: u32,
-    pub reader: ByteReader
+    pub reader: ByteReader,
 }
 
 impl PacketData {
-
     #[inline]
-    pub fn read<T: ByteReadable>(&mut self) -> T{
+    pub fn read<T: ByteReadable>(&mut self) -> T {
         self.reader.read()
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ChatSection {
+    pub color: Option<String>,
+    pub text: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Chat {
+    pub extra: Vec<ChatSection>,
+    pub text: String,
+}
+
+
+
+impl Chat {
+    pub fn player_name(&self) -> Option<String> {
+
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^<([A-Za-z_]+)>").unwrap();
+        }
+
+        let text = &self.extra.first()?.text;
+
+        let captures: Captures = RE.captures(text)?;
+
+        let res = captures.get(1)?;
+
+        Some(res.as_str().to_string())
+    }
+}
+
+impl ByteReadable for Chat {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let string: String = byte_reader.read();
+        let json: Chat = serde_json::from_str(&string).unwrap();
+        json
     }
 }
 
@@ -45,9 +90,8 @@ impl Display for Location {
 }
 
 
-
-pub fn loc_from(x: f64, y: f64, z:f64) -> Location {
-    Location{x,y,z}
+pub fn loc_from(x: f64, y: f64, z: f64) -> Location {
+    Location { x, y, z }
 }
 
 #[derive(Writable, Readable, Debug, Copy, Clone)]
@@ -107,7 +151,7 @@ impl Location {
         dx * dx + dy * dy + dz * dz
     }
 
-    pub fn apply_change(&mut self, loc: LocationOrigin){
+    pub fn apply_change(&mut self, loc: LocationOrigin) {
         loc.x.apply(&mut self.x);
         loc.y.apply(&mut self.y);
         loc.z.apply(&mut self.z);

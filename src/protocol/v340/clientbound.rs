@@ -1,7 +1,7 @@
 use packets::types::{VarInt, UUIDHyphenated, BitField, UUID, Angle, Identifier, RawVec, Position, VarUInt};
 use packets::{Readable, Writable, Packet, EnumReadable};
 use packets::read::{ByteReadable, ByteReader};
-use crate::types::{LocationOrigin, DirectionOrigin, Location, ShortLoc, Direction};
+use crate::types::{LocationOrigin, DirectionOrigin, Location, ShortLoc, Direction, Chat};
 use std::cmp::max;
 use crate::storage::chunk::{Palette, ChunkColumn, ChunkData, LowMemoryChunkSection, HighMemoryChunkSection};
 use crate::storage::block::BlockState;
@@ -137,7 +137,7 @@ pub struct PluginMessage {
 #[derive(Packet, Debug, Readable)]
 #[packet(0x0f, Play)]
 pub struct ChatMessage {
-    pub json: String,
+    pub chat: Chat,
     pub position: u8,
 }
 

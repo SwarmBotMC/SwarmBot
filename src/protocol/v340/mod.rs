@@ -192,7 +192,7 @@ impl McProtocol for Protocol {
     }
 
     fn send_chat(&mut self, message: &str) {
-        self.tx.write(serverbound::Chat::message(message));
+        self.tx.write(serverbound::ChatMessage::message(message));
     }
 
     fn teleport(&mut self, location: Location) {
@@ -227,7 +227,7 @@ impl Protocol {
                         self.tx.write(serverbound::ClientStatus {
                             action: serverbound::ClientStatusAction::Respawn
                         });
-                        self.tx.write(serverbound::Chat::message("I'm respawning"));
+                        self.tx.write(serverbound::ChatMessage::message("I'm respawning"));
                     }
                 } else {
                     client.alive = true;
@@ -254,7 +254,10 @@ impl Protocol {
                 self.disconnected = true;
             }
             // ignore
-            ChatMessage::ID => {}
+            ChatMessage::ID => {
+                let ChatMessage{ chat, position } = data.read();
+                println!("player {:?}", chat.player_name());
+            }
             _ => {}
         }
     }

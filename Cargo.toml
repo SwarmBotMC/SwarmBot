@@ -66,8 +66,19 @@ serde_json = "1.0"
 # quite a few uses
 itertools = "0.10.1"
 
+# for data storage
 flexbuffers = "2.0"
+
+# chat parsing
+regex = "1.5"
+
+# for regex among other things
+lazy_static = "1.4"
+
+
+
 packets = { path = "packets" } # from a path in the local filesystem
+
 
 [profile.release]
 #lto = "fat"
