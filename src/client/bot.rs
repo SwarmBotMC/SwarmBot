@@ -39,7 +39,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             return;
         }
         if let Some(mut follower) = self.state.follower.take() {
-            follower.follow(&mut self.state, &mut self.out);
+            follower.follow(&self.state, &mut self.out);
             self.state.follower = Some(follower);
         }
     }

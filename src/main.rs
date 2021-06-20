@@ -1,10 +1,5 @@
-#![allow(unused)]
 #![deny(unused_must_use)]
-#![feature(async_closure)]
-#![feature(never_type)]
 #![feature(in_band_lifetimes)]
-#![feature(drain_filter)]
-#![feature(entry_insert)]
 #![feature(path_try_exists)]
 #![feature(once_cell)]
 
@@ -33,7 +28,7 @@ mod types;
 
 
 fn main() {
-    let mut rt = Runtime::new().unwrap();
+    let rt = Runtime::new().unwrap();
     let local = task::LocalSet::new();
     local.block_on(&rt, async move {
         match run().await {
