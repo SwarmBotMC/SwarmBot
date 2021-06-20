@@ -18,23 +18,22 @@ impl Follower {
                 xs
             })
     }
-    pub fn follow(&mut self, _state: &LocalState, out: &mut impl InterfaceOut){
+    pub fn follow(&mut self, state: &mut LocalState, out: &mut impl InterfaceOut){
         let next = self.xs.pop_front();
         let next = match next {
             None => return,
             Some(next) => next
         };
 
-        let BlockLocation(x,y,z) = self.head.location;
         let BlockLocation(x_new,y_new,z_new) = next.location;
 
         let new_loc = Location {
-            x: x_new as f64,
+            x: x_new as f64 + 0.5,
             y: y_new as f64,
-            z: z_new as f64
+            z: z_new as f64 + 0.5
         };
 
-        println!("teleport {:?}", new_loc);
-        out.teleport(new_loc)
+        out.teleport(new_loc);
+        state.location = new_loc;
     }
 }

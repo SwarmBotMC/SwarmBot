@@ -1,7 +1,6 @@
-
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
-use std::lazy::{SyncLazy};
+use std::lazy::SyncLazy;
 use std::ops::{Add, AddAssign, Sub};
 
 use packets::*;
@@ -9,6 +8,7 @@ use packets::read::{ByteReadable, ByteReader};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
+use crate::storage::block::BlockLocation;
 use crate::types::Origin::{Abs, Rel};
 
 #[derive(Clone)]
@@ -110,6 +110,13 @@ pub struct Location {
     pub z: f64,
 }
 
+impl From<Location> for BlockLocation {
+    fn from(location: Location) -> Self {
+        let Location { x, y, z } = location;
+        BlockLocation(x.floor() as i64, y.floor() as i64, z.floor() as i64)
+    }
+}
+
 impl Sub<Location> for Location {
     type Output = Displacement;
 
@@ -178,7 +185,6 @@ impl From<Location> for LocationOrigin {
 }
 
 impl Location {
-
     pub fn dist2(&self, loc: Location) -> f64 {
         let dx = loc.x - self.x;
         let dy = loc.y - self.y;
@@ -247,7 +253,6 @@ impl Origin<f64> {
 }
 
 impl Origin<f32> {
-
     pub fn apply(&self, other: &mut f32) {
         match self {
             Origin::Rel(x) => *other += *x,
@@ -299,7 +304,6 @@ pub struct Direction {
 }
 
 impl Direction {
-
     pub fn from(dx: f32, dy: f32, dz: f32) -> Direction {
         let r = (dx * dx + dy * dy + dz * dz).sqrt();
         let mut yaw = -dx.atan2(dz) / PI * 180.0;

@@ -31,14 +31,8 @@ pub struct LocalState {
 
 impl LocalState {
 
-    pub fn block_location(&self) -> BlockLocation {
-        let Location { x, y, z } = self.location;
-        BlockLocation(x.floor() as i64, y.floor() as i64, z.floor() as i64)
-    }
-
-
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
-        let from = self.block_location();
+        let from = self.location.into();
 
 
         // https://github.com/tokio-rs/tokio/releases/tag/tokio-0.2.12

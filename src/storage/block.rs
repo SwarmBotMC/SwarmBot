@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
 pub struct BlockState(pub u32);
@@ -16,6 +18,12 @@ impl BlockLocation {
 
     pub(crate) fn dist(&self, other: BlockLocation) -> f64 {
         (self.dist2(other) as f64).sqrt()
+    }
+}
+
+impl Display for BlockLocation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("[{}, {}, {}]", self.0, self.1, self.2))
     }
 }
 

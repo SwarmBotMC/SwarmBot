@@ -1,10 +1,12 @@
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::InterfaceOut;
-use crate::storage::block::{BlockApprox, BlockLocation};
+use crate::storage::block::{BlockLocation};
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::world::ChunkLocation;
-use crate::types::{Chat, Command, Location};
+use crate::types::{Chat, Location};
+use crate::client::pathfind::progress_checker::{NoVehicleProgressor, Progressor, Progression};
+use crate::client::pathfind::context::{GlobalContext, MoveContext};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -47,7 +49,26 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                         }
                     }
                     "loc" => {
-                        self.out.send_chat(&format!("my location is {:?}", self.local.location));
+                        let block_loc: BlockLocation = self.local.location.into();
+                        self.out.send_chat(&format!("my location is {}. My block loc is {}", self.local.location, block_loc));
+                    }
+                    "progressions" => {
+
+                        let ctx = GlobalContext {
+                            path_config: &self.global.travel_config,
+                            world: &self.global.world_blocks,
+                        };
+                        let prog = NoVehicleProgressor::new(ctx);
+                        let loc = MoveContext {
+                            location: self.local.location.into(),
+                            blocks_can_place: 30
+                        };
+                        let progressions = prog.progressions(&loc);
+                        if let Progression::Movements(neighbors) = progressions {
+                            for neighbor in neighbors {
+                                self.out.send_chat(&format!("{}", neighbor.value.location));
+                            }
+                        }
                     }
                     _ => {
                         self.out.send_chat("invalid command");

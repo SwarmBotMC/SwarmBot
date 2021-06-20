@@ -35,11 +35,11 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 
     fn move_around(&mut self) {
-        if self.state.ticks % ticks_from_secs(1) != 0 {
+        if self.state.ticks % 3 != 0 {
             return;
         }
         if let Some(mut follower) = self.state.follower.take() {
-            follower.follow(&self.state, &mut self.out);
+            follower.follow(&mut self.state, &mut self.out);
             self.state.follower = Some(follower);
         }
     }
@@ -55,15 +55,11 @@ pub fn run_threaded(client: &mut LocalState, global: &GlobalState) {
 
         let progressor = NoVehicleProgressor::new(ctx);
 
-        println!("iter...");
         let res = traverse.a_star.iterate_for(Duration::from_millis(30), &traverse.heuristic, &progressor, &traverse.goal_checker);
 
         if let Increment::Finished(res) = res {
-            println!("finished...");
             if let Some(res) = res {
                 client.follower = Follower::new(res);
-                println!("found goal {:?}", client.follower);
-
             }
             // we are done finding the path
             client.travel_problem = None;

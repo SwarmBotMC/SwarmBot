@@ -166,6 +166,8 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
                     }
                 };
 
+                state.parent_map.insert(value_idx, idx);
+
                 let h_score = heuristic.heuristic(&neighbor.value);
                 let f_score = g_score + h_score;
 

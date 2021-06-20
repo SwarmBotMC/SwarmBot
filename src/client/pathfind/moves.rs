@@ -1,7 +1,7 @@
 use crate::client::pathfind::context::{GlobalContext, MoveContext};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::progress_checker::{Neighbor, Progression};
-use crate::storage::block::{AIR, BlockLocation, SimpleType};
+use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::world::WorldBlocks;
 
 enum MoveResult {
@@ -59,7 +59,7 @@ impl Movements {
             let Change { dx, dz, .. } = direction.unit_change();
 
             let legs = get_block!(x + dx, y, z + dz);
-            let head = get_block!(x + dx, y, z + dz);
+            let head = get_block!(x + dx, y + 1, z + dz);
 
             match (legs, head) {
                 (Some(legs), Some(head)) => {
@@ -83,10 +83,12 @@ impl Movements {
                 let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
                 let floor_walkable = floor == Solid;
                 traverse_possible_no_place[idx] = floor_walkable;
-                res.push(Neighbor {
-                    value: wrap!(BlockLocation(x + dx, y - 1, z + dz)),
-                    cost: ctx.path_config.costs.block_walk,
-                })
+                if floor_walkable {
+                    res.push(Neighbor {
+                        value: wrap!(BlockLocation(x + dx, y, z + dz)),
+                        cost: ctx.path_config.costs.block_walk,
+                    })
+                }
             }
         }
 
