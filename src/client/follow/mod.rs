@@ -12,13 +12,10 @@ pub struct Follower {
 impl Follower {
     pub fn new(path: Vec<MoveContext>) -> Option<Follower> {
         let mut xs = VecDeque::from(path);
-        match xs.pop_front() {
-            None => None,
-            Some(head) => Some(Follower {
+        xs.pop_front().map(|head| Follower {
                 head,
                 xs
             })
-        }
     }
     pub fn follow(&mut self, state: &LocalState, out: &mut impl InterfaceOut){
         let next = self.xs.pop_front();

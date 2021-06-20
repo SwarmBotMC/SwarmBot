@@ -76,7 +76,10 @@ impl EventQueue340 {
             }
             UpdateHealth::ID => {
                 let UpdateHealth { health, .. } = data.read();
-                if health <= 0.0 && self.alive {
+                if health > 0.0 {
+                    self.alive = true;
+                }
+                else if self.alive {
                     processor.on_death();
                     self.alive = false;
                 }
@@ -282,7 +285,7 @@ impl Minecraft for Protocol {
             out: out.clone(),
             disconnected: false,
             location: Default::default(),
-            alive: false,
+            alive: true,
         };
 
         let login = Login {

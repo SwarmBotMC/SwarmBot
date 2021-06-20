@@ -33,8 +33,8 @@ pub struct ChatSection {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Chat {
-    pub extra: Vec<ChatSection>,
-    pub text: String,
+    pub extra: Option<Vec<ChatSection>>,
+    pub text: Option<String>,
 }
 
 #[derive(Debug)]
@@ -82,7 +82,7 @@ impl Chat {
             Regex::new(r"^<([A-Za-z_]+)> (.*)").unwrap()
         });
 
-        let text = &self.extra.first()?.text;
+        let text = &self.extra.as_ref()?.first()?.text;
 
         let captures: Captures = RE.captures(text)?;
 

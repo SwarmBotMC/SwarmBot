@@ -41,11 +41,11 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_death(&mut self) {
-
+        self.out.respawn();
+        self.out.send_chat("I died... oof... well I guess I should respawn");
     }
 
     fn on_move(&mut self, location: Location) {
-
     }
 
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn) {
@@ -53,6 +53,6 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_disconnect(&mut self, reason: &str) {
-
+        self.local.disconnected = true;
     }
 }
