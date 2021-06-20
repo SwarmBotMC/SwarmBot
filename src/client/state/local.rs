@@ -1,14 +1,18 @@
-use crate::client::state::inventory::Inventory;
-use crate::client::pathfind::context::{Costs, MoveContext};
-use crate::client::instance::{ClientInfo, TravelProblem};
-use crate::storage::block::BlockLocation;
-use crate::client::state::Dimension;
-use crate::client::follow::Follower;
-use crate::types::Location;
-use crate::client::pathfind::incremental::AStar;
-use tokio::sync::Notify;
 use std::rc::Rc;
-use crate::client::pathfind::progress_checker::{NoVehicleHeuristic, NoVehicleGoalCheck};
+
+use tokio::sync::Notify;
+
+use crate::client::follow::Follower;
+use crate::client::instance::{ClientInfo, TravelProblem};
+use crate::client::pathfind::context::{Costs, MoveContext};
+use crate::client::pathfind::incremental::AStar;
+use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeuristic};
+use crate::client::state::Dimension;
+use crate::client::state::inventory::Inventory;
+use crate::storage::block::BlockLocation;
+use crate::types::{Chat, Location, PlayerMessage, Command};
+use std::lazy::SyncLazy;
+use regex::Regex;
 
 pub struct LocalState {
     pub ticks: usize,
@@ -24,6 +28,25 @@ pub struct LocalState {
 }
 
 impl LocalState {
+
+
+
+    pub fn process_chat(&self, chat: Chat) {
+
+        let message = match chat.player_message() {
+            None => return,
+            Some(message) => message
+        };
+
+        match message.into_cmd() {
+            None => {}
+            Some(cmd) => {
+                println!("command {:?}", cmd);
+            }
+        }
+
+    }
+
     pub fn block_location(&self) -> BlockLocation {
         let Location { x, y, z } = self.location;
         BlockLocation(x.floor() as i64, y.floor() as i64, z.floor() as i64)

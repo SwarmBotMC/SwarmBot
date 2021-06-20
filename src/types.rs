@@ -1,15 +1,16 @@
+use std::borrow::Borrow;
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::io::Read;
+use std::lazy::{Lazy, SyncLazy};
 use std::ops::{Add, AddAssign, Sub};
+
 use packets::*;
 use packets::read::{ByteReadable, ByteReader};
+use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
 use crate::types::Origin::{Abs, Rel};
-use regex::{Regex, Captures};
-use std::borrow::Borrow;
-use std::lazy::{Lazy, SyncLazy};
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -36,17 +37,48 @@ pub struct Chat {
     pub text: String,
 }
 
+#[derive(Debug)]
+pub struct Command<'a> {
+    pub player: &'a str,
+    pub command: &'a str,
+    pub args: Vec<&'a str>,
+}
+
 
 #[derive(Debug)]
 pub struct PlayerMessage<'a> {
     pub player: &'a str,
-    pub message: &'a str
+    pub message: &'a str,
+}
+
+impl<'a> PlayerMessage<'a> {
+    pub fn into_cmd(self) -> Option<Command<'a>> {
+        static RE: SyncLazy<Regex> = SyncLazy::new(|| {
+            Regex::new(r"#(\S+) (.*)").unwrap()
+        });
+        let capture = RE.captures(self.message)?;
+
+        let command = capture.get(1)?.as_str();
+        let args = capture.get(2)?.as_str();
+
+
+        let args: Vec<_> = if args.is_empty() {
+            Vec::new()
+        } else {
+            args.split(' ').collect()
+        };
+
+        Some(Command {
+            player: self.player,
+            command,
+            args,
+        })
+    }
 }
 
 impl Chat {
     pub fn player_message(&self) -> Option<PlayerMessage> {
-
-        static RE: SyncLazy<Regex> = SyncLazy::new(||{
+        static RE: SyncLazy<Regex> = SyncLazy::new(|| {
             Regex::new(r"^<([A-Za-z_]+)> (.*)").unwrap()
         });
 
@@ -58,7 +90,8 @@ impl Chat {
         let message = captures.get(2)?.as_str();
 
         Some(PlayerMessage {
-            player, message
+            player,
+            message,
         })
     }
 }
