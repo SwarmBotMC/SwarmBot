@@ -6,7 +6,7 @@ use packets::read::{ByteReadable, ByteReader};
 use packets::types::{Angle, BitField, Identifier, Position, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
 
 use crate::storage::block::BlockState;
-use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, LowMemoryChunkSection, Palette};
+use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
 use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationOrigin, ShortLoc};
 
 #[derive(Packet, Readable)]
@@ -220,7 +220,7 @@ impl ByteReadable for ChunkColumnPacket {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let chunk_x = byte_reader.read();
         let chunk_z = byte_reader.read();
-        let ground_up_continuous: bool = byte_reader.read();
+        let _ground_up_continuous: bool = byte_reader.read();
         let VarUInt(mut primary_bitmask) = byte_reader.read();
         let _size: VarUInt = byte_reader.read();
 

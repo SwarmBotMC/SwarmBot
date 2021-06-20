@@ -1,9 +1,9 @@
 use crate::bootstrap::Connection;
-use crate::client::bot::{Bot};
+
 use crate::error::Res;
 use crate::types::Location;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
+
+
 use packets::types::UUID;
 use crate::client::processor::InterfaceIn;
 

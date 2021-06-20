@@ -1,7 +1,7 @@
 use crate::client::pathfind::context::{MoveContext, GlobalContext};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::progress_checker::{Neighbor, Progression};
-use crate::storage::block::{AIR, BlockApprox, BlockLocation, SimpleType};
+use crate::storage::block::{AIR, BlockLocation, SimpleType};
 use crate::storage::world::WorldBlocks;
 
 enum MoveResult {
@@ -76,9 +76,9 @@ impl Movements {
 
         let mut traverse_possible_no_place = [false; 4];
 
-        let current_floor = get_block!(x, y, z).unwrap();
+        let _current_floor = get_block!(x, y, z).unwrap();
 
-        let mut adj_floor = [AIR; 4];
+        let _adj_floor = [AIR; 4];
 
         // moving adjacent without changing elevation
         for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {

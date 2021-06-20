@@ -1,8 +1,8 @@
-use std::task::Poll;
+
 
 use packets::types::{Packet, RawVec, VarInt};
 use packets::write::{ByteWritable, ByteWritableLike, ByteWriter};
-use tokio::io::{AsyncWrite, AsyncWriteExt, BufWriter, ReadBuf};
+use tokio::io::{AsyncWriteExt};
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -63,7 +63,7 @@ pub struct PacketWriteChannel {
 
 impl PacketWriteChannel {
     pub fn write<T: Packet + ByteWritable>(&mut self, packet: T) {
-        let mut data = data(packet, &self.compression);
+        let data = data(packet, &self.compression);
         self.tx.send(data).unwrap();
     }
 }

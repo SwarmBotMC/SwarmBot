@@ -1,19 +1,19 @@
-use std::cmp::min;
+
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
-use std::io::{BufReader, Read, Write};
+use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use itertools::Itertools;
-use packets::types::UUID;
+
+
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Receiver;
-use tokio_socks::tcp::Socks5Stream;
+
 
 use crate::bootstrap::{CSVUser, Proxy};
-use crate::bootstrap::mojang::{AuthResponse, Mojang};
-use crate::error::Error;
+use crate::bootstrap::mojang::{Mojang};
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Root {
@@ -68,7 +68,7 @@ pub struct ProxyUser {
 }
 
 
-async fn validate_user(user: &ValidUser, proxy: &Proxy) {}
+async fn validate_user(_user: &ValidUser, _proxy: &Proxy) {}
 
 fn time() -> u64 {
     let start = SystemTime::now();
@@ -181,7 +181,7 @@ impl UserCache {
                             return Some((mojang, proxy, valid.clone()));
                         }
                     }
-                    User::Invalid(invalid) => {}
+                    User::Invalid(_invalid) => {}
                 }
                 None
             }

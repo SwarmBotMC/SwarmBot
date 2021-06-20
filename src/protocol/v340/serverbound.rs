@@ -1,5 +1,5 @@
 use packets::*;
-use packets::types::{Packet, PacketState, VarInt};
+use packets::types::{VarInt};
 use packets::write::{ByteWritable, ByteWriter};
 use crate::types::{Location, Direction};
 

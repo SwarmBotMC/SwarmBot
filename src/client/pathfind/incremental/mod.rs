@@ -105,7 +105,7 @@ impl <T: Clone + Hash + Eq> AStar<T> {
     }
     pub fn iterate(&mut self, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T>> {
 
-        let mut state = match self.state.as_mut() {
+        let state = match self.state.as_mut() {
             None => panic!("called after finished"),
             Some(state) => state
         };
@@ -144,7 +144,7 @@ impl <T: Clone + Hash + Eq> AStar<T> {
 
                 let value_idx = state.val_to_idx.get(&value);
 
-                let value_idx  = match value_idx {
+                let _value_idx  = match value_idx {
                     Some(idx) => {
                         let prev_g_score = state.g_scores.get_mut(idx).unwrap();
                         if g_score < *prev_g_score {

@@ -1,28 +1,28 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::mpsc::{SendError, TryRecvError};
+use std::sync::mpsc::{TryRecvError};
 
 use packets::types::{PacketState, UUID, VarInt};
 use packets::types::Packet;
 use packets::write::ByteWritable;
-use rand::{Rng, thread_rng};
-use tokio::sync::oneshot::error::RecvError;
-use tokio::time::{Duration, sleep};
 
-use crate::bootstrap::{Address, Connection, CSVUser};
-use crate::bootstrap::mojang::{AuthResponse, calc_hash, Mojang};
+
+
+
+use crate::bootstrap::{Address, Connection};
+use crate::bootstrap::mojang::{calc_hash};
 use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
-use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
+
+
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
 use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Minecraft};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
-use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
-use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState, TeleportConfirm};
+use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
+use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState};
 use crate::storage::world::ChunkLocation;
 use crate::types::{Location, PacketData};
 
@@ -89,7 +89,7 @@ impl EventQueue340 {
                 processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column);
             }
             PlayerPositionAndLook::ID => {
-                let PlayerPositionAndLook { location, rotation, teleport_id } = data.read();
+                let PlayerPositionAndLook { location, rotation: _, teleport_id } = data.read();
 
                 self.location.apply_change(location);
                 processor.on_move(self.location);
@@ -106,7 +106,7 @@ impl EventQueue340 {
             }
             // ignore
             ChatMessage::ID => {
-                let ChatMessage { chat, position } = data.read();
+                let ChatMessage { chat, position: _ } = data.read();
                 processor.on_chat(chat);
             }
             _ => {}
@@ -162,7 +162,7 @@ impl Minecraft for Protocol {
 
     async fn login(conn: Connection) -> Res<Login<EventQueue340, Interface340>> {
         let Connection { user, address, mojang, read, write } = conn;
-        let ValidUser { email, username, password, last_checked, uuid, access_id, client_id } = user;
+        let ValidUser { email: _, username, password: _, last_checked: _, uuid, access_id, client_id: _ } = user;
 
         let Address { host, port } = address;
         let uuid = UUID::from(&uuid);
@@ -170,7 +170,7 @@ impl Minecraft for Protocol {
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
 
-        let online = true;
+        let _online = true;
 
         // START: handshake
         writer.write(serverbound::Handshake {
@@ -218,7 +218,7 @@ impl Minecraft for Protocol {
         {
             let mut data = reader.read().await;
 
-            let LoginSuccess { username, uuid } = match data.id {
+            let LoginSuccess { username: _, uuid: _ } = match data.id {
                 clientbound::SetCompression::ID => {
                     let clientbound::SetCompression { threshold } = data.read();
 
@@ -260,8 +260,8 @@ impl Minecraft for Protocol {
                     }
                 }
                 match tx.send(packet) {
-                    Ok(ok) => {}
-                    Err(err) => {
+                    Ok(_ok) => {}
+                    Err(_err) => {
                         // the other end is stopped and should have printed the error
                         return;
                     }
@@ -273,7 +273,7 @@ impl Minecraft for Protocol {
 
         let entity_id = match os_rx.await {
             Ok(inner) => inner,
-            Err(err) => {
+            Err(_err) => {
                 return Err(crate::error::err("disconnected before join game packet"));
             }
         };

@@ -1,5 +1,5 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+
+
 
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
@@ -46,7 +46,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                         self.out.send_chat(&message);
                     }
                 }
-                msg => {
+                _msg => {
 
                 }
             }
@@ -66,7 +66,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         self.global.world_blocks.add_column(location, column);
     }
 
-    fn on_disconnect(&mut self, reason: &str) {
+    fn on_disconnect(&mut self, _reason: &str) {
         self.local.disconnected = true;
     }
 }

@@ -1,6 +1,6 @@
 use crate::client::pathfind::context::PathConfig;
 use crate::storage::world::WorldBlocks;
-use std::collections::HashSet;
+
 
 #[derive(Default)]
 pub struct GlobalState {

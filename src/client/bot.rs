@@ -1,21 +1,21 @@
-use std::rc::Rc;
+
 use std::time::Duration;
 
-use packets::types::UUID;
-use tokio::sync::Notify;
+
+
 
 use crate::client::follow::Follower;
-use crate::client::pathfind::context::{GlobalContext, MoveContext};
-use crate::client::pathfind::incremental::{AStar, PathResult};
-use crate::client::pathfind::progress_checker::{GoalCheck, NoVehicleGoalCheck, NoVehicleHeuristic, NoVehicleProgressor};
+use crate::client::pathfind::context::{GlobalContext};
+
+use crate::client::pathfind::progress_checker::{NoVehicleProgressor};
 use crate::client::timing::Increment;
-use crate::protocol::{Minecraft, InterfaceOut, EventQueue};
-use crate::storage::block::BlockLocation;
-use crate::storage::world::WorldBlocks;
-use crate::types::Location;
+use crate::protocol::{InterfaceOut, EventQueue};
+
+
+
 use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
-use crate::client::processor::InterfaceIn;
+
 
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
@@ -29,7 +29,7 @@ const fn ticks_from_secs(seconds: usize) -> usize {
 }
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
-    pub fn run_sync(&mut self, global: &mut GlobalState) {
+    pub fn run_sync(&mut self, _global: &mut GlobalState) {
         self.move_around();
         self.state.ticks += 1;
     }

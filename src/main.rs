@@ -4,20 +4,20 @@
 #![feature(once_cell)]
 
 use std::fs::File;
-use std::path::PathBuf;
-use std::time::Duration;
+
+
 
 use tokio::runtime::Runtime;
 use tokio::task;
 
 use crate::bootstrap::dns::normalize_address;
-use crate::bootstrap::mojang::AuthResponse;
+
 use crate::bootstrap::opts::Opts;
-use crate::bootstrap::{Output, Connection};
+use crate::bootstrap::{Connection};
 use crate::bootstrap::storage::UserCache;
 use crate::client::runner::{Runner, RunnerOptions};
-use crate::error::{Error, ResContext, HasContext};
-use crate::error::Error::Mojang;
+use crate::error::{ResContext, HasContext};
+
 
 mod error;
 mod bootstrap;
@@ -39,7 +39,7 @@ fn main() {
 }
 
 async fn run() -> ResContext<()> {
-    let Opts { users_file, proxy, proxies_file, host, count, version, port, db, delay, load, ..} = Opts::get();
+    let Opts { users_file, proxy: _, proxies_file, host, count, version, port, db: _, delay, load, ..} = Opts::get();
 
     let address = normalize_address(&host, port).await;
 
@@ -54,7 +54,7 @@ async fn run() -> ResContext<()> {
         let proxies = bootstrap::csv::read_proxies(proxies_file).context_str("could not open proxies file")?;
 
         println!("reading cache.db");
-        let mut cache = UserCache::load("cache.db".into());
+        let cache = UserCache::load("cache.db".into());
 
         println!("obtaining users from cache");
         cache.obtain_users(count, csv_users, proxies)

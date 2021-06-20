@@ -9,9 +9,9 @@ use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeu
 use crate::client::state::Dimension;
 use crate::client::state::inventory::Inventory;
 use crate::storage::block::BlockLocation;
-use crate::types::{Chat, Location, PlayerMessage, Command};
-use std::lazy::SyncLazy;
-use regex::Regex;
+use crate::types::{Chat, Location};
+
+
 use crate::protocol::ClientInfo;
 use crate::client::state::travel::TravelProblem;
 

@@ -1,18 +1,18 @@
 use std::cell::RefCell;
-use std::marker::PhantomData;
+
 use std::rc::Rc;
 use std::time::Duration;
 
-use rayon::Scope;
-use tokio::task::JoinHandle;
+
+
 
 use crate::bootstrap::Connection;
 use crate::client::bot::{Bot, run_threaded};
-use crate::error::Error;
+
 use crate::protocol::{Login, Minecraft, EventQueue};
 use crate::storage::world::WorldBlocks;
 use crate::types::Location;
-use crate::client::pathfind::context::{GlobalContext, PathConfig, Costs};
+use crate::client::pathfind::context::{Costs};
 use crate::storage::block::BlockLocation;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
@@ -43,7 +43,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
     /// Start the runner process
     pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) {
-        let blocks = WorldBlocks::default();
+        let _blocks = WorldBlocks::default();
         let mut runner = Runner::<T>::init(connections, opts);
         runner.game_loop().await;
     }

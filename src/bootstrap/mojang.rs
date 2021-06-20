@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 use packets::types::UUID;
-use reqwest::StatusCode;
+
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha1::Sha1;
@@ -129,7 +129,7 @@ impl Mojang {
             .send()
             .await?;
 
-        let status = res.status();
+        let _status = res.status();
         let auth: RawAuthResponse = res.json().await?;
         let auth = AuthResponse {
             access_token: auth.access_token,

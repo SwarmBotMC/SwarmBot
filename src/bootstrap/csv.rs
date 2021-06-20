@@ -4,7 +4,7 @@ use serde::de::DeserializeOwned;
 
 use crate::error::Res;
 use crate::bootstrap::{CSVUser, Proxy};
-use serde::Serialize;
+
 
 fn read_csv<T: DeserializeOwned>(file: File) -> Res<Vec<T>> {
     csv::ReaderBuilder::new()

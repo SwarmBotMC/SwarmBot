@@ -3,7 +3,7 @@ use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::error::ResolveError;
 
 use crate::bootstrap::Address;
-use crate::error::Res;
+
 
 async fn dns_lookup(host: &str) -> Result<Address, ResolveError> {
     let resolver = AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default()).unwrap();

@@ -6,7 +6,7 @@ use cfb8::Cfb8;
 use flate2::Compression;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
-use rsa::RSAPublicKey;
+
 
 pub mod reader;
 pub mod writer;

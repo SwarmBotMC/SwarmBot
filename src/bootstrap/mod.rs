@@ -1,19 +1,19 @@
-use std::fs::File;
-use std::time::Duration;
 
-use itertools::Itertools;
-use packets::types::UUID;
-use rand::seq::SliceRandom;
+
+
+
+
+
 use serde::Deserialize;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::sync::mpsc::Receiver;
 use tokio_socks::tcp::Socks5Stream;
 
-use crate::bootstrap::csv::read_users;
-use crate::bootstrap::mojang::{AuthResponse, Mojang};
-use crate::bootstrap::opts::Opts;
+
+use crate::bootstrap::mojang::{Mojang};
+
 use crate::bootstrap::storage::{ProxyUser, ValidUser};
-use crate::error::{err, Error, HasContext, ResContext};
+
 
 pub mod opts;
 pub mod csv;
