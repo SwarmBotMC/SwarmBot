@@ -9,7 +9,7 @@ use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeu
 use crate::client::state::Dimension;
 use crate::client::state::inventory::Inventory;
 use crate::storage::block::BlockLocation;
-use crate::types::{Chat, Location};
+use crate::types::{Location};
 
 
 use crate::protocol::ClientInfo;
@@ -31,28 +31,11 @@ pub struct LocalState {
 
 impl LocalState {
 
-
-
-    pub fn process_chat(&self, chat: Chat) {
-
-        let message = match chat.player_message() {
-            None => return,
-            Some(message) => message
-        };
-
-        match message.into_cmd() {
-            None => {}
-            Some(cmd) => {
-                println!("command {:?}", cmd);
-            }
-        }
-
-    }
-
     pub fn block_location(&self) -> BlockLocation {
         let Location { x, y, z } = self.location;
         BlockLocation(x.floor() as i64, y.floor() as i64, z.floor() as i64)
     }
+
 
     async fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.block_location();

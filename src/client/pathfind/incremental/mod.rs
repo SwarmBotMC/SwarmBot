@@ -1,7 +1,7 @@
 use std::collections::{HashMap, BinaryHeap};
 use std::hash::Hash;
 use crate::client::pathfind::HeapNode;
-use crate::client::timing::{Incremental, Increment};
+use crate::client::timing::{Increment};
 use crate::client::pathfind::progress_checker::{Heuristic, Progressor, GoalCheck, Progression};
 use std::time::{Duration, Instant};
 
@@ -83,18 +83,18 @@ impl <T: Clone + Hash + Eq> AStar<T> {
     }
 
     pub fn iterate_for(&mut self, duration: Duration, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T>> {
-        
+
         let start = Instant::now();
-        
+
         loop {
             let on = Instant::now();
-            
+
             let current_duration = on.duration_since(start);
-            
+
             if current_duration >= duration {
                 return Increment::InProgress;
             }
-            
+
             match self.iterate(heuristic, progressor, goal_check)  {
                 Increment::Finished(res) => {
                     return Increment::Finished(res)
@@ -123,11 +123,11 @@ impl <T: Clone + Hash + Eq> AStar<T> {
 
             let neighbors = match progressor.progressions(popped) {
                 Progression::Edge => {
-                    
+
                     // still return a path of on edge
                     let state = self.state.take().unwrap();
                     let path = reconstruct_path(state.nodes, idx, &state.parent_map);
-                    
+
                     return Increment::Finished(PathResult::Some(path));
                 }
                 Progression::Movements(neighbors) => {
@@ -181,6 +181,3 @@ impl <T: Clone + Hash + Eq> AStar<T> {
         Increment::InProgress
     }
 }
-
-
-

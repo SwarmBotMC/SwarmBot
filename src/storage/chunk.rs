@@ -36,7 +36,7 @@ impl LowMemoryChunkSection {
         SimpleType::from(res)
     }
 
-    fn set_simple_type(&self, x: u8, y: u8, z: u8, input: SimpleType) {
+    fn set_simple_type(&mut self, x: u8, y: u8, z: u8, input: SimpleType) {
         let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
 
         // 2 bits per block
@@ -51,6 +51,8 @@ impl LowMemoryChunkSection {
         block &= zero_out;
 
         block |= id << offset;
+
+        self.storage[idx] = block;
     }
 }
 

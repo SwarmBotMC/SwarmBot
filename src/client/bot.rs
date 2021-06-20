@@ -35,7 +35,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 
     fn move_around(&mut self) {
-        if self.state.ticks % 20 != 0 {
+        if self.state.ticks % ticks_from_secs(1) != 0 {
             return;
         }
         if let Some(mut follower) = self.state.follower.take() {

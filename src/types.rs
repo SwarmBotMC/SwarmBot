@@ -1,7 +1,6 @@
 
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
-use std::io::Read;
 use std::lazy::{SyncLazy};
 use std::ops::{Add, AddAssign, Sub};
 
@@ -129,11 +128,6 @@ impl Display for Location {
     }
 }
 
-
-pub fn loc_from(x: f64, y: f64, z: f64) -> Location {
-    Location { x, y, z }
-}
-
 #[derive(Writable, Readable, Debug, Copy, Clone)]
 pub struct Displacement {
     pub x: f64,
@@ -184,6 +178,7 @@ impl From<Location> for LocationOrigin {
 }
 
 impl Location {
+
     pub fn dist2(&self, loc: Location) -> f64 {
         let dx = loc.x - self.x;
         let dy = loc.y - self.y;
@@ -252,6 +247,7 @@ impl Origin<f64> {
 }
 
 impl Origin<f32> {
+
     pub fn apply(&self, other: &mut f32) {
         match self {
             Origin::Rel(x) => *other += *x,
@@ -303,6 +299,7 @@ pub struct Direction {
 }
 
 impl Direction {
+
     pub fn from(dx: f32, dy: f32, dz: f32) -> Direction {
         let r = (dx * dx + dy * dy + dz * dz).sqrt();
         let mut yaw = -dx.atan2(dz) / PI * 180.0;

@@ -18,6 +18,7 @@ pub struct Handshake {
 
 #[derive(Copy, Clone, EnumWritable)]
 #[repr(i32)]
+
 pub enum HandshakeNextState {
 
     #[deprecated]
@@ -69,14 +70,6 @@ pub struct PlayerPositionAndRotation {
 #[packet(0x02, Play)]
 pub struct ChatMessage {
     pub message: String
-}
-
-impl ChatMessage {
-    pub fn message(message: &str) -> ChatMessage {
-        ChatMessage {
-            message: message.to_string()
-        }
-    }
 }
 
 #[derive(Writable, Packet)]
@@ -140,6 +133,7 @@ pub struct VehicleMove {
 
 #[repr(i32)]
 #[derive(EnumWritable)]
+
 pub enum ClientStatusAction {
     Respawn = 0,
     Stats = 1,
@@ -160,12 +154,14 @@ pub struct KeepAlive {
 
 
 #[derive(EnumWritable, Debug)]
+
 pub enum Hand {
     Main,
     Off,
 }
 
 #[derive(EnumWritable, Debug)]
+
 pub enum Action {
     SneakStart,
     SneakStop,
@@ -180,6 +176,7 @@ pub enum Action {
 
 #[derive(Debug, AdtWritable)]
 #[repr(i32)]
+
 pub enum InteractEntityKind {
     Interact {
         target_x: f32,

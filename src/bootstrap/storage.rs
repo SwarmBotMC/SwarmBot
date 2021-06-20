@@ -67,9 +67,6 @@ pub struct ProxyUser {
     pub mojang: Mojang,
 }
 
-
-async fn validate_user(_user: &ValidUser, _proxy: &Proxy) {}
-
 fn time() -> u64 {
     let start = SystemTime::now();
     let since_the_epoch = start

@@ -185,9 +185,12 @@ pub struct ChunkColumnPacket {
 
 pub struct ChunkSection {
     palette: crate::storage::chunk::Palette,
+
+    #[allow(unused)]
     block_light: [u8; 2048],
 
     // TODO: fix overworld
+    #[allow(unused)]
     sky_light: Option<[u8; 2048]>,
 }
 

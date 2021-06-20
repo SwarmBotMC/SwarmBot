@@ -89,9 +89,3 @@ impl Proxy {
         format!("{}:{}", self.host, self.port)
     }
 }
-
-pub struct Output {
-    pub version: usize,
-    pub delay_millis: u64,
-    pub connections: tokio::sync::mpsc::Receiver<Connection>,
-}

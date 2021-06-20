@@ -32,7 +32,6 @@ mod serverbound;
 pub struct EventQueue340 {
     rx: std::sync::mpsc::Receiver<PacketData>,
     out: Interface340,
-    disconnected: bool,
     location: Location,
 
     /// we need to store state because sometimes death packets occur twice and we only want to send one event
@@ -50,8 +49,7 @@ impl EventQueue for EventQueue340 {
                     match err {
                         TryRecvError::Empty => {}
                         TryRecvError::Disconnected => {
-                            println!("disconnected because error");
-                            self.disconnected = true;
+                            processor.on_socket_close();
                         }
                     }
                     return;
@@ -102,7 +100,6 @@ impl EventQueue340 {
             PlayDisconnect::ID => {
                 let PlayDisconnect { reason } = data.read();
                 processor.on_disconnect(&reason);
-                self.disconnected = true;
             }
             // ignore
             ChatMessage::ID => {
@@ -283,7 +280,6 @@ impl Minecraft for Protocol {
         let queue = EventQueue340 {
             rx,
             out: out.clone(),
-            disconnected: false,
             location: Default::default(),
             alive: true,
         };

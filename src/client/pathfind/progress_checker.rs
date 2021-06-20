@@ -80,10 +80,3 @@ impl<'a> NoVehicleProgressor<'a> {
         }
     }
 }
-
-struct NoVehicleProblem<'a> {
-    progressor: NoVehicleProgressor<'a>,
-    goal_check: NoVehicleGoalCheck,
-
-
-}

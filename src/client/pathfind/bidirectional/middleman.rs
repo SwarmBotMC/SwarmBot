@@ -12,6 +12,7 @@ pub enum Msg<T: Debug> {
     Finished {forward: bool},
 }
 
+
 pub struct Middleman<T: Debug> {
     pub node_sender: tokio::sync::mpsc::Sender<Msg<T>>,
     pub vec_receiver: tokio::sync::oneshot::Receiver<Option<T>>,

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 #![deny(unused_must_use)]
 #![feature(in_band_lifetimes)]
 #![feature(path_try_exists)]
@@ -5,19 +6,15 @@
 
 use std::fs::File;
 
-
-
 use tokio::runtime::Runtime;
 use tokio::task;
 
+use crate::bootstrap::Connection;
 use crate::bootstrap::dns::normalize_address;
-
 use crate::bootstrap::opts::Opts;
-use crate::bootstrap::{Connection};
 use crate::bootstrap::storage::UserCache;
 use crate::client::runner::{Runner, RunnerOptions};
-use crate::error::{ResContext, HasContext};
-
+use crate::error::{HasContext, ResContext};
 
 mod error;
 mod bootstrap;
@@ -39,18 +36,18 @@ fn main() {
 }
 
 async fn run() -> ResContext<()> {
-    let Opts { users_file, proxy: _, proxies_file, host, count, version, port, db: _, delay, load, ..} = Opts::get();
+    let Opts { users_file, proxy: _, proxies_file, host, count, version, port, db: _, delay, load, .. } = Opts::get();
 
     let address = normalize_address(&host, port).await;
 
     // A list of users we will login
     let mut proxy_users = {
         println!("reading {}", users_file);
-        let csv_file = File::open(&users_file).context(||format!("could not open users file {}", users_file))?;
+        let csv_file = File::open(&users_file).context(|| format!("could not open users file {}", users_file))?;
         let csv_users = bootstrap::csv::read_users(csv_file).context_str("could not open users file")?;
 
         println!("reading {}", proxies_file);
-        let proxies_file = File::open(&proxies_file).context(||format!("could not open proxies file {}", proxies_file))?;
+        let proxies_file = File::open(&proxies_file).context(|| format!("could not open proxies file {}", proxies_file))?;
         let proxies = bootstrap::csv::read_proxies(proxies_file).context_str("could not open proxies file")?;
 
         println!("reading cache.db");
@@ -65,8 +62,7 @@ async fn run() -> ResContext<()> {
             // empty
         }
         return Ok(());
-    }
-    else {
+    } else {
         // taking the users and generating connections to the Minecraft server
         let connections = Connection::stream(address, proxy_users);
 

@@ -15,6 +15,7 @@ pub trait InterfaceIn {
     fn on_move(&mut self, location: Location);
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn);
     fn on_disconnect(&mut self, reason: &str);
+    fn on_socket_close(&mut self);
 }
 
 pub struct SimpleInterfaceIn<'a, I: InterfaceOut> {
@@ -68,5 +69,9 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
     fn on_disconnect(&mut self, _reason: &str) {
         self.local.disconnected = true;
+    }
+
+    fn on_socket_close(&mut self) {
+
     }
 }
