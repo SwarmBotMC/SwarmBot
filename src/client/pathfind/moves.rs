@@ -1,4 +1,4 @@
-use crate::client::pathfind::context::{MoveContext, GlobalContext};
+use crate::client::pathfind::context::{GlobalContext, MoveContext};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{AIR, BlockLocation, SimpleType};
@@ -25,7 +25,7 @@ impl Movements {
     };
 
     pub fn obtain_all(on: &MoveContext, ctx: &GlobalContext) -> Progression<MoveContext> {
-        let BlockLocation(x,y,z) = on.location;
+        let BlockLocation(x, y, z) = on.location;
         let w = ctx.world;
         let blocks_can_place = on.blocks_can_place;
 
@@ -65,7 +65,7 @@ impl Movements {
                 (Some(legs), Some(head)) => {
                     adj_legs[idx] = legs;
                     adj_head[idx] = head;
-                    can_move_adj_noplace[idx] = legs == WalkThrough && head == WalkThrough;
+                    can_move_adj_noplace[idx] = matches!(legs, WalkThrough | Water) && matches!(head, WalkThrough | Water);
                 }
                 _ => return Progression::Edge,
             };
@@ -75,10 +75,6 @@ impl Movements {
         let mut res = vec![];
 
         let mut traverse_possible_no_place = [false; 4];
-
-        let _current_floor = get_block!(x, y, z).unwrap();
-
-        let _adj_floor = [AIR; 4];
 
         // moving adjacent without changing elevation
         for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
@@ -215,6 +211,12 @@ pub struct Change {
     pub dz: i64,
 }
 
+impl Change {
+    fn new(dx: i64, dy: i64, dz: i64) -> Change {
+        Change { dx, dy, dz }
+    }
+}
+
 impl CardinalDirection3D {
     pub fn unit_change(&self) -> Change {
         todo!()
@@ -223,6 +225,11 @@ impl CardinalDirection3D {
 
 impl CardinalDirection {
     fn unit_change(&self) -> Change {
-        todo!()
+        match self {
+            CardinalDirection::NORTH => Change::new(1, 0, 0),
+            CardinalDirection::SOUTH => Change::new(-1, 0, 0),
+            CardinalDirection::WEST => Change::new(0, 0, 1),
+            CardinalDirection::EAST => Change::new(0, 0, -1)
+        }
     }
 }

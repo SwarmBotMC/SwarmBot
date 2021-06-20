@@ -37,7 +37,7 @@ impl LocalState {
     }
 
 
-    async fn travel_to_block(&mut self, goal: BlockLocation) {
+    pub fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.block_location();
 
 
@@ -63,12 +63,12 @@ impl LocalState {
             a_star,
             heuristic,
             goal_checker,
-            notifier: notifier.clone(),
+            notifier,
         };
 
 
         self.travel_problem = Some(problem);
 
-        notifier.notified().await;
+        // notifier.notified().await;
     }
 }

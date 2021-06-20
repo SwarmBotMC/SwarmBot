@@ -5,6 +5,7 @@ use crate::storage::block::BlockLocation;
 use crate::types::Location;
 use crate::client::state::local::LocalState;
 
+#[derive(Debug)]
 pub struct Follower {
     head: MoveContext,
     xs: VecDeque<MoveContext>
@@ -27,13 +28,13 @@ impl Follower {
         let BlockLocation(x,y,z) = self.head.location;
         let BlockLocation(x_new,y_new,z_new) = next.location;
 
-        let (_dx, _dy, _dz) = (x_new - x, y_new - y, z_new -z);
         let new_loc = Location {
             x: x_new as f64,
             y: y_new as f64,
             z: z_new as f64
         };
 
+        println!("teleport {:?}", new_loc);
         out.teleport(new_loc)
     }
 }

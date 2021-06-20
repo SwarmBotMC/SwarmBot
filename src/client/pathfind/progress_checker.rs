@@ -24,6 +24,16 @@ pub enum Progression<T> {
     Movements(Vec<Neighbor<T>>),
 }
 
+impl <T: Debug> Debug for Progression<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Progression::Edge => f.write_str("Edge"),
+            Progression::Movements(neighbors) => neighbors.fmt(f)
+        }
+    }
+}
+
+
 pub trait Progressor<T> {
     fn progressions(&self, input: &T) -> Progression<T>;
 }

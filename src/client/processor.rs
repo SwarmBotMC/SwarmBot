@@ -1,13 +1,10 @@
-
-
-
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::InterfaceOut;
+use crate::storage::block::{BlockApprox, BlockLocation};
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::world::ChunkLocation;
-use crate::types::{Chat, Location};
-use crate::storage::block::BlockApprox;
+use crate::types::{Chat, Command, Location};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -37,20 +34,37 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
         if let Some(player_msg) = message.player_message() {
-            match player_msg.message {
-                "nearby" => {
-                    let mut below = self.local.block_location();
-                    below.1 -= 1;
-                    let below_block = self.global.world_blocks.get_block(below);
-                    if let Some(BlockApprox::Realized(below_block)) = below_block {
-                        let message = format!("below {:?} is {:?}", self.local.block_location(), below_block.id());
-                        self.out.send_chat(&message);
+            if let Some(cmd) = player_msg.into_cmd() {
+                match cmd.command {
+                    "goto" => {
+                        if let [a, b, c] = cmd.args[..] {
+                            let x: i64 = a.parse().unwrap();
+                            let y: i64 = b.parse().unwrap();
+                            let z: i64 = c.parse().unwrap();
+                            let dest = BlockLocation(x,y,z);
+                            self.out.send_chat(&format!("going to {:?}", dest));
+                            self.local.travel_to_block(dest);
+                        }
+                    }
+                    "loc" => {
+                        self.out.send_chat(&format!("my location is {:?}", self.local.location));
+                    }
+                    _ => {
+                        self.out.send_chat("invalid command");
                     }
                 }
-                _msg => {
-
-                }
             }
+            // match player_msg.message {
+            //     "nearby" => {
+            //         let mut below = self.local.block_location();
+            //         below.1 -= 1;
+            //         let below_block = self.global.world_blocks.get_block(below);
+            //         if let Some(BlockApprox::Realized(below_block)) = below_block {
+            //             let message = format!("below {:?} is {:?}", self.local.block_location(), below_block.id());
+            //             self.out.send_chat(&message);
+            //         }
+            //     }
+            // }
         }
     }
 
@@ -71,7 +85,5 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         self.local.disconnected = true;
     }
 
-    fn on_socket_close(&mut self) {
-
-    }
+    fn on_socket_close(&mut self) {}
 }

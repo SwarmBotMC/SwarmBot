@@ -4,6 +4,7 @@ use crate::client::pathfind::HeapNode;
 use crate::client::timing::{Increment};
 use crate::client::pathfind::progress_checker::{Heuristic, Progressor, GoalCheck, Progression};
 use std::time::{Duration, Instant};
+use std::fmt::Debug;
 
 
 pub struct AStar<T: Clone> {
@@ -53,7 +54,7 @@ fn reconstruct_path<T: Clone>(vec: Vec<T>, goal_idx: usize, parent_map: &HashMap
 
 pub type PathResult<T> = Option<Vec<T>>;
 
-impl <T: Clone + Hash + Eq> AStar<T> {
+impl <T: Clone + Hash + Eq + Debug> AStar<T> {
 
     pub fn new(init_node: T) -> AStar<T> {
 
@@ -135,6 +136,8 @@ impl <T: Clone + Hash + Eq> AStar<T> {
                 }
             };
 
+            // println!("neighbors {:?}", neighbors);
+
             let popped_g_score = *state.g_scores.get(&idx).unwrap();
 
             'neighbor_loop:
@@ -144,7 +147,7 @@ impl <T: Clone + Hash + Eq> AStar<T> {
 
                 let value_idx = state.val_to_idx.get(&value);
 
-                let _value_idx  = match value_idx {
+                let value_idx  = match value_idx {
                     Some(idx) => {
                         let prev_g_score = state.g_scores.get_mut(idx).unwrap();
                         if g_score < *prev_g_score {
@@ -167,7 +170,7 @@ impl <T: Clone + Hash + Eq> AStar<T> {
                 let f_score = g_score + h_score;
 
                 let heap_node = HeapNode {
-                    contents: idx,
+                    contents: value_idx,
                     f_score,
                 };
 
