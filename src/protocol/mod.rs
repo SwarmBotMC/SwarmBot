@@ -1,9 +1,11 @@
 use crate::bootstrap::Connection;
-use crate::client::instance::{Client, ClientInfo};
+use crate::client::bot::{Bot};
 use crate::error::Res;
 use crate::types::Location;
 use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
+use packets::types::UUID;
+use crate::client::processor::InterfaceIn;
 
 pub mod v340;
 
@@ -11,17 +13,34 @@ mod io;
 mod transform;
 mod encrypt;
 
-#[async_trait::async_trait]
-pub trait McProtocol where Self: Sized {
-    async fn login(conn: Connection) -> Res<Login<Self>>;
-    fn apply_packets(&mut self, client: &mut LocalState, global: &mut GlobalState);
+pub trait InterfaceOut {
     fn send_chat(&mut self, message: &str);
+    fn respawn(&mut self);
     fn teleport(&mut self, location: Location);
-    fn disconnected(&self) -> bool;
+}
+
+#[async_trait::async_trait]
+pub trait Minecraft: Sized {
+    type Queue: EventQueue;
+    type Interface: InterfaceOut;
+    async fn login(conn: Connection) -> Res<Login<Self::Queue, Self::Interface>>;
+}
+
+pub trait EventQueue {
+    fn flush(&mut self, processor: &mut impl InterfaceIn);
+}
+
+#[derive(Debug)]
+pub struct ClientInfo {
+    pub username: String,
+    pub uuid: UUID,
+    pub entity_id: u32,
 }
 
 
-pub struct Login<T: McProtocol> {
-    pub protocol: T,
+/// login for a given bot. Holds
+pub struct Login<E: EventQueue, I: InterfaceOut> {
+    pub queue: E,
+    pub out: I,
     pub info: ClientInfo
 }

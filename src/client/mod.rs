@@ -1,5 +1,6 @@
-pub mod instance;
+pub mod bot;
 pub mod runner;
+pub mod processor;
 mod pathfind;
 mod timing;
 mod follow;

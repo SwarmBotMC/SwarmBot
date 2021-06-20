@@ -5,6 +5,7 @@ use std::collections::HashSet;
 #[derive(Default)]
 pub struct GlobalState {
     pub world_blocks: WorldBlocks,
+    pub ticks: usize,
     pub travel_config: PathConfig,
 }
 

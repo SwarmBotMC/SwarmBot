@@ -1,41 +1,163 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::mpsc::{SendError, TryRecvError};
 
 use packets::types::{PacketState, UUID, VarInt};
 use packets::types::Packet;
+use packets::write::ByteWritable;
+use rand::{Rng, thread_rng};
 use tokio::sync::oneshot::error::RecvError;
 use tokio::time::{Duration, sleep};
 
-use crate::bootstrap::{Connection, CSVUser, Address};
+use crate::bootstrap::{Address, Connection, CSVUser};
 use crate::bootstrap::mojang::{AuthResponse, calc_hash, Mojang};
-use crate::client::instance::{ClientInfo};
+use crate::bootstrap::storage::ValidUser;
+use crate::client::processor::InterfaceIn;
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
-use crate::protocol::{Login, McProtocol};
+use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Minecraft};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
-use crate::types::{PacketData, Location};
 use crate::protocol::v340::clientbound::{Disconnect, JoinGame, LoginSuccess};
-use crate::protocol::v340::serverbound::{HandshakeNextState, TeleportConfirm};
-use rand::{thread_rng, Rng};
+use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState, TeleportConfirm};
 use crate::storage::world::ChunkLocation;
-use crate::bootstrap::storage::ValidUser;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
+use crate::types::{Location, PacketData};
 
 mod clientbound;
 mod serverbound;
 
-pub struct Protocol {
+pub struct EventQueue340 {
     rx: std::sync::mpsc::Receiver<PacketData>,
-    tx: PacketWriteChannel,
+    out: Interface340,
     disconnected: bool,
+    location: Location,
+
+    /// we need to store state because sometimes death packets occur twice and we only want to send one event
+    alive: bool,
 }
 
-#[async_trait::async_trait]
-impl McProtocol for Protocol {
+impl EventQueue for EventQueue340 {
+    fn flush(&mut self, processor: &mut impl InterfaceIn) {
+        loop {
+            match self.rx.try_recv() {
+                Ok(data) => {
+                    self.process_packet(data, processor);
+                }
+                Err(err) => {
+                    match err {
+                        TryRecvError::Empty => {}
+                        TryRecvError::Disconnected => {
+                            println!("disconnected because error");
+                            self.disconnected = true;
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+    }
+}
 
-    async fn login(conn: Connection) -> Res<Login<Self>> {
+impl EventQueue340 {
+    fn process_packet(&mut self, mut data: PacketData, processor: &mut impl InterfaceIn) {
+        use clientbound::*;
+        match data.id {
+            JoinGame::ID => {}
+            KeepAlive::ID => {
+                // auto keep alive
+                let KeepAlive { id } = data.read();
+
+                self.out.write(serverbound::KeepAlive {
+                    id
+                });
+            }
+            UpdateHealth::ID => {
+                let UpdateHealth { health, .. } = data.read();
+                if health <= 0.0 && self.alive {
+                    processor.on_death();
+                    self.alive = false;
+                }
+            }
+            ChunkColumnPacket::ID => {
+                let ChunkColumnPacket { chunk_x, chunk_z, column } = data.read();
+                processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column);
+            }
+            PlayerPositionAndLook::ID => {
+                let PlayerPositionAndLook { location, rotation, teleport_id } = data.read();
+
+                self.location.apply_change(location);
+                processor.on_move(self.location);
+
+                // "accept" the packet
+                self.out.write(serverbound::TeleportConfirm {
+                    teleport_id
+                });
+            }
+            PlayDisconnect::ID => {
+                let PlayDisconnect { reason } = data.read();
+                processor.on_disconnect(&reason);
+                self.disconnected = true;
+            }
+            // ignore
+            ChatMessage::ID => {
+                let ChatMessage { chat, position } = data.read();
+                processor.on_chat(chat);
+            }
+            _ => {}
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Interface340 {
+    tx: Rc<RefCell<PacketWriteChannel>>,
+}
+
+impl Interface340 {
+    fn new(tx: PacketWriteChannel) -> Interface340 {
+        Interface340 {
+            tx: Rc::new(RefCell::new(tx))
+        }
+    }
+
+    #[inline]
+    fn write<T: Packet + ByteWritable>(&self, packet: T) {
+        self.tx.borrow_mut().write(packet)
+    }
+}
+
+impl InterfaceOut for Interface340 {
+    fn send_chat(&mut self, message: &str) {
+        self.write(serverbound::ChatMessage {
+            message: message.to_string()
+        });
+    }
+
+    fn respawn(&mut self) {
+        self.write(serverbound::ClientStatus {
+            action: ClientStatusAction::Respawn
+        });
+    }
+
+    fn teleport(&mut self, location: Location) {
+        self.write(serverbound::PlayerPosition {
+            location,
+            on_ground: true,
+        });
+    }
+}
+
+pub struct Protocol;
+
+#[async_trait::async_trait]
+impl Minecraft for Protocol {
+    type Queue = EventQueue340;
+    type Interface = Interface340;
+
+    async fn login(conn: Connection) -> Res<Login<EventQueue340, Interface340>> {
         let Connection { user, address, mojang, read, write } = conn;
         let ValidUser { email, username, password, last_checked, uuid, access_id, client_id } = user;
 
@@ -153,14 +275,19 @@ impl McProtocol for Protocol {
             }
         };
 
-        let protocol = Protocol {
+        let out = Interface340::new(tx);
+
+        let queue = EventQueue340 {
             rx,
-            tx,
+            out: out.clone(),
             disconnected: false,
+            location: Default::default(),
+            alive: false,
         };
 
         let login = Login {
-            protocol,
+            queue,
+            out,
             info: ClientInfo {
                 username,
                 uuid,
@@ -169,96 +296,5 @@ impl McProtocol for Protocol {
         };
 
         Ok(login)
-    }
-
-    fn apply_packets(&mut self, client: &mut LocalState, global: &mut GlobalState) {
-        loop {
-            match self.rx.try_recv() {
-                Ok(data) => {
-                    self.process_packet(data, client, global);
-                }
-                Err(err) => {
-                    match err {
-                        TryRecvError::Empty => {}
-                        TryRecvError::Disconnected => {
-                            println!("disconnected because error");
-                            self.disconnected = true;
-                        }
-                    }
-                    return;
-                }
-            }
-        }
-    }
-
-    fn send_chat(&mut self, message: &str) {
-        self.tx.write(serverbound::ChatMessage::message(message));
-    }
-
-    fn teleport(&mut self, location: Location) {
-        self.tx.write(serverbound::PlayerPosition {
-            location,
-            on_ground: true
-        })
-    }
-
-    fn disconnected(&self) -> bool {
-        self.disconnected
-    }
-}
-
-impl Protocol {
-    fn process_packet(&mut self, mut data: PacketData, client: &mut LocalState, global: &mut GlobalState) {
-        use clientbound::*;
-        match data.id {
-            JoinGame::ID => println!("{} joined", client.info.username),
-            KeepAlive::ID => {
-                let KeepAlive { id } = data.read();
-
-                self.tx.write(serverbound::KeepAlive {
-                    id
-                });
-            }
-            UpdateHealth::ID => {
-                let UpdateHealth { health, .. } = data.read();
-                if health <= 0.0 {
-                    if client.alive {
-                        client.alive = false;
-                        self.tx.write(serverbound::ClientStatus {
-                            action: serverbound::ClientStatusAction::Respawn
-                        });
-                        self.tx.write(serverbound::ChatMessage::message("I'm respawning"));
-                    }
-                } else {
-                    client.alive = true;
-                }
-            }
-            ChunkColumnPacket::ID => {
-                let ChunkColumnPacket{ chunk_x, chunk_z, column } = data.read();
-                global.world_blocks.add_column(ChunkLocation(chunk_x, chunk_z), column)
-            }
-            PlayerPositionAndLook::ID => {
-                let PlayerPositionAndLook { location, rotation, teleport_id } = data.read();
-
-                // update the client's location
-                client.location.apply_change(location);
-
-                // "accept" the packet
-                self.tx.write(serverbound::TeleportConfirm {
-                    teleport_id
-                });
-            }
-            PlayDisconnect::ID => {
-                let PlayDisconnect { reason } = data.read();
-                println!("player disconnected ... {}", reason);
-                self.disconnected = true;
-            }
-            // ignore
-            ChatMessage::ID => {
-                let ChatMessage{ chat, position } = data.read();
-                client.process_chat(chat);
-            }
-            _ => {}
-        }
     }
 }

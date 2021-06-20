@@ -3,7 +3,6 @@ use std::rc::Rc;
 use tokio::sync::Notify;
 
 use crate::client::follow::Follower;
-use crate::client::instance::{ClientInfo, TravelProblem};
 use crate::client::pathfind::context::{Costs, MoveContext};
 use crate::client::pathfind::incremental::AStar;
 use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeuristic};
@@ -13,9 +12,12 @@ use crate::storage::block::BlockLocation;
 use crate::types::{Chat, Location, PlayerMessage, Command};
 use std::lazy::SyncLazy;
 use regex::Regex;
+use crate::protocol::ClientInfo;
+use crate::client::state::travel::TravelProblem;
 
 pub struct LocalState {
     pub ticks: usize,
+    pub disconnected: bool,
     pub inventory: Inventory,
     pub costs: Costs,
     pub info: ClientInfo,

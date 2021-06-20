@@ -9,48 +9,26 @@ use crate::client::pathfind::context::{GlobalContext, MoveContext};
 use crate::client::pathfind::incremental::{AStar, PathResult};
 use crate::client::pathfind::progress_checker::{GoalCheck, NoVehicleGoalCheck, NoVehicleHeuristic, NoVehicleProgressor};
 use crate::client::timing::Increment;
-use crate::protocol::McProtocol;
+use crate::protocol::{Minecraft, InterfaceOut, EventQueue};
 use crate::storage::block::BlockLocation;
 use crate::storage::world::WorldBlocks;
 use crate::types::Location;
 use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
+use crate::client::processor::InterfaceIn;
 
 
-#[derive(Debug)]
-pub struct ClientInfo {
-    pub username: String,
-    pub uuid: UUID,
-    pub entity_id: u32,
-}
-
-pub struct TravelPath {
-    blocks: Vec<BlockLocation>,
-}
-
-pub struct TravelProblem {
-    pub a_star: AStar<MoveContext>,
-    pub heuristic: NoVehicleHeuristic,
-    pub goal_checker: NoVehicleGoalCheck,
-    pub notifier: Rc<Notify>,
-}
-
-impl Drop for TravelProblem {
-    fn drop(&mut self) {
-        self.notifier.notify_one();
-    }
-}
-
-pub struct Client<T: McProtocol> {
+pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
-    pub protocol: T,
+    pub queue: Queue,
+    pub out: Out,
 }
 
 const fn ticks_from_secs(seconds: usize) -> usize {
     seconds * 20
 }
 
-impl<T: McProtocol> Client<T> {
+impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
         self.move_around();
         self.state.ticks += 1;
@@ -61,7 +39,7 @@ impl<T: McProtocol> Client<T> {
             return;
         }
         if let Some(mut follower) = self.state.follower.take() {
-            follower.follow(&mut self.state, &mut self.protocol);
+            follower.follow(&mut self.state, &mut self.out);
             self.state.follower = Some(follower);
         }
     }

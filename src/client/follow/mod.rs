@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 use crate::client::pathfind::context::MoveContext;
-use crate::protocol::McProtocol;
+use crate::protocol::{Minecraft, InterfaceOut};
 use crate::storage::block::BlockLocation;
 use crate::types::Location;
 use crate::client::state::local::LocalState;
@@ -20,7 +20,7 @@ impl Follower {
             })
         }
     }
-    pub fn follow(&mut self, state: &LocalState, protocol: &mut impl McProtocol){
+    pub fn follow(&mut self, state: &LocalState, out: &mut impl InterfaceOut){
         let next = self.xs.pop_front();
         let next = match next {
             None => return,
@@ -37,6 +37,6 @@ impl Follower {
             z: z_new as f64
         };
 
-        protocol.teleport(new_loc)
+        out.teleport(new_loc)
     }
 }

@@ -7,9 +7,9 @@ use rayon::Scope;
 use tokio::task::JoinHandle;
 
 use crate::bootstrap::Connection;
-use crate::client::instance::{Client, run_threaded};
+use crate::client::bot::{Bot, run_threaded};
 use crate::error::Error;
-use crate::protocol::{Login, McProtocol};
+use crate::protocol::{Login, Minecraft, EventQueue};
 use crate::storage::world::WorldBlocks;
 use crate::types::Location;
 use crate::client::pathfind::context::{GlobalContext, PathConfig, Costs};
@@ -18,27 +18,38 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::state::Dimension;
 use crate::client::state::inventory::Inventory;
+use crate::client::processor::SimpleInterfaceIn;
 
 
-pub struct Runner<T: McProtocol> {
-    pending_logins: Rc<RefCell<Vec<Login<T>>>>,
+/// Runs the game loop and holds all bots.
+pub struct Runner<T: Minecraft> {
+
+    /// logins that are about to be established
+    pending_logins: Rc<RefCell<Vec<Login<T::Queue, T::Interface>>>>,
+
+    /// the global state of the program containing chunks and global config
     global_state: GlobalState,
-    clients: Vec<Client<T>>,
+
+    /// the bots created by pending logins
+    bots: Vec<Bot<T::Queue, T::Interface>>,
 }
 
+/// Runner launch options
 pub struct RunnerOptions {
     pub delay_millis: u64,
 }
 
-impl<T: McProtocol + 'static> Runner<T> {
+impl<T: Minecraft + 'static> Runner<T> {
+
+    /// Start the runner process
     pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) {
         let blocks = WorldBlocks::default();
-        let mut runner = Runner::<T>::new(connections, opts).await;
+        let mut runner = Runner::<T>::init(connections, opts);
         runner.game_loop().await;
     }
 
 
-    async fn new(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
+    fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
         // let handles = Rc::new(RefCell::new(Vec::new()));
 
@@ -68,7 +79,7 @@ impl<T: McProtocol + 'static> Runner<T> {
         Runner {
             pending_logins,
             global_state: GlobalState::default(),
-            clients: Vec::new(),
+            bots: Vec::new(),
         }
     }
 
@@ -82,10 +93,10 @@ impl<T: McProtocol + 'static> Runner<T> {
     }
 
     fn game_iter(&mut self) {
-        let old_count = self.clients.len();
+        let old_count = self.bots.len();
         // first step: removing disconnected clients
         {
-            self.clients.retain(|client| !client.protocol.disconnected());
+            self.bots.retain(|client| !client.state.disconnected);
         }
 
         // second step: turning pending logins into clients
@@ -94,11 +105,12 @@ impl<T: McProtocol + 'static> Runner<T> {
 
             // TODO: why couldnt use iter
             for login in logins.drain(..) {
-                let Login { protocol, info } = login;
+                let Login { queue, out, info } = login;
 
-                let client = Client {
+                let client = Bot {
                     state: LocalState {
                         ticks: 0,
+                        disconnected: false,
                         inventory: Inventory {},
                         alive: true,
                         dimension: Dimension::Overworld,
@@ -114,30 +126,33 @@ impl<T: McProtocol + 'static> Runner<T> {
                             block_place: 1.0
                         }
                     },
-                    protocol,
+                    queue,
+                    out
                 };
-                self.clients.push(client);
+                self.bots.push(client);
             }
         }
 
 
-        let new_count = self.clients.len();
+        let new_count = self.bots.len();
 
         if new_count != old_count {
             println!("{} clients", new_count);
         }
 
         // third step: process packets from game loop
-        for client in &mut self.clients {
+        for bot in &mut self.bots {
             // protocol-specific logic
-            client.protocol.apply_packets(&mut client.state, &mut self.global_state);
 
-            // general sync logic that isnt dependent on protocol implementation
-            client.run_sync(&mut self.global_state);
+            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out);
+            bot.queue.flush(&mut processor);
+
+            // general sync logic that isn't dependent on protocol implementation
+            bot.run_sync(&mut self.global_state);
         }
 
         // fourth step: run threaded
-        for client in &mut self.clients {
+        for client in &mut self.bots {
             run_threaded(&mut client.state, &self.global_state);
         }
 
