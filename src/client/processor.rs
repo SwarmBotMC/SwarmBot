@@ -44,7 +44,6 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                             let y: i64 = b.parse().unwrap();
                             let z: i64 = c.parse().unwrap();
                             let dest = BlockLocation(x,y,z);
-                            self.out.send_chat(&format!("going to {:?}", dest));
                             self.local.travel_to_block(dest);
                         }
                     }

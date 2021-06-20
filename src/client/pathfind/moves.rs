@@ -119,7 +119,8 @@ impl Movements {
 
                 // we can only move if we couldn't move adjacent without changing elevation
                 if !can_move_adj_noplace[idx] {
-                    let can_jump = get_block!(x+dx,y+1,z+dz).unwrap() == Solid;
+                    let adj_above = get_block!(x+dx, y+2, z+dz).unwrap() == WalkThrough;
+                    let can_jump = adj_above && adj_legs[idx] == Solid && adj_head[idx] == WalkThrough;
                     if can_jump {
                         res.push(Neighbor {
                             value: wrap!(BlockLocation(x+dx,y+1,z+dz)),

@@ -35,7 +35,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 
     fn move_around(&mut self) {
-        if self.state.ticks % 3 != 0 {
+        if self.state.ticks % 5 != 0 {
             return;
         }
         if let Some(mut follower) = self.state.follower.take() {
@@ -59,6 +59,7 @@ pub fn run_threaded(client: &mut LocalState, global: &GlobalState) {
 
         if let Increment::Finished(res) = res {
             if let Some(res) = res {
+                println!("found goal of size {}", res.len());
                 client.follower = Follower::new(res);
             }
             // we are done finding the path
