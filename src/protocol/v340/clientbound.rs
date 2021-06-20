@@ -1,12 +1,13 @@
-use packets::types::{VarInt, UUIDHyphenated, BitField, UUID, Angle, Identifier, RawVec, Position, VarUInt};
-use packets::{Readable, Writable, Packet, EnumReadable};
-use packets::read::{ByteReadable, ByteReader};
-use crate::types::{LocationOrigin, DirectionOrigin, Location, ShortLoc, Direction, Chat};
 use std::cmp::max;
-use crate::storage::chunk::{Palette, ChunkColumn, ChunkData, LowMemoryChunkSection, HighMemoryChunkSection};
-use crate::storage::block::BlockState;
-use itertools::Itertools;
 
+use itertools::Itertools;
+use packets::{EnumReadable, Packet, Readable, Writable};
+use packets::read::{ByteReadable, ByteReader};
+use packets::types::{Angle, BitField, Identifier, Position, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
+
+use crate::storage::block::BlockState;
+use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, LowMemoryChunkSection, Palette};
+use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationOrigin, ShortLoc};
 
 #[derive(Packet, Readable)]
 #[packet(0x00, Login)]
@@ -43,8 +44,9 @@ pub struct JoinGame {
 #[derive(Packet, Readable)]
 #[packet(0x03, Login)]
 pub struct SetCompression {
-    pub threshold: VarInt
+    pub threshold: VarInt,
 }
+
 #[derive(Debug, Clone, Packet, Writable, Readable)]
 #[packet(0x01, Login)]
 pub struct EncryptionRequest {
@@ -56,8 +58,9 @@ pub struct EncryptionRequest {
 #[derive(Debug, Packet, Readable)]
 #[packet(0x02, Login)]
 pub struct LoginSuccess {
-    pub uuid: UUIDHyphenated, // 1.16 this is just a raw UUID, 1.12 hyphenated
-    pub username: String
+    pub uuid: UUIDHyphenated,
+    // 1.16 this is just a raw UUID, 1.12 hyphenated
+    pub username: String,
 }
 
 #[derive(Readable)]
@@ -95,7 +98,7 @@ pub struct EntityPosition {
 #[derive(Packet, Debug, Readable)]
 #[packet(0x36, Play)]
 pub struct DestroyEntities {
-    pub ids: Vec<VarInt>
+    pub ids: Vec<VarInt>,
 }
 
 #[derive(Packet, Debug, Readable)]
@@ -146,7 +149,7 @@ pub struct ChatMessage {
 #[packet(0x0b, Play)]
 pub struct BlockChange {
     pub location: Position,
-    pub block_id: VarInt
+    pub block_id: VarInt,
 }
 
 
@@ -169,7 +172,7 @@ pub struct KeepAlive {
 #[derive(Packet, Debug, Readable)]
 #[packet(0x1a, Play)]
 pub struct PlayDisconnect {
-    pub reason: String
+    pub reason: String,
 }
 
 #[derive(Packet)]
@@ -177,7 +180,7 @@ pub struct PlayDisconnect {
 pub struct ChunkColumnPacket {
     pub chunk_x: i32,
     pub chunk_z: i32,
-    pub column: ChunkColumn
+    pub column: ChunkColumn,
 }
 
 pub struct ChunkSection {
@@ -191,7 +194,7 @@ pub struct ChunkSection {
 impl ByteReadable for ChunkSection {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let bits_per_block: u8 = byte_reader.read();
-        let palette=if bits_per_block <= 8 {
+        let palette = if bits_per_block <= 8 {
             let bits_per_block = max(bits_per_block, 4);
             let block_state_ids: Vec<VarInt> = byte_reader.read();
             let block_state_ids = block_state_ids.into_iter().map(|id| BlockState(id.0 as u32)).collect_vec();
@@ -208,7 +211,7 @@ impl ByteReadable for ChunkSection {
         ChunkSection {
             palette,
             block_light,
-            sky_light: Some(sky_light)
+            sky_light: Some(sky_light),
         }
     }
 }
@@ -226,12 +229,12 @@ impl ByteReadable for ChunkColumnPacket {
 
         let mut idx = 0;
         while primary_bitmask != 0 {
-            if primary_bitmask == 1 {
+            if primary_bitmask & 0b1 == 1 {
                 let section: ChunkSection = byte_reader.read();
                 sections[idx] = Some(HighMemoryChunkSection::new(section.palette));
             }
-            primary_bitmask <<= 1;
-            idx+=1;
+            primary_bitmask >>= 1;
+            idx += 1;
         }
 
         let data = ChunkData {
@@ -245,7 +248,7 @@ impl ByteReadable for ChunkColumnPacket {
         ChunkColumnPacket {
             chunk_x,
             chunk_z,
-            column
+            column,
         }
     }
 }

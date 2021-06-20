@@ -130,8 +130,7 @@ impl Palette {
         match &self.id_to_state {
             None => BlockState(data),
             Some(map) => {
-                let value = map.get(data as usize).expect("internal chunk error getting block state");
-                value.clone()
+                *map.get(data as usize).expect("internal chunk error getting block state")
             }
         }
     }

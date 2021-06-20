@@ -7,6 +7,7 @@ use crate::protocol::InterfaceOut;
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::world::ChunkLocation;
 use crate::types::{Chat, Location};
+use crate::storage::block::BlockApprox;
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -35,8 +36,20 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
         if let Some(player_msg) = message.player_message() {
-            let message = format!("{} sent a message", player_msg.player);
-            self.out.send_chat(&message);
+            match player_msg.message {
+                "nearby" => {
+                    let mut below = self.local.block_location();
+                    below.1 -= 1;
+                    let below_block = self.global.world_blocks.get_block(below);
+                    if let Some(BlockApprox::Realized(below_block)) = below_block {
+                        let message = format!("below {:?} is {:?}", self.local.block_location(), below_block.id());
+                        self.out.send_chat(&message);
+                    }
+                }
+                msg => {
+
+                }
+            }
         }
     }
 
@@ -46,10 +59,11 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_move(&mut self, location: Location) {
+        self.local.location = location;
     }
 
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn) {
-
+        self.global.world_blocks.add_column(location, column);
     }
 
     fn on_disconnect(&mut self, reason: &str) {
