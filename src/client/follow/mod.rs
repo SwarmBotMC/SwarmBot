@@ -25,7 +25,7 @@ impl Follower {
         })
     }
     pub fn follow(&mut self, local: &mut LocalState, out: &mut impl InterfaceOut) {
-        let next = self.xs.front();
+        let next = self.xs.pop_front();
 
         let next = match next {
             None => return,
@@ -34,7 +34,7 @@ impl Follower {
 
         let current = local.location;
 
-        let Displacement { dx, dy, dz } = *next - current;
+        let Displacement { dx, dy, dz } = next - current;
 
         if dy > 0.0 {
             // we want to move vertically first (jump)
@@ -44,7 +44,7 @@ impl Follower {
             // no change in height
         }
 
-        let to_loc = *next;
+        let to_loc =next;
 
         out.teleport(to_loc);
         local.location = to_loc;
