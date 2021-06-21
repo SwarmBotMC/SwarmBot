@@ -152,9 +152,9 @@ impl<T: Minecraft + 'static> Runner<T> {
         }
 
         // fourth step: run threaded
-        for client in &mut self.bots {
-            run_threaded(&mut client.state, &self.global_state);
-        }
+        // for client in &mut self.bots {
+        //     run_threaded(&mut client.state, &self.global_state);
+        // }
 
 
         // {

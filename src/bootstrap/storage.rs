@@ -189,7 +189,7 @@ impl UserCache {
         println!("obtaining users");
         let mut proxies = proxies.into_iter().cycle();
 
-        let (tx, rx) = tokio::sync::mpsc::channel(1);
+        let (tx, rx) = tokio::sync::mpsc::channel(32);
 
         tokio::task::spawn_local(async move {
             let mut local_count = 0;
