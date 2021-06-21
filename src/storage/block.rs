@@ -1,19 +1,124 @@
+use std::collections::Bound;
 use std::fmt::{Display, Formatter};
+use std::iter::Step;
+use std::ops::{Range, RangeBounds};
+use crate::types::Location;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
 pub struct BlockState(pub u32);
 
 
-#[derive(Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default)]
 pub struct BlockLocation(pub i64, pub i64, pub i64);
+
+impl BlockLocation {
+    pub fn centered(&self) -> Location {
+        Location {
+            x: self.0 as f64 + 0.5,
+            y: self.1 as f64,
+            z: self.2 as f64 + 0.5
+        }
+    }
+}
+
+// trait IterDirection {
+//     type Item;
+//     type IntoIter: Iterator<Item=Self::Item>;
+//     fn iter_y(&self, pos: bool) -> Self::IntoIter;
+//     fn iter_x(&self, pos: bool) -> Self::IntoIter;
+//     fn iter_z(&self, pos: bool) -> Self::IntoIter;
+// }
+//
+// impl IterDirection for Range<BlockLocation> {
+//     type Item = BlockLocation;
+//     type IntoIter = ();
+//
+//     fn iter_y(&self, pos: bool) -> Self::IntoIter {
+//         todo!()
+//     }
+//
+//     fn iter_x(&self, pos: bool) -> Self::IntoIter {
+//         todo!()
+//     }
+//
+//     fn iter_z(&self, pos: bool) -> Self::IntoIter {
+//         todo!()
+//     }
+// }
+
+enum Priority {
+    X,
+    Y,
+    Z,
+}
+
+struct BlockIter {
+    from: BlockLocation,
+    to: BlockLocation,
+    idx: usize,
+    cross_section: usize,
+    d_second: usize,
+    dx: usize,
+    dy: usize,
+    dz: usize,
+    size: usize,
+    pos: bool,
+    priority: Priority,
+}
+
+// impl BlockIter {
+//     fn new(pos: bool, mut from: BlockLocation, mut to: BlockLocation, priority: Priority) -> BlockIter {
+//         let dx = to.0 - from.0 + 1;
+//         let dy = to.1 - from.1 + 1;
+//         let dz = to.2 - from.2 + 1;
+//     }
+// }
+
+impl Iterator for BlockIter {
+    type Item = BlockLocation;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut on = self.idx;
+        if on < self.size {
+            let first = (self.idx / self.cross_section) as i64;
+            let left_over = self.idx % self.cross_section;
+            let second = (left_over / self.d_second) as i64;
+            let third = (left_over % self.d_second) as i64;
+
+            let BlockLocation(x,y,z) = self.from;
+
+            let block_loc = match self.priority {
+                Priority::X => {
+                    BlockLocation(x + first,y + second,z + third)
+                }
+                Priority::Y => {
+                    BlockLocation(x+ third,y + first,z + second)
+                }
+                Priority::Z => {
+                    BlockLocation(x+ third,y + second,z + first)
+                }
+            };
+            on += 1;
+            Some(block_loc)
+        } else {
+            None
+        }
+    }
+}
+
+impl DoubleEndedIterator for BlockIter {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        todo!()
+    }
+}
 
 impl BlockLocation {
     pub(crate) fn dist2(&self, other: BlockLocation) -> i64 {
         let dx = self.0 - other.0;
         let dy = self.1 - other.1;
         let dz = self.2 - other.2;
-        dx*dx + dy*dy + dz*dz
+        dx * dx + dy * dy + dz * dz
     }
 
     pub(crate) fn dist(&self, other: BlockLocation) -> f64 {
@@ -30,7 +135,7 @@ impl Display for BlockLocation {
 #[derive(Copy, Clone, Debug)]
 pub enum BlockApprox {
     Realized(BlockState),
-    Estimate(SimpleType)
+    Estimate(SimpleType),
 }
 
 pub const AIR: BlockApprox = BlockApprox::Estimate(SimpleType::WalkThrough);
@@ -63,7 +168,6 @@ impl SimpleType {
             SimpleType::WalkThrough => 3
         }
     }
-
 }
 
 impl From<u8> for SimpleType {

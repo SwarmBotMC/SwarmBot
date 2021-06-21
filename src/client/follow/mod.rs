@@ -1,39 +1,52 @@
 use std::collections::VecDeque;
+
 use crate::client::pathfind::context::MoveContext;
-use crate::protocol::{InterfaceOut};
-use crate::storage::block::BlockLocation;
-use crate::types::Location;
 use crate::client::state::local::LocalState;
+use crate::protocol::InterfaceOut;
+use crate::types::{Displacement, Location};
 
 #[derive(Debug)]
 pub struct Follower {
-    head: MoveContext,
-    xs: VecDeque<MoveContext>
+    head: Location,
+    xs: VecDeque<Location>,
 }
+
 impl Follower {
     pub fn new(path: Vec<MoveContext>) -> Option<Follower> {
-        let mut xs = VecDeque::from(path);
-        xs.pop_front().map(|head| Follower {
-                head,
-                xs
-            })
+        let mut xs: VecDeque<_> = path.into_iter().map(|ctx| {
+            let loc = ctx.location;
+            Location::new(loc.0 as f64 + 0.5, loc.1 as f64, loc.2 as f64 + 0.5)
+        }).collect();
+
+        let head = xs.pop_front()?;
+        Some(Follower {
+            head,
+            xs,
+        })
     }
-    pub fn follow(&mut self, state: &mut LocalState, out: &mut impl InterfaceOut){
-        let next = self.xs.pop_front();
+    pub fn follow(&mut self, local: &mut LocalState, out: &mut impl InterfaceOut) {
+        let next = self.xs.front();
+
         let next = match next {
             None => return,
             Some(next) => next
         };
 
-        let BlockLocation(x_new,y_new,z_new) = next.location;
+        let current = local.location;
 
-        let new_loc = Location {
-            x: x_new as f64 + 0.5,
-            y: y_new as f64,
-            z: z_new as f64 + 0.5
-        };
+        let Displacement { dx, dy, dz } = *next - current;
 
-        out.teleport(new_loc);
-        state.location = new_loc;
+        if dy > 0.0 {
+            // we want to move vertically first (jump)
+        } else if dy < 0.0 {
+            // we want to move horizontally first
+        } else {
+            // no change in height
+        }
+
+        let to_loc = *next;
+
+        out.teleport(to_loc);
+        local.location = to_loc;
     }
 }

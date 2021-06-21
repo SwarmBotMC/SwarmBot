@@ -110,6 +110,24 @@ pub struct Location {
     pub z: f64,
 }
 
+impl Add<Displacement> for Location {
+    type Output = Location;
+
+    fn add(self, rhs: Displacement) -> Self::Output {
+        Location {
+            x: self.x + rhs.dx,
+            y: self.y + rhs.dy,
+            z: self.z + rhs.dz
+        }
+    }
+}
+
+impl Location {
+    pub fn new(x: f64, y: f64, z: f64) -> Location {
+        Location { x, y, z }
+    }
+}
+
 impl From<Location> for BlockLocation {
     fn from(location: Location) -> Self {
         let Location { x, y, z } = location;
@@ -122,9 +140,9 @@ impl Sub<Location> for Location {
 
     fn sub(self, rhs: Location) -> Self::Output {
         Displacement {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
+            dx: self.x - rhs.x,
+            dy: self.y - rhs.y,
+            dz: self.z - rhs.z,
         }
     }
 }
@@ -135,11 +153,17 @@ impl Display for Location {
     }
 }
 
-#[derive(Writable, Readable, Debug, Copy, Clone)]
+#[derive(Writable, Readable, Debug, Copy, Clone, Default)]
 pub struct Displacement {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    pub dx: f64,
+    pub dy: f64,
+    pub dz: f64,
+}
+
+impl Displacement {
+    pub fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
+        Displacement {dx,dy,dz}
+    }
 }
 
 impl AddAssign<Location> for Location {

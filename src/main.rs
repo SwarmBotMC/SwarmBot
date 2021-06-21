@@ -3,6 +3,7 @@
 #![feature(in_band_lifetimes)]
 #![feature(path_try_exists)]
 #![feature(once_cell)]
+#![feature(step_trait)]
 
 use std::fs::File;
 
