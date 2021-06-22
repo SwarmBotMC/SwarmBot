@@ -1,5 +1,5 @@
 use crate::storage::block::BlockLocation;
-use crate::storage::world::WorldBlocks;
+use crate::storage::blocks::WorldBlocks;
 use crate::types::Location;
 
 /// 0.6F, 1.95F

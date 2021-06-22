@@ -1,4 +1,4 @@
-use crate::storage::world::WorldBlocks;
+use crate::storage::blocks::WorldBlocks;
 use crate::storage::block::BlockLocation;
 
 #[derive(Clone)]

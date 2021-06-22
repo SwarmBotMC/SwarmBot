@@ -10,7 +10,7 @@ use crate::bootstrap::Connection;
 use crate::client::bot::{Bot, run_threaded};
 
 use crate::protocol::{Login, Minecraft, EventQueue};
-use crate::storage::world::WorldBlocks;
+use crate::storage::blocks::WorldBlocks;
 use crate::types::Location;
 use crate::client::pathfind::context::{Costs};
 use crate::storage::block::BlockLocation;
@@ -33,6 +33,8 @@ pub struct Runner<T: Minecraft> {
 
     /// the bots created by pending logins
     bots: Vec<Bot<T::Queue, T::Interface>>,
+
+    id_on: u32
 }
 
 /// Runner launch options
@@ -81,6 +83,7 @@ impl<T: Minecraft + 'static> Runner<T> {
             pending_logins,
             global_state: GlobalState::default(),
             bots: Vec::new(),
+            id_on: 0
         }
     }
 
@@ -111,6 +114,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let client = Bot {
                     state: LocalState {
                         ticks: 0,
+                        bot_id: self.id_on,
                         physics: Physics::default(),
                         disconnected: false,
                         inventory: Inventory {},
@@ -130,6 +134,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                     queue,
                     out
                 };
+                self.id_on += 1;
                 self.bots.push(client);
             }
         }

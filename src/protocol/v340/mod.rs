@@ -23,8 +23,8 @@ use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState};
-use crate::storage::world::ChunkLocation;
-use crate::types::{Location, PacketData};
+use crate::storage::blocks::ChunkLocation;
+use crate::types::{Location, PacketData, Direction};
 
 mod clientbound;
 mod serverbound;
@@ -71,6 +71,32 @@ impl EventQueue340 {
                 self.out.write(serverbound::KeepAlive {
                     id
                 });
+            }
+            entity::RelativeMove::ID => {
+                let entity::RelativeMove {entity_id, loc, ..} = data.read();
+                processor.on_entity_move(entity_id.into(), loc.into());
+            }
+            entity::LookAndRelativeMove::ID => {
+                let entity::LookAndRelativeMove {entity_id, loc, ..} = data.read();
+                processor.on_entity_move(entity_id.into(), loc.into());
+            }
+            entity::Destroy::ID => {
+                let entity::Destroy {ids} = data.read();
+                for id in ids {
+                    processor.on_entity_destroy(id.into());
+                }
+            }
+            entity::Teleport::ID => {
+                let entity::Teleport {entity_id,location, ..} = data.read();
+                processor.on_entity_move(entity_id.into(), location.into());
+            }
+            entity::LivingSpawn::ID => {
+                let entity::LivingSpawn {entity_id,location, ..} = data.read();
+                processor.on_entity_spawn(entity_id.into(), location);
+            }
+            entity::PlayerSpawn::ID => {
+                let entity::PlayerSpawn {entity_id,location, ..} = data.read();
+                processor.on_entity_spawn(entity_id.into(), location);
             }
             UpdateHealth::ID => {
                 let UpdateHealth { health, .. } = data.read();
@@ -147,6 +173,13 @@ impl InterfaceOut for Interface340 {
             location,
             on_ground: true,
         });
+    }
+
+    fn look(&mut self, direction: Direction) {
+        self.write(serverbound::PlayerLook {
+            direction,
+            on_ground: false
+        })
     }
 }
 

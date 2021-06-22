@@ -1,10 +1,12 @@
 use crate::client::pathfind::context::PathConfig;
-use crate::storage::world::WorldBlocks;
+use crate::storage::blocks::WorldBlocks;
+use crate::storage::entities::WorldEntities;
 
 
 #[derive(Default)]
 pub struct GlobalState {
     pub world_blocks: WorldBlocks,
+    pub world_entities: WorldEntities,
     pub ticks: usize,
     pub travel_config: PathConfig,
 }

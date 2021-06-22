@@ -1,3 +1,4 @@
 pub mod chunk;
-pub mod world;
+pub mod entities;
+pub mod blocks;
 pub mod block;

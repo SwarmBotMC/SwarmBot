@@ -293,6 +293,7 @@ pub struct LocationOrigin {
 }
 
 impl LocationOrigin {
+
     pub fn from(location: Location, x: bool, y: bool, z: bool) -> LocationOrigin {
         LocationOrigin {
             x: Origin::from(location.x, x),
@@ -328,7 +329,9 @@ pub struct Direction {
 }
 
 impl Direction {
-    pub fn from(dx: f32, dy: f32, dz: f32) -> Direction {
+    pub fn from(displacement: Displacement) -> Direction {
+        let Displacement {dx, dy, dz} = displacement;
+        let (dx, dy ,dz) = (dx as f32, dy as f32, dz as f32);
         let r = (dx * dx + dy * dy + dz * dz).sqrt();
         let mut yaw = -dx.atan2(dz) / PI * 180.0;
         if yaw < 0.0 {

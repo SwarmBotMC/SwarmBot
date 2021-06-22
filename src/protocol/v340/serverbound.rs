@@ -96,8 +96,8 @@ pub struct HeldItemChangeSb {
 // }
 
 #[derive(Writable, Packet)]
-#[packet(0x14, Play)]
-pub struct PlayerRotation {
+#[packet(0x0f, Play)]
+pub struct PlayerLook {
     pub(crate) direction: Direction,
     pub(crate) on_ground: bool,
 }

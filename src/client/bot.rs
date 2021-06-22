@@ -15,7 +15,8 @@ use crate::protocol::{InterfaceOut, EventQueue};
 
 use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
-
+use float_ord::FloatOrd;
+use crate::types::Direction;
 
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
@@ -35,7 +36,20 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
         self.state.physics.jump();
         self.state.physics.tick(&global.world_blocks);
 
+        let current_loc = self.state.physics.location();
+
+        let closest_entity = global.world_entities.iter().min_by_key(|(k,v)|{
+            FloatOrd(v.location.dist2(current_loc))
+        });
+
+        if let Some((_, entity)) = closest_entity {
+            let displacement = entity.location - current_loc;
+            let dir = Direction::from(displacement);
+            self.out.look(dir)
+        }
+
         self.out.teleport(self.state.physics.location());
+
         self.move_around();
         self.state.ticks += 1;
     }

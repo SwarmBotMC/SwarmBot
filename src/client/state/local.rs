@@ -17,6 +17,7 @@ use crate::client::state::Dimension;
 
 pub struct LocalState {
     pub ticks: usize,
+    pub bot_id: u32,
     pub physics: Physics,
     pub disconnected: bool,
     pub inventory: Inventory,

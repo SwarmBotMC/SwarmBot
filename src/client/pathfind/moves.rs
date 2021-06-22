@@ -2,7 +2,7 @@ use crate::client::pathfind::context::{GlobalContext, MoveContext};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
-use crate::storage::world::WorldBlocks;
+use crate::storage::blocks::WorldBlocks;
 
 enum MoveResult {
     Edge,

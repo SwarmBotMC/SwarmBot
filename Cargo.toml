@@ -73,6 +73,11 @@ bincode = "1.3"
 # chat parsing
 regex = "1.5"
 
+# efficient hashmap
+indexmap = {version = "1.6", features = ["std"]}
+
+float-ord = "0.3"
+
 # for regex among other things .. this is included in std now
 #once_cell = "1.8"
 

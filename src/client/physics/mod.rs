@@ -1,6 +1,6 @@
 use crate::client::physics::bounding_box::BoundingBox;
 use crate::storage::block::{BlockLocation, SimpleType};
-use crate::storage::world::WorldBlocks;
+use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
 
 mod bounding_box;
@@ -40,7 +40,7 @@ const VEL_MULT: f64 = 0.9800000190734863;
 #[derive(Default, Debug)]
 pub struct Physics {
     location: Location,
-    look: Direction,
+    pub look: Direction,
     velocity: Displacement,
     on_ground: bool,
 }
@@ -88,8 +88,11 @@ impl Physics {
                     self.on_ground = true;
                 }
                 // we are falling
-                Some(_) => {
+                Some(SimpleType::WalkThrough) => {
                     self.velocity.dy -= ACC_G;
+                }
+                Some(_) => {
+                    panic!("unsupported physics block")
                 }
                 // the chunk hasn't loaded, let's not apply physics
                 _ => {}
@@ -108,8 +111,5 @@ impl Physics {
     }
     pub fn on_ground(&self) -> bool {
         self.on_ground
-    }
-    pub fn look(&self) -> Direction {
-        self.look
     }
 }

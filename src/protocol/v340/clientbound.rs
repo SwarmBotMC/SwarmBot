@@ -71,55 +71,78 @@ pub struct PlayerPositionAndLookRaw {
     teleport_id: VarInt,
 }
 
-#[derive(Packet, Debug, Readable)]
-#[packet(0x02, Play)]
-pub struct SpawnLivingEntity {
-    pub entity_id: VarInt,
-    pub entity_uuid: UUID,
-    pub type_id: VarInt,
-    pub location: Location,
-    pub yaw: Angle,
-    pub pitch: Angle,
-    pub head_pitch: Angle,
-    pub velocity_x: i16,
-    pub velocity_y: i16,
-    pub velocity_z: i16,
-}
+pub mod entity {
+    use packets::types::{VarInt, Angle, UUID};
+    use packets::*;
+    use crate::types::{ShortLoc, Location};
 
 
-#[derive(Packet, Debug, Readable)]
-#[packet(0x27, Play)]
-pub struct EntityPosition {
-    pub entity_id: VarInt,
-    pub loc: ShortLoc,
-    pub on_ground: bool,
+    #[derive(Packet, Debug, Readable)]
+    #[packet(0x03, Play)]
+    pub struct LivingSpawn {
+        pub entity_id: VarInt,
+        pub entity_uuid: UUID,
+        pub type_id: VarInt,
+        pub location: Location,
+        pub yaw: Angle,
+        pub pitch: Angle,
+        pub head_pitch: Angle,
+        pub velocity_x: i16,
+        pub velocity_y: i16,
+        pub velocity_z: i16,
+    }
+
+    #[derive(Packet, Debug, Readable)]
+    #[packet(0x05, Play)]
+    pub struct PlayerSpawn {
+        pub entity_id: VarInt,
+        pub player_uuid: UUID,
+        pub location: Location,
+        pub yaw: Angle,
+        pub pitch: Angle,
+        // TODO metadata
+        // pub head_pitch: Angle,
+        // pub velocity_x: i16,
+        // pub velocity_y: i16,
+        // pub velocity_z: i16,
+    }
+
+    #[derive(Packet, Debug, Readable)]
+    #[packet(0x26, Play)]
+    pub struct RelativeMove {
+        pub entity_id: VarInt,
+        pub loc: ShortLoc,
+        pub on_ground: bool,
+    }
+
+    #[derive(Packet, Debug, Readable)]
+    #[packet(0x32, Play)]
+    pub struct Destroy {
+        pub ids: Vec<VarInt>,
+    }
+
+    #[derive(Packet, Debug, Readable)]
+    #[packet(0x27, Play)]
+    pub struct LookAndRelativeMove {
+        pub entity_id: VarInt,
+        pub loc: ShortLoc,
+        pub yaw: Angle,
+        pub pitch: Angle,
+        pub on_ground: bool,
+    }
+
+    #[derive(Packet, Debug, Readable)]
+    #[packet(0x4c, Play)]
+    pub struct Teleport {
+        pub entity_id: VarInt,
+        pub location: Location,
+        pub yaw: Angle,
+        pub pitch: Angle,
+        pub on_ground: bool,
+    }
+
 }
 
-#[derive(Packet, Debug, Readable)]
-#[packet(0x36, Play)]
-pub struct DestroyEntities {
-    pub ids: Vec<VarInt>,
-}
-
-#[derive(Packet, Debug, Readable)]
-#[packet(0x28, Play)]
-pub struct EntityPositionAndRot {
-    pub entity_id: VarInt,
-    pub loc: ShortLoc,
-    pub yaw: Angle,
-    pub pitch: Angle,
-    pub on_ground: bool,
-}
-
-#[derive(Packet, Debug, Readable)]
-#[packet(0x56, Play)]
-pub struct EntityTeleport {
-    pub entity_id: VarInt,
-    pub location: Location,
-    pub yaw: Angle,
-    pub pitch: Angle,
-    pub on_ground: bool,
-}
 
 #[derive(Packet, Debug)]
 #[packet(0x2f, Play)]

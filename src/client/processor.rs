@@ -3,8 +3,8 @@ use crate::client::state::local::LocalState;
 use crate::protocol::InterfaceOut;
 use crate::storage::block::{BlockLocation};
 use crate::storage::chunk::ChunkColumn;
-use crate::storage::world::ChunkLocation;
-use crate::types::{Chat, Location};
+use crate::storage::blocks::ChunkLocation;
+use crate::types::{Chat, Location, LocationOrigin};
 use crate::client::pathfind::progress_checker::{NoVehicleProgressor, Progressor, Progression};
 use crate::client::pathfind::context::{GlobalContext, MoveContext};
 
@@ -13,6 +13,9 @@ pub trait InterfaceIn {
     fn on_death(&mut self);
     fn on_move(&mut self, location: Location);
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn);
+    fn on_entity_move(&mut self, id: u32, location: LocationOrigin);
+    fn on_entity_destroy(&mut self, id: u32);
+    fn on_entity_spawn(&mut self, id: u32, location: Location);
     fn on_disconnect(&mut self, reason: &str);
     fn on_socket_close(&mut self);
 }
@@ -99,6 +102,18 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn) {
         self.global.world_blocks.add_column(location, column);
+    }
+
+    fn on_entity_move(&mut self, id: u32, location: LocationOrigin) {
+        self.global.world_entities.update_entity(id, self.local.bot_id, location);
+    }
+
+    fn on_entity_destroy(&mut self, id: u32) {
+        self.global.world_entities.remove_entity(id, self.local.bot_id);
+    }
+
+    fn on_entity_spawn(&mut self, id: u32, location: Location) {
+        self.global.world_entities.put_entity(id, self.local.bot_id, location);
     }
 
     fn on_disconnect(&mut self, _reason: &str) {

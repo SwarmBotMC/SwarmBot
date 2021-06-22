@@ -1,7 +1,7 @@
 use crate::bootstrap::Connection;
 
 use crate::error::Res;
-use crate::types::Location;
+use crate::types::{Location, Direction};
 
 
 use packets::types::UUID;
@@ -17,6 +17,7 @@ pub trait InterfaceOut {
     fn send_chat(&mut self, message: &str);
     fn respawn(&mut self);
     fn teleport(&mut self, location: Location);
+    fn look(&mut self, direction: Direction);
 }
 
 #[async_trait::async_trait]
