@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 
 # parsing arguments
-clap= "3.0.0-beta.2"
+clap= "3.0.0-beta"
 
 # reading from csv
 csv = "1.1"
@@ -23,26 +23,26 @@ tokio-socks = "0.5"
 tokio-stream = "0.1"
 
 # tokio
-tokio = { version = "1.5.0", features = ["full"] }
+tokio = { version = "1.7", features = ["full"] }
 
 # async trait
-async-trait = "0.1.50"
+async-trait = "0.1"
 
 # dns
-trust-dns-resolver = "0.20.3"
+trust-dns-resolver = "0.20"
 
 # encryption
-aes = "0.7.4"
-cfb8 = "0.7.1"
+aes = "0.7"
+cfb8 = "0.7"
 
 # zlib
 flate2 = "1.0"
 
 # get_u8, etc extensions
-bytes = "1.0.1"
+bytes = "1.0"
 
 # threads
-rayon = "1.5.1"
+rayon = "1.5"
 
 # mojang https api
 reqwest = { version = "0.11", features = ["json", "socks"] }
@@ -52,7 +52,7 @@ rsa-der = "0.2"
 rsa = "0.4"
 
 # used for RSA and random generation
-rand = "0.8.3"
+rand = "0.8"
 
 # mojang hash
 num-bigint = "0.4"
@@ -64,7 +64,7 @@ sha1 = "0.6"
 serde_json = "1.0"
 
 # quite a few uses
-itertools = "0.10.1"
+itertools = "0.10"
 
 # for data storage
 #flexbuffers = "2.0"
@@ -82,5 +82,6 @@ packets = { path = "packets" } # from a path in the local filesystem
 
 
 [profile.release]
+debug = true
 #lto = "fat"
 #codegen-units = 1

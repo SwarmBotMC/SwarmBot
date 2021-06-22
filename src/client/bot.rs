@@ -61,6 +61,8 @@ pub fn run_threaded(client: &mut LocalState, global: &GlobalState) {
             if let Some(res) = res {
                 println!("found goal of size {}", res.len());
                 client.follower = Follower::new(res);
+            } else {
+                println!("could not find goal");
             }
             // we are done finding the path
             client.travel_problem = None;

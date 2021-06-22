@@ -62,7 +62,6 @@ impl LocalState {
 
 
         self.travel_problem = Some(problem);
-
         // notifier.notified().await;
     }
 }
