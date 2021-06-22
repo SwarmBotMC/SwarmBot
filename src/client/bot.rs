@@ -1,23 +1,15 @@
-
 use std::time::Duration;
 
-
-
+use float_ord::FloatOrd;
 
 use crate::client::follow::Follower;
-use crate::client::pathfind::context::{GlobalContext};
-
-use crate::client::pathfind::progress_checker::{NoVehicleProgressor};
-use crate::client::timing::Increment;
-use crate::protocol::{InterfaceOut, EventQueue};
-
-
-
-use crate::client::state::local::LocalState;
+use crate::client::pathfind::context::GlobalContext;
+use crate::client::pathfind::progress_checker::NoVehicleProgressor;
 use crate::client::state::global::GlobalState;
-use float_ord::FloatOrd;
+use crate::client::state::local::LocalState;
+use crate::client::timing::Increment;
+use crate::protocol::{EventQueue, InterfaceOut};
 use crate::types::Direction;
-
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
@@ -38,14 +30,19 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
         let current_loc = self.state.physics.location();
 
-        let closest_entity = global.world_entities.iter().min_by_key(|(k,v)|{
-            FloatOrd(v.location.dist2(current_loc))
-        });
+        let closest_entity = global.world_entities.iter()
+            // don't look at self
+            .filter(|(k, _)| **k != self.state.info.entity_id)
+            .min_by_key(|(_, v)| {
+                FloatOrd(v.location.dist2(current_loc))
+            });
 
         if let Some((_, entity)) = closest_entity {
             let displacement = entity.location - current_loc;
-            let dir = Direction::from(displacement);
-            self.out.look(dir)
+            if displacement.has_length() {
+                let dir = Direction::from(displacement);
+                self.out.look(dir)
+            }
         }
 
         self.out.teleport(self.state.physics.location());

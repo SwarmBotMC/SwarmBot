@@ -103,7 +103,7 @@ impl ByteReadable for Chat {
     }
 }
 
-#[derive(Writable, Readable, Debug, Copy, Clone, Default)]
+#[derive(Writable, Readable, Debug, Copy, Clone, Default, PartialEq)]
 pub struct Location {
     pub x: f64,
     pub y: f64,
@@ -163,6 +163,9 @@ pub struct Displacement {
 impl Displacement {
     pub fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement {dx,dy,dz}
+    }
+    pub fn has_length(&self) -> bool {
+        return self.dx != 0.0 || self.dy != 0.0 || self.dz != 0.0
     }
 }
 
