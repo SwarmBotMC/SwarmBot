@@ -2,21 +2,22 @@ use std::rc::Rc;
 
 use tokio::sync::Notify;
 
-use crate::client::follow::Follower;
-use crate::client::pathfind::context::{Costs, MoveContext};
+use crate::client::pathfind::context::{MoveContext, Costs};
 use crate::client::pathfind::incremental::AStar;
 use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeuristic};
-use crate::client::state::Dimension;
-use crate::client::state::inventory::Inventory;
 use crate::storage::block::BlockLocation;
-use crate::types::{Location};
 
 
-use crate::protocol::ClientInfo;
 use crate::client::state::travel::TravelProblem;
+use crate::client::physics::Physics;
+use crate::client::state::inventory::Inventory;
+use crate::protocol::ClientInfo;
+use crate::client::follow::Follower;
+use crate::client::state::Dimension;
 
 pub struct LocalState {
     pub ticks: usize,
+    pub physics: Physics,
     pub disconnected: bool,
     pub inventory: Inventory,
     pub costs: Costs,
@@ -26,13 +27,12 @@ pub struct LocalState {
     pub dimension: Dimension,
     pub follower: Option<Follower>,
     pub travel_problem: Option<TravelProblem>,
-    pub location: Location,
 }
 
 impl LocalState {
 
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
-        let from = self.location.into();
+        let from = self.physics.location().into();
 
 
         // https://github.com/tokio-rs/tokio/releases/tag/tokio-0.2.12

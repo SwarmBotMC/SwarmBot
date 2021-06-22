@@ -48,8 +48,8 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                         }
                     }
                     "loc" => {
-                        let block_loc: BlockLocation = self.local.location.into();
-                        self.out.send_chat(&format!("my location is {}. My block loc is {}", self.local.location, block_loc));
+                        let block_loc: BlockLocation = self.local.physics.location().into();
+                        self.out.send_chat(&format!("my location is {}. My block loc is {}", self.local.physics.location(), block_loc));
                     }
                     "progressions" => {
 
@@ -59,7 +59,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                         };
                         let prog = NoVehicleProgressor::new(ctx);
                         let loc = MoveContext {
-                            location: self.local.location.into(),
+                            location: self.local.physics.location().into(),
                             blocks_can_place: 30
                         };
                         let progressions = prog.progressions(&loc);
@@ -94,7 +94,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_move(&mut self, location: Location) {
-        self.local.location = location;
+        self.local.physics.teleport(location);
     }
 
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn) {

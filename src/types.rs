@@ -317,7 +317,7 @@ impl DirectionOrigin {
     }
 }
 
-#[derive(Readable, Writable)]
+#[derive(Readable, Writable, Copy, Clone, Default, Debug)]
 pub struct Direction {
     /// wiki.vg:
     ///yaw is measured in degrees, and does not follow classical trigonometry rules.

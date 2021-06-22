@@ -29,7 +29,13 @@ const fn ticks_from_secs(seconds: usize) -> usize {
 }
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
-    pub fn run_sync(&mut self, _global: &mut GlobalState) {
+    pub fn run_sync(&mut self, global: &mut GlobalState) {
+
+        // always jump
+        self.state.physics.jump();
+        self.state.physics.tick(&global.world_blocks);
+
+        self.out.teleport(self.state.physics.location());
         self.move_around();
         self.state.ticks += 1;
     }

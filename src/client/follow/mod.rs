@@ -32,7 +32,7 @@ impl Follower {
             Some(next) => next
         };
 
-        let current = local.location;
+        let current = local.physics.location();
 
         let Displacement { dx, dy, dz } = next - current;
 
@@ -47,6 +47,6 @@ impl Follower {
         let to_loc =next;
 
         out.teleport(to_loc);
-        local.location = to_loc;
+        local.physics.teleport(to_loc);
     }
 }

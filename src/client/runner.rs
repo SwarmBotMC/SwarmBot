@@ -19,6 +19,7 @@ use crate::client::state::local::LocalState;
 use crate::client::state::Dimension;
 use crate::client::state::inventory::Inventory;
 use crate::client::processor::SimpleInterfaceIn;
+use crate::client::physics::Physics;
 
 
 /// Runs the game loop and holds all bots.
@@ -110,13 +111,13 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let client = Bot {
                     state: LocalState {
                         ticks: 0,
+                        physics: Physics::default(),
                         disconnected: false,
                         inventory: Inventory {},
                         alive: true,
                         dimension: Dimension::Overworld,
                         follower: None,
                         info,
-                        location: Location::default(),
                         destination: BlockLocation(119, 72, 226),
                         travel_problem: None,
                         costs: Costs {
