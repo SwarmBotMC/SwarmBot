@@ -18,9 +18,9 @@ use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState};
-use crate::storage::block::{AIR, BlockState};
+use crate::storage::block::{BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Direction, Location, PacketData};
+use crate::types::{Direction, Location, PacketData, Dimension};
 
 mod clientbound;
 mod serverbound;
@@ -29,7 +29,7 @@ pub struct EventQueue340 {
     rx: std::sync::mpsc::Receiver<PacketData>,
     out: Interface340,
     location: Location,
-
+    dimension: Dimension,
     /// we need to store state because sometimes death packets occur twice and we only want to send one event
     alive: bool,
 }
@@ -59,7 +59,9 @@ impl EventQueue340 {
     fn process_packet(&mut self, mut data: PacketData, processor: &mut impl InterfaceIn) {
         use clientbound::*;
         match data.id {
-            JoinGame::ID => {}
+            JoinGame::ID => {
+                // don't have to do anything here... already processed in Minecraft::login
+            }
             BlockChange::ID => {
                 let BlockChange { block_id, location } = data.read();
                 processor.on_block_change(location.into(), BlockState(block_id.0 as u32));
@@ -114,8 +116,13 @@ impl EventQueue340 {
                     self.alive = false;
                 }
             }
-            ChunkColumnPacket::ID => {
-                let ChunkColumnPacket { chunk_x, chunk_z, column } = data.read();
+            Respawn::ID => {
+                let Respawn{dimension, ..} = data.read();
+                self.dimension = dimension;
+            }
+            clientbound::CHUNK_PKT_ID => {
+                let overworld = self.dimension == Dimension::Overworld;
+                let ChunkColumnPacket { chunk_x, chunk_z, column } = data.reader.read_like(&overworld);
                 processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column);
             }
             PlayerPositionAndLook::ID => {
@@ -292,7 +299,7 @@ impl Minecraft for Protocol {
                     if let Some(os_tx) = oneshot.take() {
                         let mut packet = packet.clone();
                         let processed: JoinGame = packet.read();
-                        os_tx.send(processed.entity_id).unwrap();
+                        os_tx.send((processed.entity_id, processed.dimension)).unwrap();
                     }
                 }
                 match tx.send(packet) {
@@ -307,7 +314,7 @@ impl Minecraft for Protocol {
 
         let tx = writer.into_channel();
 
-        let entity_id = match os_rx.await {
+        let (entity_id, dimension) = match os_rx.await {
             Ok(inner) => inner,
             Err(_err) => {
                 return Err(crate::error::err("disconnected before join game packet"));
@@ -318,6 +325,7 @@ impl Minecraft for Protocol {
 
         let queue = EventQueue340 {
             rx,
+            dimension,
             out: out.clone(),
             location: Default::default(),
             alive: true,

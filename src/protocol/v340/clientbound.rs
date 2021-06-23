@@ -2,12 +2,12 @@ use std::cmp::max;
 
 use itertools::Itertools;
 use packets::{EnumReadable, Packet, Readable, Writable};
-use packets::read::{ByteReadable, ByteReader};
+use packets::read::{ByteReadable, ByteReader, ByteReadableLike};
 use packets::types::{BitField, Identifier, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
 
 use crate::storage::block::{BlockState, BlockLocation};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
-use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin, Position};
+use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin, Position, Dimension};
 
 #[derive(Packet, Readable)]
 #[packet(0x00, Login)]
@@ -16,7 +16,7 @@ pub struct Disconnect {
 }
 
 
-#[derive(EnumReadable, Debug)]
+#[derive(Debug)]
 pub enum GameMode {
     Survival,
     Creative,
@@ -24,21 +24,39 @@ pub enum GameMode {
     Spectator,
 }
 
+impl ByteReadable for GameMode {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        use GameMode::*;
+        let val: u8 = byte_reader.read();
+        match val {
+            0 => Survival,
+            1 => Creative,
+            2 => Adventure,
+            3 => Spectator,
+            val => panic!("gamemode {} is not valid", val)
+        }
+    }
+}
+
 #[derive(Packet, Debug, Readable)]
 #[packet(0x23, Play)]
 pub struct JoinGame {
     pub entity_id: u32,
-    pub is_hardcore: bool,
     pub game_mode: GameMode,
-    // pub previous_game_mode: GameMode,
-    // pub world_names: Vec<String>,
-    // pub dimension_codec: String,
-    // TODO: add rest of data
-    // pub entity_id: Int,
-    // pub entity_id: Int,
-    // pub entity_id: Int,
-    // pub entity_id: Int,
-    // pub entity_id: Int,
+    pub dimension: Dimension,
+    pub difficulty: u8,
+    pub max_players: u8,
+    pub level_type: String,
+    pub reduced_debug_info: bool,
+}
+
+#[derive(Packet, Debug, Readable)]
+#[packet(0x35, Play)]
+pub struct Respawn {
+    pub dimension: Dimension,
+    pub difficulty: u8,
+    pub gamemode: GameMode,
+    pub level_type: String
 }
 
 #[derive(Packet, Readable)]
@@ -239,8 +257,11 @@ pub struct PlayDisconnect {
     pub reason: String,
 }
 
-#[derive(Packet)]
-#[packet(0x20, Play)]
+// #[derive(Packet)]
+// #[packet(0x20, Play)]
+
+pub const CHUNK_PKT_ID: u32 = 0x20;
+
 pub struct ChunkColumnPacket {
     pub chunk_x: i32,
     pub chunk_z: i32,
@@ -258,33 +279,39 @@ pub struct ChunkSection {
     sky_light: Option<[u8; 2048]>,
 }
 
-impl ByteReadable for ChunkSection {
-    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        let bits_per_block: u8 = byte_reader.read();
-        let palette = if bits_per_block <= 8 {
-            let bits_per_block = max(bits_per_block, 4);
-            let block_state_ids: Vec<VarInt> = byte_reader.read();
-            let block_state_ids = block_state_ids.into_iter().map(|id| BlockState(id.0 as u32)).collect_vec();
-            let storage: Vec<u64> = byte_reader.read();
-            Palette::indirect(bits_per_block, block_state_ids, storage)
-        } else {
-            let VarInt(_place_holder) = byte_reader.read();
-            let storage: Vec<u64> = byte_reader.read();
-            Palette::direct(storage)
-        };
+impl ByteReadableLike for ChunkSection {
+    type Param = bool;
 
-        let block_light = byte_reader.read();
-        let sky_light = byte_reader.read();
-        ChunkSection {
-            palette,
-            block_light,
-            sky_light: Some(sky_light),
-        }
+    fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
+            let bits_per_block: u8 = byte_reader.read();
+            let palette = if bits_per_block <= 8 {
+                let bits_per_block = max(bits_per_block, 4);
+                let block_state_ids: Vec<VarInt> = byte_reader.read();
+                let block_state_ids = block_state_ids.into_iter().map(|id| BlockState(id.0 as u32)).collect_vec();
+                let storage: Vec<u64> = byte_reader.read();
+                Palette::indirect(bits_per_block, block_state_ids, storage)
+            } else {
+                let VarInt(_place_holder) = byte_reader.read();
+                let storage: Vec<u64> = byte_reader.read();
+                Palette::direct(storage)
+            };
+
+            let block_light = byte_reader.read();
+            let sky_light = param.then(||byte_reader.read());
+            ChunkSection {
+                palette,
+                block_light,
+                sky_light,
+            }
     }
+    // fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+    // }
 }
 
-impl ByteReadable for ChunkColumnPacket {
-    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+impl ByteReadableLike for ChunkColumnPacket {
+    type Param = bool;
+
+    fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
         let chunk_x = byte_reader.read();
         let chunk_z = byte_reader.read();
         let _ground_up_continuous: bool = byte_reader.read();
@@ -297,7 +324,7 @@ impl ByteReadable for ChunkColumnPacket {
         let mut idx = 0;
         while primary_bitmask != 0 {
             if primary_bitmask & 0b1 == 1 {
-                let section: ChunkSection = byte_reader.read();
+                let section: ChunkSection = byte_reader.read_like(param);
                 sections[idx] = Some(HighMemoryChunkSection::new(section.palette));
             }
             primary_bitmask >>= 1;

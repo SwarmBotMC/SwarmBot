@@ -11,15 +11,14 @@ use crate::client::bot::{Bot, run_threaded};
 
 use crate::protocol::{Login, Minecraft, EventQueue};
 use crate::storage::blocks::WorldBlocks;
-use crate::types::Location;
 use crate::client::pathfind::context::{Costs};
 use crate::storage::block::BlockLocation;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::state::Dimension;
 use crate::client::state::inventory::Inventory;
 use crate::client::processor::SimpleInterfaceIn;
 use crate::client::physics::Physics;
+use crate::types::Dimension;
 
 
 /// Runs the game loop and holds all bots.

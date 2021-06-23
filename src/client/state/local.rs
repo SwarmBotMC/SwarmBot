@@ -13,7 +13,7 @@ use crate::client::physics::Physics;
 use crate::client::state::inventory::Inventory;
 use crate::protocol::ClientInfo;
 use crate::client::follow::Follower;
-use crate::client::state::Dimension;
+use crate::types::Dimension;
 
 pub struct LocalState {
     pub ticks: usize,

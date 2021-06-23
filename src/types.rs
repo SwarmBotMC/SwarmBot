@@ -182,7 +182,7 @@ impl Displacement {
     pub fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement { dx, dy, dz }
     }
-    
+
     pub fn mag2(&self) -> f64 {
         let Displacement{dx,dy,dz} = *self;
         dx*dx + dy*dy + dz*dz
@@ -412,6 +412,24 @@ impl Direction {
         Direction {
             yaw,
             pitch,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Dimension {
+    Nether, Overworld, End
+}
+
+impl ByteReadable for Dimension {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        use Dimension::*;
+        let val: i32 = byte_reader.read();
+        match val {
+            -1 => Nether,
+            0 => Overworld,
+            1 => End,
+            val => panic!("dimension {} is not valid", val)
         }
     }
 }
