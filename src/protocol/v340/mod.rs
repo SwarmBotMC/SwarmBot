@@ -1,20 +1,15 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::mpsc::{TryRecvError};
+use std::sync::mpsc::TryRecvError;
 
 use packets::types::{PacketState, UUID, VarInt};
 use packets::types::Packet;
 use packets::write::ByteWritable;
 
-
-
-
 use crate::bootstrap::{Address, Connection};
-use crate::bootstrap::mojang::{calc_hash};
+use crate::bootstrap::mojang::calc_hash;
 use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
-
-
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
 use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Minecraft};
@@ -23,9 +18,9 @@ use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState};
+use crate::storage::block::{AIR, BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Location, PacketData, Direction};
-use crate::storage::block::BlockState;
+use crate::types::{Direction, Location, PacketData};
 
 mod clientbound;
 mod serverbound;
@@ -66,8 +61,15 @@ impl EventQueue340 {
         match data.id {
             JoinGame::ID => {}
             BlockChange::ID => {
-                let BlockChange {block_id, location} = data.read();
+                let BlockChange { block_id, location } = data.read();
                 processor.on_block_change(location.into(), BlockState(block_id.0 as u32));
+            }
+            Explosion::ID => {
+                let Explosion { records, .. } = data.read();
+
+                for record in records {
+                    processor.on_block_change(record, BlockState::AIR);
+                }
             }
             KeepAlive::ID => {
                 // auto keep alive
@@ -78,37 +80,36 @@ impl EventQueue340 {
                 });
             }
             entity::RelativeMove::ID => {
-                let entity::RelativeMove {entity_id, loc, ..} = data.read();
+                let entity::RelativeMove { entity_id, loc, .. } = data.read();
                 processor.on_entity_move(entity_id.into(), loc.into());
             }
             entity::LookAndRelativeMove::ID => {
-                let entity::LookAndRelativeMove {entity_id, loc, ..} = data.read();
+                let entity::LookAndRelativeMove { entity_id, loc, .. } = data.read();
                 processor.on_entity_move(entity_id.into(), loc.into());
             }
             entity::Destroy::ID => {
-                let entity::Destroy {ids} = data.read();
+                let entity::Destroy { ids } = data.read();
                 for id in ids {
                     processor.on_entity_destroy(id.into());
                 }
             }
             entity::Teleport::ID => {
-                let entity::Teleport {entity_id,location, ..} = data.read();
+                let entity::Teleport { entity_id, location, .. } = data.read();
                 processor.on_entity_move(entity_id.into(), location.into());
             }
             entity::LivingSpawn::ID => {
-                let entity::LivingSpawn {entity_id,location, ..} = data.read();
+                let entity::LivingSpawn { entity_id, location, .. } = data.read();
                 processor.on_entity_spawn(entity_id.into(), location);
             }
             entity::PlayerSpawn::ID => {
-                let entity::PlayerSpawn {entity_id,location, ..} = data.read();
+                let entity::PlayerSpawn { entity_id, location, .. } = data.read();
                 processor.on_entity_spawn(entity_id.into(), location);
             }
             UpdateHealth::ID => {
                 let UpdateHealth { health, .. } = data.read();
                 if health > 0.0 {
                     self.alive = true;
-                }
-                else if self.alive {
+                } else if self.alive {
                     processor.on_death();
                     self.alive = false;
                 }
@@ -183,7 +184,7 @@ impl InterfaceOut for Interface340 {
     fn look(&mut self, direction: Direction) {
         self.write(serverbound::PlayerLook {
             direction,
-            on_ground: false
+            on_ground: false,
         })
     }
 }

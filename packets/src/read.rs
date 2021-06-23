@@ -102,6 +102,12 @@ impl ByteReadable for f32 {
     }
 }
 
+impl ByteReadable for i8 {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        byte_reader.bytes.get_i8()
+    }
+}
+
 
 impl ByteReadable for u64 {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {

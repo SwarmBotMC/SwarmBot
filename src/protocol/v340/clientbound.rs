@@ -5,9 +5,9 @@ use packets::{EnumReadable, Packet, Readable, Writable};
 use packets::read::{ByteReadable, ByteReader};
 use packets::types::{BitField, Identifier, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
 
-use crate::storage::block::BlockState;
+use crate::storage::block::{BlockState, BlockLocation};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
-use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationOrigin, Position};
+use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin, Position};
 
 #[derive(Packet, Readable)]
 #[packet(0x00, Login)]
@@ -72,10 +72,10 @@ pub struct PlayerPositionAndLookRaw {
 }
 
 pub mod entity {
-    use packets::types::{VarInt, Angle, UUID};
     use packets::*;
-    use crate::types::{ShortLoc, Location};
+    use packets::types::{Angle, UUID, VarInt};
 
+    use crate::types::{Location, ShortLoc};
 
     #[derive(Packet, Debug, Readable)]
     #[packet(0x03, Play)]
@@ -140,7 +140,6 @@ pub mod entity {
         pub pitch: Angle,
         pub on_ground: bool,
     }
-
 }
 
 
@@ -167,6 +166,48 @@ pub struct ChatMessage {
     pub position: u8,
 }
 
+#[derive(Readable, Debug)]
+pub struct Offset {
+    pub x: i8,
+    pub y: i8,
+    pub z: i8,
+}
+
+#[derive(Packet, Debug)]
+#[packet(0x1c, Play)]
+pub struct Explosion {
+    pub location: Location,
+    pub radius: f32,
+    pub records: Vec<BlockLocation>,
+    // TOOD: velocity
+}
+
+impl ByteReadable for Explosion {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let location: LocationFloat = byte_reader.read();
+        let radius = byte_reader.read();
+        let records = {
+            let record_size: i32 = byte_reader.read();
+            let record_size = record_size as usize;
+            let records: RawVec<Offset> = byte_reader.read_like(&record_size);
+            records.0
+        };
+
+
+        let origin_block = BlockLocation(location.x as i64, location.y as i64, location.z as i64);
+        let location: Location = location.into();
+        let records = records.into_iter().map(|record| BlockLocation(
+            origin_block.0 + record.x as i64,
+            origin_block.1 + record.y as i64,
+            origin_block.2 + record.z as i64,
+        )).collect();
+        Self {
+            location,
+            radius,
+            records
+        }
+    }
+}
 
 #[derive(Packet, Debug, Readable)]
 #[packet(0x0b, Play)]

@@ -110,6 +110,23 @@ pub struct Location {
     pub z: f64,
 }
 
+#[derive(Writable, Readable, Debug, Copy, Clone, Default, PartialEq)]
+pub struct LocationFloat {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+impl From<LocationFloat> for Location {
+    fn from(loc: LocationFloat) -> Self {
+        Self {
+            x: loc.x as f64,
+            y: loc.y as f64,
+            z: loc.z as f64
+        }
+    }
+}
+
 impl Add<Displacement> for Location {
     type Output = Location;
 

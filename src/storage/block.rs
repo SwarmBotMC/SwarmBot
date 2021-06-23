@@ -5,6 +5,10 @@ use crate::types::Location;
 #[repr(transparent)]
 pub struct BlockState(pub u32);
 
+impl BlockState {
+    pub const AIR: BlockState = BlockState(0);
+}
+
 
 #[derive(Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default)]
 pub struct BlockLocation(pub i64, pub i64, pub i64);
