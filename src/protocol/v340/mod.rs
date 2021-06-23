@@ -25,6 +25,7 @@ use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Location, PacketData, Direction};
+use crate::storage::block::BlockState;
 
 mod clientbound;
 mod serverbound;
@@ -64,6 +65,10 @@ impl EventQueue340 {
         use clientbound::*;
         match data.id {
             JoinGame::ID => {}
+            BlockChange::ID => {
+                let BlockChange {block_id, location} = data.read();
+                processor.on_block_change(location.into(), BlockState(block_id.0 as u32));
+            }
             KeepAlive::ID => {
                 // auto keep alive
                 let KeepAlive { id } = data.read();

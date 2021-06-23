@@ -199,46 +199,6 @@ impl From<u32> for VarInt {
 
 // pub type NBT = nbt::Blob;
 
-
-/// total of 8 bytes
-/// [See](https://wiki.vg/index.php?title=Protocol&oldid=14204#Position)
-#[derive(Copy, Clone, Debug)]
-pub struct Position {
-    pub x: i32,
-    pub y: i16,
-    pub z: i32,
-}
-
-
-// TODO: is this right
-impl ByteReadable for Position {
-    ///
-    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        let val: u64 = byte_reader.read();
-
-
-        let mut x = (val >> 38) as i32;
-        let mut y = ((val >> 26) & 0xFFF) as i16;
-        let mut z = (val << 38 >> 38) as i32;
-
-        const LAT_LON_THRESHOLD: i32 = 1 << 25;
-        const LAT_LON_SUB: i32 = 1 << 26;
-
-        const Y_THRESH: i16 = 1 << 11;
-        const Y_SUB: i16 = 1 << 12;
-
-        if x >= LAT_LON_THRESHOLD { x -= LAT_LON_SUB }
-        if y >= Y_THRESH { y -= Y_SUB }
-        if z >= LAT_LON_THRESHOLD { z -= LAT_LON_SUB }
-
-        Position {
-            x,
-            y,
-            z,
-        }
-    }
-}
-
 impl ByteWritable for VarInt {
     fn write_to_bytes(self, writer: &mut ByteWriter) {
         const PART: u32 = 0x7F;

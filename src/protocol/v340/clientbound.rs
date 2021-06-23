@@ -3,11 +3,11 @@ use std::cmp::max;
 use itertools::Itertools;
 use packets::{EnumReadable, Packet, Readable, Writable};
 use packets::read::{ByteReadable, ByteReader};
-use packets::types::{Angle, BitField, Identifier, Position, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
+use packets::types::{BitField, Identifier, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
 
 use crate::storage::block::BlockState;
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
-use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationOrigin, ShortLoc};
+use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationOrigin, Position};
 
 #[derive(Packet, Readable)]
 #[packet(0x00, Login)]

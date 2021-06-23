@@ -4,6 +4,7 @@
 #![feature(path_try_exists)]
 #![feature(once_cell)]
 #![feature(step_trait)]
+#![feature(option_get_or_insert_default)]
 
 use std::fs::File;
 

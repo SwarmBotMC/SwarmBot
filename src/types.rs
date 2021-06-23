@@ -165,7 +165,7 @@ impl Displacement {
         Displacement {dx,dy,dz}
     }
     pub fn has_length(&self) -> bool {
-        return self.dx != 0.0 || self.dy != 0.0 || self.dz != 0.0
+        self.dx != 0.0 || self.dy != 0.0 || self.dz != 0.0
     }
 }
 
@@ -344,6 +344,52 @@ impl Direction {
         Direction {
             yaw,
             pitch,
+        }
+    }
+}
+
+
+/// total of 8 bytes
+/// [See](https://wiki.vg/index.php?title=Protocol&oldid=14204#Position)
+#[derive(Copy, Clone, Debug)]
+pub struct Position {
+    pub x: i32,
+    pub y: i16,
+    pub z: i32,
+}
+
+impl From<Position> for BlockLocation {
+    fn from(pos: Position) -> Self {
+        BlockLocation(pos.x as i64, pos.y as i64, pos.z as i64)
+    }
+}
+
+
+// TODO: is this right
+impl ByteReadable for Position {
+    ///
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let val: u64 = byte_reader.read();
+
+
+        let mut x = (val >> 38) as i32;
+        let mut y = ((val >> 26) & 0xFFF) as i16;
+        let mut z = (val << 38 >> 38) as i32;
+
+        const LAT_LON_THRESHOLD: i32 = 1 << 25;
+        const LAT_LON_SUB: i32 = 1 << 26;
+
+        const Y_THRESH: i16 = 1 << 11;
+        const Y_SUB: i16 = 1 << 12;
+
+        if x >= LAT_LON_THRESHOLD { x -= LAT_LON_SUB }
+        if y >= Y_THRESH { y -= Y_SUB }
+        if z >= LAT_LON_THRESHOLD { z -= LAT_LON_SUB }
+
+        Position {
+            x,
+            y,
+            z,
         }
     }
 }

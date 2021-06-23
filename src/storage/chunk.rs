@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+
 use crate::storage::block::{BlockApprox, BlockState, SimpleType};
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
 const SECTION_BYTES: usize = SECTION_ELEMENTS * BITS_PER_ENUM / 8;
 
+const ONE_MASK: u64 = !0;
+
+#[derive(Default)]
 pub struct HighMemoryChunkSection {
     pub palette: Palette,
 }
@@ -19,6 +24,23 @@ impl HighMemoryChunkSection {
 #[repr(packed)]
 pub struct LowMemoryChunkSection {
     storage: [u8; SECTION_BYTES],
+}
+
+impl Default for LowMemoryChunkSection {
+    fn default() -> Self {
+        Self {
+            storage: [0; SECTION_BYTES]
+        }
+    }
+}
+
+pub fn bits_needed(mut number: usize) -> u8 {
+    let mut bits = 0_u8;
+    while number != 0  {
+        number /= 2;
+        bits += 1;
+    }
+    bits
 }
 
 impl LowMemoryChunkSection {
@@ -63,7 +85,7 @@ pub struct ChunkData<T> {
 const SECTION_HEIGHT: usize = 16;
 const SECTION_WIDTH: usize = 16;
 
-
+#[derive(Default)]
 pub struct Palette {
     bits_per_block: u8,
     id_to_state: Option<Vec<BlockState>>,
@@ -71,12 +93,11 @@ pub struct Palette {
 }
 
 impl Palette {
-
     pub fn direct(storage: Vec<u64>) -> Palette {
         Palette {
             bits_per_block: 13,
             id_to_state: None,
-            storage
+            storage,
         }
     }
 
@@ -84,38 +105,128 @@ impl Palette {
         Palette {
             bits_per_block,
             id_to_state: Some(id_to_state),
-            storage
+            storage,
         }
     }
 
-    // fn set_block_compressed_id(&self, x: u8, y: u8, z: u8, value: u32) {
-    //
-    //     let bits_per_block = self.bits_per_block;
-    //
-    //     let indv_value_mask = (1 << bits_per_block) - 1;
-    //
-    //     let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
-    //     let start_long = (block_number * bits_per_block) / 64;
-    //     let start_offset = (block_number * bits_per_block) % 64;
-    //     let end_long = ((block_number + 1) * bits_per_block - 1) / 64;
-    //
-    //     let value = value & indv_value_mask;
-                //
-    //     data[start_long] |= (value << start_offset);
-    //
-    //     if start_long != end_long {
-    //         data[end_long] = (value >> (64 - start_offset));
-    //     }
-    // }
+    pub fn all_states(&self) -> Vec<BlockState> {
+        (0..4096).map(|i| self.get_block_by_idx(i)).collect()
+    }
 
-    fn get_block(&self, x: u8, y: u8, z: u8) -> BlockState {
+    pub fn set_block(&mut self, x: u8, y: u8, z: u8, state: BlockState) {
+        let value = match self.id_to_state.as_mut() {
+            None => state.0,
+            Some(map) => {
+
+                // we only have to modify the map if we do not have the state
+                let value = map.iter().position(|&r| r == state);
+                match value {
+                    None => {
+                        // println!("a");
+                        let new_len = map.len() + 1;
+                        let required_bits = bits_needed(new_len);
+
+                        map.push(state);
+
+                        if required_bits > self.bits_per_block {
+
+                            // println!("b");
+                            let (required_bits, reverse_map) = if required_bits <= 8 {
+                                let reverse_map: HashMap<_, _> = map.iter().enumerate().map(|(k, v)| (*v, k)).collect();
+                                // println!("c");
+                                (required_bits.max(4), Some(reverse_map))
+
+                            } else {
+                                self.id_to_state = None;
+                                // println!("d");
+                                (13, None)
+                            };
+
+
+
+                            // we have to recreate the palette
+                            let states = self.all_states();
+
+                            // update bits per block
+                            self.bits_per_block = required_bits;
+
+                            let required_bits = required_bits as usize;
+
+                            let indv_value_mask = (1 << required_bits) - 1;
+
+
+                            let new_data_size = 4096 * (required_bits as usize) / 64;
+                            let mut storage = vec![0_u64; new_data_size];
+
+                            for (block_number, state) in states.into_iter().enumerate() {
+                                let start_long = (block_number * required_bits) / 64;
+                                let start_offset = (block_number * required_bits) % 64;
+                                let end_long = ((block_number + 1) * required_bits - 1) / 64;
+
+                                let value = match reverse_map.as_ref() {
+                                    None => state.0 as u64,
+                                    Some(reverse_map) => *reverse_map.get(&state).unwrap() as u64
+                                };
+
+                                let value = value & indv_value_mask;
+
+                                storage[start_long] |= value << start_offset;
+
+                                if start_long != end_long {
+                                    storage[end_long] = value >> (64 - start_offset);
+                                }
+                            }
+
+                            // println!("e");
+                            self.storage = storage;
+                            return;
+                        } else {
+                            // println!("f");
+                            (new_len - 1) as u32
+                        }
+                    }
+                    Some(value) => {
+                        // println!("g");
+                        value as u32
+                    }
+                }
+            }
+        };
+        // println!("h");
+
+        let value = value as u64;
+
+        let indv_value_mask = (1 << self.bits_per_block) - 1;
+
+        let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
+        let bits_per_block = self.bits_per_block as usize;
+        let start_long = (block_number * bits_per_block) / 64;
+        let start_offset = (block_number * bits_per_block) % 64;
+        let end_long = ((block_number + 1) * bits_per_block - 1) / 64;
+
+        // zero out
+        self.storage[start_long] &= !(indv_value_mask << start_offset);
+
+        // place
+        self.storage[start_long] |= value << start_offset;
+
+        if start_long != end_long {
+            // println!("i");
+            // zero out
+            self.storage[end_long] &= !(indv_value_mask >> (64 - start_offset));
+
+            // set value
+            self.storage[end_long] |= value >> (64 - start_offset);
+        }
+    }
+
+    fn get_block_by_idx(&self, block_number: usize) -> BlockState {
         let data_arr = &self.storage;
 
         let bits_per_block = self.bits_per_block as usize;
 
         let indv_value_mask = (1 << bits_per_block) - 1;
 
-        let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
         let start_long = (block_number * bits_per_block) / 64;
         let start_offset = (block_number * bits_per_block) % 64;
         let end_long = ((block_number + 1) * bits_per_block - 1) / 64;
@@ -137,6 +248,11 @@ impl Palette {
         }
     }
 
+    fn get_block(&self, x: u8, y: u8, z: u8) -> BlockState {
+        let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
+        self.get_block_by_idx(block_number)
+    }
+
     // fn add_block(&self, x: u8, y: u8, z: u8, state: BlockState){
     //     let id = self.id_to_state.iter().position(|x|x == state);
     //
@@ -155,8 +271,23 @@ pub enum ChunkColumn {
     HighMemory { data: ChunkData<HighMemoryChunkSection> },
 }
 
-
 impl ChunkColumn {
+    pub fn set_block(&mut self, x: u8, y: u8, z: u8, state: BlockState) {
+        let section_idx = (y >> 4) as u8;
+        let y_offset = y - (section_idx << 4);
+
+        let section_idx = section_idx as usize;
+        match self {
+            ChunkColumn::LowMemory { data } => {
+                let section = data.sections[section_idx].get_or_insert_default();
+                section.set_simple_type(x, y_offset, z, state.simple_type());
+            }
+            ChunkColumn::HighMemory { data } => {
+                let section = data.sections[section_idx].get_or_insert_default();
+                section.palette.set_block(x, y_offset, z, state);
+            }
+        }
+    }
     pub fn get_block(&self, x: u8, y: u8, z: u8) -> BlockApprox {
         let section_idx = (y >> 4) as u8;
         let y_offset = y - (section_idx << 4);
