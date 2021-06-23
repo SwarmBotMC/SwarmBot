@@ -42,6 +42,7 @@ const VEL_MULT: f64 = 0.9800000190734863;
 pub struct Physics {
     location: Location,
     look: Direction,
+    horizontal: Displacement,
     velocity: Displacement,
     on_ground: bool,
 }
@@ -49,6 +50,11 @@ pub struct Physics {
 pub enum Strafe {
     Left,
     Right,
+}
+
+pub enum Walk {
+    Forward,
+    Backward,
 }
 
 static UNIT_Y: SyncLazy<Displacement> = SyncLazy::new(|| {
@@ -73,17 +79,25 @@ impl Physics {
 
     pub fn look(&mut self, direction: Direction){
         self.look = direction;
+        self.horizontal = direction.horizontal().unit_vector();
     }
 
     pub fn direction(&self) -> Direction {
         self.look
     }
 
+    pub fn walk(&mut self, walk: Walk){
+        let mut velocity = self.horizontal;
+        velocity *= WALK_SPEED;
+        if let Walk::Backward = walk {
+            velocity *= -1.0;
+        }
+
+        self.velocity = velocity;
+    }
+
     pub fn strafe(&mut self, strafe: Strafe) {
-
-        let horizontal = self.look.horizontal().unit_vector();
-
-        let mut velocity = horizontal.cross(*UNIT_Y);
+        let mut velocity = self.horizontal.cross(*UNIT_Y);
 
 
         velocity *= WALK_SPEED;
