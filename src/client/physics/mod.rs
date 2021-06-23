@@ -93,7 +93,8 @@ impl Physics {
             velocity *= -1.0;
         }
 
-        self.velocity = velocity;
+        self.velocity.dx = velocity.dx;
+        self.velocity.dz = velocity.dz;
     }
 
     pub fn strafe(&mut self, strafe: Strafe) {
@@ -105,16 +106,27 @@ impl Physics {
             velocity *= -1.0
         }
 
-        self.velocity = velocity;
+        self.velocity.dx = velocity.dx;
+        self.velocity.dz = velocity.dz;
     }
 
     pub fn tick(&mut self, world: &WorldBlocks) {
         // move y, x, z
 
         let prev_loc = self.location;
+
+        let mut below_loc = prev_loc;
+        below_loc.y -= 0.001;
+
+        let below_loc: BlockLocation = below_loc.into();
+        if world.get_block_simple(below_loc) == Some(SimpleType::WalkThrough) {
+            self.on_ground = false;
+        }
+
         let mut new_loc = prev_loc + self.velocity;
 
         if !self.on_ground {
+
 
             let prev_block_loc: BlockLocation = prev_loc.into();
             let next_block_loc: BlockLocation = new_loc.into();
@@ -131,7 +143,8 @@ impl Physics {
                     self.velocity.dy -= ACC_G;
                 }
                 Some(_) => {
-                    panic!("unsupported physics block")
+                    // we are not going to do anything
+                    // panic!("unsupported physics block")
                 }
                 // the chunk hasn't loaded, let's not apply physics
                 _ => {}
