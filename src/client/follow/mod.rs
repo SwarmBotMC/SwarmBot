@@ -16,6 +16,7 @@ pub enum FollowResult {
 #[derive(Debug)]
 pub struct Follower {
     xs: VecDeque<Location>,
+    ticks: usize
 }
 
 impl Follower {
@@ -28,9 +29,23 @@ impl Follower {
 
         Follower {
             xs,
+            ticks: 0
         }
     }
+
+    fn next(&mut self){
+        self.xs.pop_front();
+        self.ticks = 0;
+    }
+
     pub fn follow(&mut self, local: &mut LocalState, global: &mut GlobalState) -> FollowResult {
+        self.ticks += 1;
+
+        // more than 7 seconds on same block => failed
+        if self.ticks >= 20*7 {
+            return FollowResult::Failed
+        }
+
         let next = self.xs.front();
 
         let next = match next {
@@ -45,12 +60,12 @@ impl Follower {
         let mag2_horizontal = Displacement::new(displacement.dx, 0.0, displacement.dz).mag2();
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
-        if mag2_horizontal > 1.3*1.3 {
+        if mag2_horizontal > 1.6*1.6 {
             return FollowResult::Failed;
         }
 
         let res = if mag2 < 0.2 * 0.2 {
-            self.xs.pop_front();
+            self.next();
             FollowResult::Success
         } else {
             FollowResult::InProgress
@@ -71,6 +86,6 @@ impl Follower {
 
         local.physics.walk(Walk::Forward);
 
-        return res;
+        res
     }
 }

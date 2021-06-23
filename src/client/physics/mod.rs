@@ -32,7 +32,8 @@ const VEL_MULT: f64 = 0.9800000190734863;
 // player width divided by 2
 const PLAYER_WIDTH_2: f64 = 0.6 / 2.0;
 
-const PLAYER_HEIGHT: f64 = 1.8;
+// remove 0.1
+const PLAYER_HEIGHT: f64 = 1.79;
 
 
 // 1/2 at^2 + vt = 0
@@ -131,23 +132,30 @@ impl Physics {
 
         {
             let dx = self.velocity.dx;
-            let end_dx = if dx == 0.0 { 0.0 } else { dx.signum() * PLAYER_WIDTH_2 + dx };
+            let extra_dx = if dx == 0.0 { 0.0 } else { dx.signum() * PLAYER_WIDTH_2 };
+            let end_dx = dx + extra_dx;
 
             let dz = self.velocity.dz;
-            let end_dz = if dz == 0.0 { 0.0 } else { dz.signum() * PLAYER_WIDTH_2 + dz };
+            let extra_dz = if dz == 0.0 { 0.0 } else { dz.signum() * PLAYER_WIDTH_2 };
+            let end_dz = dz + extra_dz;
 
             let dy = self.velocity.dy;
 
-            let end_vel = Displacement::new(end_dx, 0.0, end_dz);
+            let end_vel = Displacement::new(end_dx, dy, end_dz);
             let test_loc = prev_loc + end_vel;
 
             let legs: BlockLocation = test_loc.into();
-            let mut head = legs;
-            head.1 += 1;
+            let head: BlockLocation = {
+                let mut head_loc =test_loc;
+                head_loc.y += PLAYER_HEIGHT;
+                head_loc.into()
+            };
 
             if world.get_block_simple(legs) == Some(SimpleType::Solid) || world.get_block_simple(head) == Some(SimpleType::Solid) {
-                self.velocity.dx = 0.0;
-                self.velocity.dz = 0.0;
+                let new_dx = 0.0;
+                let new_dz = 0.0;
+                self.velocity.dx = new_dx;
+                self.velocity.dz = new_dz;
             }
         }
 
@@ -165,6 +173,7 @@ impl Physics {
             if self.velocity.dy > 0.0 {// we are moving up
                 if world.get_block_simple(head_loc) == Some(SimpleType::Solid) {
                     // we hit our heads!
+                    println!("hit head");
                     self.velocity.dy = 0.0;
                     new_loc.y = (head_loc.1 as f64) - PLAYER_HEIGHT;
                 } else {

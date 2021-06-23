@@ -4,6 +4,8 @@ use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 
+pub const MAX_FALL: i32 = 22;
+
 enum MoveResult {
     Edge,
     Invalid,
@@ -149,7 +151,7 @@ fn can_fall(start: BlockLocation, world: &WorldBlocks) -> Option<i64> {
         let block_type = world.get_block_simple(loc).unwrap();
         match block_type {
             SimpleType::Solid => {
-                return (travelled <= 3).then(|| y);
+                return (travelled <= MAX_FALL).then(|| y);
             }
             SimpleType::Water => {
                 return Some(y);
