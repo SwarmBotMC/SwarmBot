@@ -16,7 +16,10 @@ pub struct WorldEntities {
 
 impl WorldEntities {
     pub fn update_entity(&mut self, entity_id: u32, bot_id: u32, location: LocationOrigin) {
-        let entity = self.entities.get_mut(&entity_id).unwrap();
+        let entity = match self.entities.get_mut(&entity_id) {
+            None => return, // probably an unimportant entity (i.e., TNT)
+            Some(entity) => entity
+        };
         let id = entity.owner.get_or_insert(bot_id);
         if *id == bot_id {
             entity.location.apply_change(location);
