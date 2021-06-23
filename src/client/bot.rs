@@ -27,43 +27,41 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
         // always jump
         // self.state.physics.jump();
-        self.state.physics.walk(Walk::Forward);
+        // self.state.physics.walk(Walk::Forward);
 
-        let current_loc = self.state.physics.location();
 
-        let closest_entity = global.world_entities.iter()
-            // don't look at self
-            .filter(|(k, _)| **k != self.state.info.entity_id)
-            .min_by_key(|(_, v)| {
-                FloatOrd(v.location.dist2(current_loc))
-            });
+        // let closest_entity = global.world_entities.iter()
+        //     // don't look at self
+        //     .filter(|(k, _)| **k != self.state.info.entity_id)
+        //     .min_by_key(|(_, v)| {
+        //         FloatOrd(v.location.dist2(current_loc))
+        //     });
 
-        if let Some((_, entity)) = closest_entity {
-            let displacement = entity.location - current_loc;
-            if displacement.has_length() {
-                let dir = Direction::from(displacement);
-                self.state.physics.look(dir);
-                if displacement.dy > 0.01 {
-                    self.state.physics.jump();
-                }
-            }
-        }
+        // if let Some((_, entity)) = closest_entity {
+        //     let displacement = entity.location - current_loc;
+        //     if displacement.has_length() {
+        //         let dir = Direction::from(displacement);
+        //         self.state.physics.look(dir);
+        //         if displacement.dy > 0.01 {
+        //             self.state.physics.jump();
+        //         }
+        //     }
+        // }
+
+
+        self.move_around(global);
 
         self.state.physics.tick(&global.world_blocks);
 
         self.out.teleport(self.state.physics.location());
         self.out.look(self.state.physics.direction());
 
-        self.move_around();
         self.state.ticks += 1;
     }
 
-    fn move_around(&mut self) {
-        if self.state.ticks % 5 != 0 {
-            return;
-        }
+    fn move_around(&mut self, global: &mut GlobalState) {
         if let Some(mut follower) = self.state.follower.take() {
-            follower.follow(&mut self.state, &mut self.out);
+            follower.follow(&mut self.state, global, &mut self.out);
             self.state.follower = Some(follower);
         }
     }

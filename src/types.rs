@@ -182,6 +182,11 @@ impl Displacement {
     pub fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement { dx, dy, dz }
     }
+    
+    pub fn mag2(&self) -> f64 {
+        let Displacement{dx,dy,dz} = *self;
+        dx*dx + dy*dy + dz*dz
+    }
 
     pub fn cross(&self, other: Displacement) -> Displacement {
         let dx = self[1] * other[2] - self[2] * other[1];

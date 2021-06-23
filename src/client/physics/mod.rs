@@ -164,10 +164,9 @@ impl Physics {
                 Some(SimpleType::WalkThrough) => {
                     self.velocity.dy -= ACC_G;
                 }
-                Some(_) => {
+                Some(kind) => {
                     // we are not going to do anything
-                    self.velocity.dy -= ACC_G;
-                    // panic!("unsupported physics block")
+                    panic!("unsupported physics block {:?}", kind);
                 }
                 // the chunk hasn't loaded, let's not apply physics
                 _ => {}
@@ -175,6 +174,10 @@ impl Physics {
         }
 
         self.location = new_loc;
+
+        // reset walk
+        self.velocity.dx = 0.0;
+        self.velocity.dz = 0.0;
     }
     pub fn location(&self) -> Location {
         self.location

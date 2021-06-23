@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+
 use crate::types::Location;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
@@ -18,7 +19,7 @@ impl BlockLocation {
         Location {
             x: self.0 as f64 + 0.5,
             y: self.1 as f64,
-            z: self.2 as f64 + 0.5
+            z: self.2 as f64 + 0.5,
         }
     }
 }
@@ -48,25 +49,25 @@ impl BlockLocation {
 //     }
 // }
 
-enum Priority {
-    X,
-    Y,
-    Z,
-}
+// enum Priority {
+//     X,
+//     Y,
+//     Z,
+// }
 
-struct BlockIter {
-    from: BlockLocation,
-    to: BlockLocation,
-    idx: usize,
-    cross_section: usize,
-    d_second: usize,
-    dx: usize,
-    dy: usize,
-    dz: usize,
-    size: usize,
-    pos: bool,
-    priority: Priority,
-}
+// struct BlockIter {
+//     from: BlockLocation,
+//     to: BlockLocation,
+//     idx: usize,
+//     cross_section: usize,
+//     d_second: usize,
+//     dx: usize,
+//     dy: usize,
+//     dz: usize,
+//     size: usize,
+//     pos: bool,
+//     priority: Priority,
+// }
 
 // impl BlockIter {
 //     fn new(pos: bool, mut from: BlockLocation, mut to: BlockLocation, priority: Priority) -> BlockIter {
@@ -76,43 +77,43 @@ struct BlockIter {
 //     }
 // }
 
-impl Iterator for BlockIter {
-    type Item = BlockLocation;
+// impl Iterator for BlockIter {
+//     type Item = BlockLocation;
+//
+//     fn next(&mut self) -> Option<Self::Item> {
+//         let mut on = self.idx;
+//         if on < self.size {
+//             let first = (self.idx / self.cross_section) as i64;
+//             let left_over = self.idx % self.cross_section;
+//             let second = (left_over / self.d_second) as i64;
+//             let third = (left_over % self.d_second) as i64;
+//
+//             let BlockLocation(x,y,z) = self.from;
+//
+//             let block_loc = match self.priority {
+//                 Priority::X => {
+//                     BlockLocation(x + first,y + second,z + third)
+//                 }
+//                 Priority::Y => {
+//                     BlockLocation(x+ third,y + first,z + second)
+//                 }
+//                 Priority::Z => {
+//                     BlockLocation(x+ third,y + second,z + first)
+//                 }
+//             };
+//             on += 1;
+//             Some(block_loc)
+//         } else {
+//             None
+//         }
+//     }
+// }
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut on = self.idx;
-        if on < self.size {
-            let first = (self.idx / self.cross_section) as i64;
-            let left_over = self.idx % self.cross_section;
-            let second = (left_over / self.d_second) as i64;
-            let third = (left_over % self.d_second) as i64;
-
-            let BlockLocation(x,y,z) = self.from;
-
-            let block_loc = match self.priority {
-                Priority::X => {
-                    BlockLocation(x + first,y + second,z + third)
-                }
-                Priority::Y => {
-                    BlockLocation(x+ third,y + first,z + second)
-                }
-                Priority::Z => {
-                    BlockLocation(x+ third,y + second,z + first)
-                }
-            };
-            on += 1;
-            Some(block_loc)
-        } else {
-            None
-        }
-    }
-}
-
-impl DoubleEndedIterator for BlockIter {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        todo!()
-    }
-}
+// impl DoubleEndedIterator for BlockIter {
+//     fn next_back(&mut self) -> Option<Self::Item> {
+//         todo!()
+//     }
+// }
 
 impl BlockLocation {
     pub(crate) fn dist2(&self, other: BlockLocation) -> i64 {
@@ -211,7 +212,22 @@ impl BlockState {
     pub fn full_block(&self) -> bool {
         //consider 54 |
         matches!(self.id(),
-            1..=5 |7 | 12..=25 | 29 | 33 |35 | 41 ..=43 | 45..=49 | 52 | 56..=58 | 60..=62 | 73 | 74
+            1..=5 |7 | 12..=25 | 29 | 33 |35 | 41 ..=43 | 45..=49 | 52 | 56..=58 | 60..=62 | 73 | 74 |
+            78..=80| // snow, ice
+            82| // clay
+            84|86|87|89|91|95|
+            97| // TODO: avoid this is a monster egg
+            98..=100|
+            // TODO: account panes
+            103|110|112|118|121|123..=125|
+            129|133|137..=138|155|159|161|162|
+            165| // TODO: slime block special fall logic
+            166|
+            168..=170| // TODO: special haybale logic
+            172..=174|
+            179|181|199..=202|
+            204|206|208..=212|214..=255
+
         )
     }
 
@@ -224,6 +240,24 @@ impl BlockState {
     }
 
     pub fn no_motion_effect(&self) -> bool {
-        matches!(self.id(), 0 | 6)
+        matches!(self.id(),
+            0| // air
+            6|// sapling
+            27|28| //  rail
+            31| // grass/fern/dead shrub
+            38|37|// flower
+            39|40| //mushroom
+            50|//torch
+            59|// wheat
+            66|68|69|70|72|75|76|77|83|
+            90| // portal
+            104|105|106|
+            115|119|
+            175..=177
+
+
+
+
+        )
     }
 }

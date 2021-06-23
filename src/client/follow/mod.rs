@@ -1,9 +1,11 @@
 use std::collections::VecDeque;
 
 use crate::client::pathfind::context::MoveContext;
+use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::InterfaceOut;
-use crate::types::{Displacement, Location};
+use crate::types::{Direction, Displacement, Location};
+use crate::client::physics::Walk;
 
 #[derive(Debug)]
 pub struct Follower {
@@ -24,29 +26,36 @@ impl Follower {
             xs,
         })
     }
-    pub fn follow(&mut self, local: &mut LocalState, out: &mut impl InterfaceOut) {
-        let next = self.xs.pop_front();
+    pub fn follow(&mut self, local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut) {
+        let next = self.xs.front();
 
         let next = match next {
             None => return,
-            Some(next) => next
+            Some(next) => *next
         };
 
         let current = local.physics.location();
+        let displacement = next - current;
 
-        let Displacement { dx, dy, dz } = next - current;
+        let mag2 = displacement.mag2();
 
-        if dy > 0.0 {
-            // we want to move vertically first (jump)
-        } else if dy < 0.0 {
-            // we want to move horizontally first
-        } else {
-            // no change in height
+        if mag2 < 0.2 * 0.2 {
+            self.xs.pop_front();
         }
 
-        let to_loc =next;
+        if mag2 < 0.01 * 0.01 {
+            // want to avoid divide by 0
+            return;
+        }
 
-        out.teleport(to_loc);
-        local.physics.teleport(to_loc);
+        let dir = Direction::from(displacement);
+        local.physics.look(dir);
+
+        if displacement.dy > 0.0 {
+            local.physics.jump();
+            // we want to move vertically first (jump)
+        }
+
+        local.physics.walk(Walk::Forward);
     }
 }
