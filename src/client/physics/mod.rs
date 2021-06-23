@@ -1,7 +1,8 @@
+use std::lazy::SyncLazy;
+
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
-use std::lazy::SyncLazy;
 
 mod bounding_box;
 
@@ -27,6 +28,9 @@ fn jump_factor(jump_boost: Option<u32>) -> f64 {
 const JUMP_WATER: f64 = 0.03999999910593033;
 const ACC_G: f64 = 0.08;
 const VEL_MULT: f64 = 0.9800000190734863;
+
+// player width divided by 2
+const PLAYER_WIDTH_2: f64 = 0.6 / 2.0;
 
 
 // 1/2 at^2 + vt = 0
@@ -73,11 +77,11 @@ impl Physics {
     pub fn jump(&mut self) {
         if self.on_ground {
             self.on_ground = false;
-            self.velocity.dy =  jump_factor(None);
+            self.velocity.dy = jump_factor(None);
         }
     }
 
-    pub fn look(&mut self, direction: Direction){
+    pub fn look(&mut self, direction: Direction) {
         self.look = direction;
         self.horizontal = direction.horizontal().unit_vector();
     }
@@ -86,7 +90,7 @@ impl Physics {
         self.look
     }
 
-    pub fn walk(&mut self, walk: Walk){
+    pub fn walk(&mut self, walk: Walk) {
         let mut velocity = self.horizontal;
         velocity *= WALK_SPEED;
         if let Walk::Backward = walk {
@@ -123,11 +127,29 @@ impl Physics {
             self.on_ground = false;
         }
 
+        {
+            let dx = self.velocity.dx;
+            let end_dx = if dx == 0.0 { 0.0 } else { dx.signum() * PLAYER_WIDTH_2 + dx };
+
+            let dz = self.velocity.dz;
+            let end_dz = if dz == 0.0 { 0.0 } else { dz.signum() * PLAYER_WIDTH_2 + dz };
+
+            let end_vel = Displacement::new(end_dx, 0.0, end_dz);
+            let test_loc = prev_loc + end_vel;
+
+            let legs: BlockLocation = test_loc.into();
+            let mut head = legs;
+            head.1 += 1;
+
+            if world.get_block_simple(legs) == Some(SimpleType::Solid) || world.get_block_simple(head) == Some(SimpleType::Solid) {
+                self.velocity.dx = 0.0;
+                self.velocity.dz = 0.0;
+            }
+        }
+
         let mut new_loc = prev_loc + self.velocity;
 
         if !self.on_ground {
-
-
             let prev_block_loc: BlockLocation = prev_loc.into();
             let next_block_loc: BlockLocation = new_loc.into();
 
@@ -150,7 +172,6 @@ impl Physics {
                 // the chunk hasn't loaded, let's not apply physics
                 _ => {}
             }
-
         }
 
         self.location = new_loc;
