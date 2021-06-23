@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::lazy::SyncLazy;
-use std::ops::{Add, AddAssign, Sub};
+use std::ops::{Add, AddAssign, Index, Sub, MulAssign};
 
 use packets::*;
 use packets::read::{ByteReadable, ByteReader};
@@ -122,7 +122,7 @@ impl From<LocationFloat> for Location {
         Self {
             x: loc.x as f64,
             y: loc.y as f64,
-            z: loc.z as f64
+            z: loc.z as f64,
         }
     }
 }
@@ -134,7 +134,7 @@ impl Add<Displacement> for Location {
         Location {
             x: self.x + rhs.dx,
             y: self.y + rhs.dy,
-            z: self.z + rhs.dz
+            z: self.z + rhs.dz,
         }
     }
 }
@@ -178,11 +178,40 @@ pub struct Displacement {
 }
 
 impl Displacement {
+
     pub fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
-        Displacement {dx,dy,dz}
+        Displacement { dx, dy, dz }
+    }
+
+    pub fn cross(&self, other: Displacement) -> Displacement {
+        let dx = self[1] * other[2] - self[2] * other[1];
+        let dy = self[2] * other[0] - self[0] * other[2];
+        let dz = self[0] * other[1] - self[1] * other[0];
+        Displacement::new(dx, dy, dz)
     }
     pub fn has_length(&self) -> bool {
         self.dx != 0.0 || self.dy != 0.0 || self.dz != 0.0
+    }
+}
+
+impl MulAssign<f64> for Displacement {
+    fn mul_assign(&mut self, rhs: f64) {
+        self.dx *= rhs;
+        self.dy *= rhs;
+        self.dz *= rhs;
+    }
+}
+
+impl Index<usize> for Displacement {
+    type Output = f64;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.dx,
+            1 => &self.dy,
+            2 => &self.dz,
+            _ => panic!("invalid index")
+        }
     }
 }
 
@@ -313,7 +342,6 @@ pub struct LocationOrigin {
 }
 
 impl LocationOrigin {
-
     pub fn from(location: Location, x: bool, y: bool, z: bool) -> LocationOrigin {
         LocationOrigin {
             x: Origin::from(location.x, x),
@@ -349,9 +377,27 @@ pub struct Direction {
 }
 
 impl Direction {
+    pub fn unit_vector(&self) -> Displacement {
+
+        let pitch = self.pitch.to_radians();
+        let yaw = self.yaw.to_radians();
+
+        let x = -(pitch).to_radians().cos() * (yaw).sin();
+        let y = -(pitch).sin();
+        let z = (pitch).cos() * (yaw).cos();
+
+        Displacement::new(x as f64, y as f64, z as f64)
+    }
+
+    pub fn horizontal(&self) -> Direction {
+        let mut res = *self;
+        res.pitch = 0.0;
+        res
+    }
+
     pub fn from(displacement: Displacement) -> Direction {
-        let Displacement {dx, dy, dz} = displacement;
-        let (dx, dy ,dz) = (dx as f32, dy as f32, dz as f32);
+        let Displacement { dx, dy, dz } = displacement;
+        let (dx, dy, dz) = (dx as f32, dy as f32, dz as f32);
         let r = (dx * dx + dy * dy + dz * dz).sqrt();
         let mut yaw = -dx.atan2(dz) / PI * 180.0;
         if yaw < 0.0 {

@@ -179,7 +179,7 @@ pub struct Explosion {
     pub location: Location,
     pub radius: f32,
     pub records: Vec<BlockLocation>,
-    // TOOD: velocity
+    // TODO: velocity
 }
 
 impl ByteReadable for Explosion {

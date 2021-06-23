@@ -1,13 +1,14 @@
-use crate::client::physics::bounding_box::BoundingBox;
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
+use std::lazy::SyncLazy;
 
 mod bounding_box;
 
 const JUMP_UPWARDS_MOTION: f64 = 0.42;
 
 const SPRINT_SPEED: f64 = 0.30000001192092896;
+const WALK_SPEED: f64 = SPRINT_SPEED * 0.6;
 
 const FALL_FACTOR: f64 = 0.02;
 
@@ -40,18 +41,19 @@ const VEL_MULT: f64 = 0.9800000190734863;
 #[derive(Default, Debug)]
 pub struct Physics {
     location: Location,
-    pub look: Direction,
+    look: Direction,
     velocity: Displacement,
     on_ground: bool,
 }
 
-enum Movement {
-    Jump,
-    StrafeLeft,
-    StrafeRight,
-    Forward,
-    Backward,
+pub enum Strafe {
+    Left,
+    Right,
 }
+
+static UNIT_Y: SyncLazy<Displacement> = SyncLazy::new(|| {
+    Displacement::new(0.0, 1.0, 0.0)
+});
 
 struct MovementProc {}
 
@@ -69,13 +71,36 @@ impl Physics {
         }
     }
 
+    pub fn look(&mut self, direction: Direction){
+        self.look = direction;
+    }
+
+    pub fn direction(&self) -> Direction {
+        self.look
+    }
+
+    pub fn strafe(&mut self, strafe: Strafe) {
+
+        let horizontal = self.look.horizontal().unit_vector();
+
+        let mut velocity = horizontal.cross(*UNIT_Y);
+
+
+        velocity *= WALK_SPEED;
+        if let Strafe::Left = strafe {
+            velocity *= -1.0
+        }
+
+        self.velocity = velocity;
+    }
+
     pub fn tick(&mut self, world: &WorldBlocks) {
         // move y, x, z
 
+        let prev_loc = self.location;
+        let mut new_loc = prev_loc + self.velocity;
 
         if !self.on_ground {
-            let prev_loc = self.location;
-            let mut new_loc = prev_loc + self.velocity;
 
             let prev_block_loc: BlockLocation = prev_loc.into();
             let next_block_loc: BlockLocation = new_loc.into();
@@ -98,8 +123,9 @@ impl Physics {
                 _ => {}
             }
 
-            self.location = new_loc;
         }
+
+        self.location = new_loc;
     }
     pub fn location(&self) -> Location {
         self.location

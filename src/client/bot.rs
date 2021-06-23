@@ -10,6 +10,7 @@ use crate::client::state::local::LocalState;
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut};
 use crate::types::Direction;
+use crate::client::physics::Strafe;
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
@@ -25,7 +26,8 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
 
         // always jump
-        self.state.physics.jump();
+        // self.state.physics.jump();
+        self.state.physics.strafe(Strafe::Right);
         self.state.physics.tick(&global.world_blocks);
 
         let current_loc = self.state.physics.location();
@@ -41,11 +43,12 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             let displacement = entity.location - current_loc;
             if displacement.has_length() {
                 let dir = Direction::from(displacement);
-                self.out.look(dir)
+                self.state.physics.look(dir)
             }
         }
 
         self.out.teleport(self.state.physics.location());
+        self.out.look(self.state.physics.direction());
 
         self.move_around();
         self.state.ticks += 1;
