@@ -4,7 +4,7 @@ use crate::client::pathfind::context::MoveContext;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::InterfaceOut;
-use crate::types::{Direction, Displacement, Location};
+use crate::types::{Direction, Location};
 use crate::client::physics::Walk;
 
 #[derive(Debug)]

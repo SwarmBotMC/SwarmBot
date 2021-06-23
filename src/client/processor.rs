@@ -55,6 +55,15 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                         let block_loc: BlockLocation = self.local.physics.location().into();
                         self.out.send_chat(&format!("my location is {}. My block loc is {}", self.local.physics.location(), block_loc));
                     }
+                    "state" => {
+                        if let [name] = cmd.args[..] {
+                            if name == self.local.info.username {
+                                println!("follower {:?}", self.local.follower);
+                                println!("location {}", self.local.physics.location());
+                                println!();
+                            }
+                        }
+                    }
                     "progressions" => {
 
                         let ctx = GlobalContext {

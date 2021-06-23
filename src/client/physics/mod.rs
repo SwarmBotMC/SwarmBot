@@ -32,6 +32,8 @@ const VEL_MULT: f64 = 0.9800000190734863;
 // player width divided by 2
 const PLAYER_WIDTH_2: f64 = 0.6 / 2.0;
 
+const PLAYER_HEIGHT: f64 = 1.8;
+
 
 // 1/2 at^2 + vt = 0
 // t(1/2 at + v) = 0
@@ -134,6 +136,8 @@ impl Physics {
             let dz = self.velocity.dz;
             let end_dz = if dz == 0.0 { 0.0 } else { dz.signum() * PLAYER_WIDTH_2 + dz };
 
+            let dy = self.velocity.dy;
+
             let end_vel = Displacement::new(end_dx, 0.0, end_dz);
             let test_loc = prev_loc + end_vel;
 
@@ -153,23 +157,39 @@ impl Physics {
             let prev_block_loc: BlockLocation = prev_loc.into();
             let next_block_loc: BlockLocation = new_loc.into();
 
+            let mut head_loc = new_loc;
+            head_loc.y += PLAYER_HEIGHT;
 
-            match world.get_block_simple(next_block_loc) {
-                Some(SimpleType::Solid) => {
-                    new_loc = prev_block_loc.centered();
+            let head_loc = new_loc.into();
+
+            if self.velocity.dy > 0.0 {// we are moving up
+                if world.get_block_simple(head_loc) == Some(SimpleType::Solid) {
+                    // we hit our heads!
                     self.velocity.dy = 0.0;
-                    self.on_ground = true;
-                }
-                // we are falling
-                Some(SimpleType::WalkThrough) => {
+                    new_loc.y = (head_loc.1 as f64) - PLAYER_HEIGHT;
+                } else {
+                    // we can decelerate normally
                     self.velocity.dy -= ACC_G;
                 }
-                Some(kind) => {
-                    // we are not going to do anything
-                    panic!("unsupported physics block {:?}", kind);
+            }else { // we are moving down
+                match world.get_block_simple(next_block_loc) {
+                    Some(SimpleType::Solid) => {
+                        new_loc = prev_block_loc.centered();
+                        self.velocity.dy = 0.0;
+                        self.on_ground = true;
+                    }
+                    // we are falling
+                    Some(SimpleType::WalkThrough) => {
+                        self.velocity.dy -= ACC_G;
+                    }
+                    Some(kind) => {
+                        self.velocity.dy -= ACC_G;
+                        // we are not going to do anything
+                        // panic!("unsupported physics block {:?}", kind);
+                    }
+                    // the chunk hasn't loaded, let's not apply physics
+                    _ => {}
                 }
-                // the chunk hasn't loaded, let's not apply physics
-                _ => {}
             }
         }
 
