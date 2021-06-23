@@ -21,11 +21,13 @@ use crate::client::physics::Physics;
 use crate::types::Dimension;
 
 
+pub type Logins<T> = Rc<RefCell<Vec<Login<<T as Minecraft>::Queue, <T as Minecraft>::Interface>>>>;
+
 /// Runs the game loop and holds all bots.
 pub struct Runner<T: Minecraft> {
 
     /// logins that are about to be established
-    pending_logins: Rc<RefCell<Vec<Login<T::Queue, T::Interface>>>>,
+    pending_logins: Logins<T>,
 
     /// the global state of the program containing chunks and global config
     global_state: GlobalState,
@@ -123,6 +125,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                         info,
                         destination: BlockLocation(119, 72, 226),
                         travel_problem: None,
+                        last_problem: None,
                         costs: Costs {
                             block_walk: 1.0,
                             ascend: 1.0,

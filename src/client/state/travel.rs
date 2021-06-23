@@ -1,23 +1,44 @@
-use crate::storage::block::BlockLocation;
-use crate::client::pathfind::incremental::AStar;
 use crate::client::pathfind::context::MoveContext;
-use crate::client::pathfind::progress_checker::{NoVehicleHeuristic, NoVehicleGoalCheck};
-use tokio::sync::Notify;
-use std::rc::Rc;
+use crate::client::pathfind::incremental::{AStar, PathResult};
+use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeuristic, Progressor};
+use crate::storage::block::BlockLocation;
+use crate::client::timing::Increment;
+use std::time::Duration;
 
 pub struct TravelPath {
     blocks: Vec<BlockLocation>,
 }
 
 pub struct TravelProblem {
-    pub a_star: AStar<MoveContext>,
-    pub heuristic: NoVehicleHeuristic,
-    pub goal_checker: NoVehicleGoalCheck,
-    pub notifier: Rc<Notify>,
+    a_star: AStar<MoveContext>,
+    heuristic: NoVehicleHeuristic,
+    goal_checker: NoVehicleGoalCheck,
 }
 
-impl Drop for TravelProblem {
-    fn drop(&mut self) {
-        self.notifier.notify_one();
+impl TravelProblem {
+    pub fn new(start: MoveContext, goal: BlockLocation) -> TravelProblem {
+        let heuristic = NoVehicleHeuristic {
+            move_cost: 1.0,
+            goal,
+        };
+
+        let a_star = AStar::new(start);
+        let goal_checker = NoVehicleGoalCheck::new(goal);
+        Self {
+            heuristic,
+            a_star,
+            goal_checker,
+        }
     }
 }
+
+impl TravelProblem {
+    pub fn iterate_for(&mut self, duration: Duration, progressor: &impl Progressor<MoveContext>) -> Increment<PathResult<MoveContext>> {
+        self.a_star.iterate_for(duration, &self.heuristic, progressor, &self.goal_checker)
+    }
+    
+    pub fn recalc(&mut self, context: MoveContext) {
+        self.a_star = AStar::new(context);
+    }
+}
+

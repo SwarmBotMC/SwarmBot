@@ -39,3 +39,12 @@ pub struct MoveContext {
     pub location: BlockLocation,
     pub blocks_can_place: usize
 }
+
+impl MoveContext {
+    pub fn no_blocks(location: BlockLocation) -> MoveContext {
+        Self {
+            location,
+            blocks_can_place: 0
+        }
+    }
+}

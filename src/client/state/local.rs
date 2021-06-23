@@ -27,7 +27,11 @@ pub struct LocalState {
     pub alive: bool,
     pub dimension: Dimension,
     pub follower: Option<Follower>,
+
     pub travel_problem: Option<TravelProblem>,
+
+    // so we can restart if we get an invalid result
+    pub last_problem: Option<TravelProblem>,
 }
 
 impl LocalState {
@@ -35,32 +39,12 @@ impl LocalState {
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.physics.location().into();
 
-
-        // https://github.com/tokio-rs/tokio/releases/tag/tokio-0.2.12
-        let notifier = Rc::new(Notify::new());
-
         let start_node = MoveContext {
             location: from,
             blocks_can_place: self.inventory.placeable_blocks(),
         };
 
-        let heuristic = NoVehicleHeuristic {
-            move_cost: self.costs.block_walk,
-            goal,
-        };
-
-        let goal_checker = NoVehicleGoalCheck::new(goal);
-
-        let a_star = AStar::new(start_node);
-
-
-        let problem = TravelProblem {
-            a_star,
-            heuristic,
-            goal_checker,
-            notifier,
-        };
-
+        let problem = TravelProblem::new(start_node, goal);
 
         self.travel_problem = Some(problem);
         // notifier.notified().await;
