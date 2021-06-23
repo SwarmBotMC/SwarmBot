@@ -28,7 +28,6 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
         // always jump
         // self.state.physics.jump();
         self.state.physics.walk(Walk::Forward);
-        self.state.physics.tick(&global.world_blocks);
 
         let current_loc = self.state.physics.location();
 
@@ -43,9 +42,14 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             let displacement = entity.location - current_loc;
             if displacement.has_length() {
                 let dir = Direction::from(displacement);
-                self.state.physics.look(dir)
+                self.state.physics.look(dir);
+                if displacement.dy > 0.01 {
+                    self.state.physics.jump();
+                }
             }
         }
+
+        self.state.physics.tick(&global.world_blocks);
 
         self.out.teleport(self.state.physics.location());
         self.out.look(self.state.physics.direction());

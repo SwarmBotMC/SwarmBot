@@ -73,7 +73,7 @@ impl Physics {
     pub fn jump(&mut self) {
         if self.on_ground {
             self.on_ground = false;
-            self.velocity = Displacement::new(0.0, jump_factor(None), 0.0)
+            self.velocity.dy =  jump_factor(None);
         }
     }
 
@@ -144,6 +144,7 @@ impl Physics {
                 }
                 Some(_) => {
                     // we are not going to do anything
+                    self.velocity.dy -= ACC_G;
                     // panic!("unsupported physics block")
                 }
                 // the chunk hasn't loaded, let's not apply physics
