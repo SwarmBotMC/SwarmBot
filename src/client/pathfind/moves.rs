@@ -1,4 +1,4 @@
-use crate::client::pathfind::context::{GlobalContext, MoveContext};
+use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
@@ -26,24 +26,22 @@ impl Movements {
         ]
     };
 
-    pub fn obtain_all(on: &MoveContext, ctx: &GlobalContext) -> Progression<MoveContext> {
-        let BlockLocation(x, y, z) = on.location;
+    pub fn obtain_all(on: &MoveNode, ctx: &GlobalContext) -> Progression<MoveNode> {
+        let BlockLocation{x, y, z} = on.location;
         let w = ctx.world;
-        let blocks_can_place = on.blocks_can_place;
 
         macro_rules! get_block {
             ($x: expr, $y: expr, $z:expr) => {{
-                let res: Option<SimpleType> = w.get_block_simple(BlockLocation($x,$y,$z));
+                let res: Option<SimpleType> = w.get_block_simple(BlockLocation::new($x,$y,$z));
                 res
             }};
         }
 
         macro_rules! wrap {
             ($block_loc: expr) => {{
-                MoveContext {
-                    blocks_can_place,
-                    location: $block_loc
-                }
+                let mut node = MoveNode::from(&on);
+                node.location = $block_loc;
+                node
             }};
         }
 
@@ -87,7 +85,7 @@ impl Movements {
                 traverse_possible_no_place[idx] = floor_walkable;
                 if floor_walkable {
                     res.push(Neighbor {
-                        value: wrap!(BlockLocation(x + dx, y, z + dz)),
+                        value: wrap!(BlockLocation::new(x + dx, y, z + dz)),
                         cost: ctx.path_config.costs.block_walk,
                     })
                 }
@@ -99,10 +97,10 @@ impl Movements {
             let Change { dx, dz, .. } = direction.unit_change();
 
             if can_move_adj_noplace[idx] && !traverse_possible_no_place[idx] {
-                let start = BlockLocation(x + dx, y, z + dz);
+                let start = BlockLocation::new(x + dx, y, z + dz);
                 let collided_y = can_fall(start, w);
                 if let Some(collided_y) = collided_y {
-                    let new_pos = BlockLocation(x + dx, collided_y + 1, z + dz);
+                    let new_pos = BlockLocation::new(x + dx, collided_y + 1, z + dz);
 
                     res.push(Neighbor {
                         value: wrap!(new_pos),
@@ -125,7 +123,7 @@ impl Movements {
                     let can_jump = adj_above && adj_legs[idx] == Solid && adj_head[idx] == WalkThrough;
                     if can_jump {
                         res.push(Neighbor {
-                            value: wrap!(BlockLocation(x+dx,y+1,z+dz)),
+                            value: wrap!(BlockLocation::new(x+dx,y+1,z+dz)),
                             cost: ctx.path_config.costs.ascend,
                         });
                     }
@@ -137,8 +135,8 @@ impl Movements {
     }
 }
 
-fn can_fall(start: BlockLocation, world: &WorldBlocks) -> Option<i64> {
-    let BlockLocation(x, init_y, z) = start;
+fn can_fall(start: BlockLocation, world: &WorldBlocks) -> Option<i16> {
+    let BlockLocation{x, y: init_y, z} = start;
 
     // only falling we could do would be into the void
     if init_y < 2 {
@@ -147,7 +145,7 @@ fn can_fall(start: BlockLocation, world: &WorldBlocks) -> Option<i64> {
 
     let mut travelled = 1;
     for y in (0..=(init_y - 2)).rev() {
-        let loc = BlockLocation(x, y, z);
+        let loc = BlockLocation::new(x, y, z);
         let block_type = world.get_block_simple(loc).unwrap();
         match block_type {
             SimpleType::Solid => {
@@ -166,7 +164,7 @@ fn can_fall(start: BlockLocation, world: &WorldBlocks) -> Option<i64> {
     }
 
 
-    return None;
+    None
 }
 
 pub enum CardinalDirection {
@@ -211,13 +209,13 @@ impl CardinalDirection {
 }
 
 pub struct Change {
-    pub dx: i64,
-    pub dy: i64,
-    pub dz: i64,
+    pub dx: i32,
+    pub dy: i16,
+    pub dz: i32,
 }
 
 impl Change {
-    fn new(dx: i64, dy: i64, dz: i64) -> Change {
+    fn new(dx: i32, dy: i16, dz: i32) -> Change {
         Change { dx, dy, dz }
     }
 }

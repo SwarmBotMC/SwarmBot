@@ -16,10 +16,9 @@ impl WorldBlocks {
         self.storage.insert(location, column);
     }
 
+    // TODO: change to support i16 y
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
-        let BlockLocation(x, y, z) = location;
-
-        let y = y as u8;
+        let BlockLocation { x, y, z } = location;
 
         let chunk_x = x >> 4;
         let chunk_z = z >> 4;
@@ -32,12 +31,12 @@ impl WorldBlocks {
 
         let loc = ChunkLocation(chunk_x, chunk_z);
         let chunk = self.storage.get(&loc)?;
-        let block = chunk.get_block(x, y, z);
+        let block = chunk.get_block(x, y as u8, z);
         Some(block)
     }
 
     pub fn set_block(&mut self, location: BlockLocation, block: BlockState) {
-        let BlockLocation(x, y, z) = location;
+        let BlockLocation { x, y, z } = location;
 
         let y = y as u8;
 

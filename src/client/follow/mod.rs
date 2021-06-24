@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::client::pathfind::context::MoveContext;
+use crate::client::pathfind::context::{MoveNode, MoveRecord};
 use crate::client::physics::Walk;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
@@ -24,14 +24,14 @@ pub struct Follower {
 }
 
 impl Follower {
-    pub fn new(path_result: PathResult<MoveContext>) -> Option<Follower> {
+    pub fn new(path_result: PathResult<MoveRecord>) -> Option<Follower> {
         let path = path_result.value;
         if path.len() <= 1 { return None; }
 
         let initial = path.len();
         let xs = path.into_iter().map(|ctx| {
-            let loc = ctx.location;
-            Location::new(loc.0 as f64 + 0.5, loc.1 as f64, loc.2 as f64 + 0.5)
+            let loc = ctx.state.location;
+            loc.centered()
         }).collect();
 
         Some(Follower {

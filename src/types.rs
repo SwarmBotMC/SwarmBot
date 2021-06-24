@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::lazy::SyncLazy;
-use std::ops::{Add, AddAssign, Index, Sub, MulAssign};
+use std::ops::{Add, AddAssign, Index, MulAssign, Sub};
 
 use packets::*;
 use packets::read::{ByteReadable, ByteReader};
@@ -148,7 +148,7 @@ impl Location {
 impl From<Location> for BlockLocation {
     fn from(location: Location) -> Self {
         let Location { x, y, z } = location;
-        BlockLocation(x.floor() as i64, y.floor() as i64, z.floor() as i64)
+        BlockLocation::from(x, y, z)
     }
 }
 
@@ -178,14 +178,13 @@ pub struct Displacement {
 }
 
 impl Displacement {
-
     pub fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement { dx, dy, dz }
     }
 
     pub fn mag2(&self) -> f64 {
-        let Displacement{dx,dy,dz} = *self;
-        dx*dx + dy*dy + dz*dz
+        let Displacement { dx, dy, dz } = *self;
+        dx * dx + dy * dy + dz * dz
     }
 
     pub fn cross(&self, other: Displacement) -> Displacement {
@@ -383,7 +382,6 @@ pub struct Direction {
 
 impl Direction {
     pub fn unit_vector(&self) -> Displacement {
-
         let pitch = self.pitch.to_radians();
         let yaw = self.yaw.to_radians();
 
@@ -418,7 +416,9 @@ impl Direction {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Dimension {
-    Nether, Overworld, End
+    Nether,
+    Overworld,
+    End,
 }
 
 impl ByteReadable for Dimension {
@@ -446,7 +446,7 @@ pub struct Position {
 
 impl From<Position> for BlockLocation {
     fn from(pos: Position) -> Self {
-        BlockLocation(pos.x as i64, pos.y as i64, pos.z as i64)
+        BlockLocation::new(pos.x, pos.y, pos.z)
     }
 }
 

@@ -2,12 +2,12 @@ use std::cmp::max;
 
 use itertools::Itertools;
 use packets::{EnumReadable, Packet, Readable, Writable};
-use packets::read::{ByteReadable, ByteReader, ByteReadableLike};
+use packets::read::{ByteReadable, ByteReadableLike, ByteReader};
 use packets::types::{BitField, Identifier, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
 
-use crate::storage::block::{BlockState, BlockLocation};
+use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
-use crate::types::{Chat, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin, Position, Dimension};
+use crate::types::{Chat, Dimension, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin, Position};
 
 #[derive(Packet, Readable)]
 #[packet(0x00, Login)]
@@ -41,9 +41,9 @@ impl ByteReadable for GameMode {
 #[derive(Debug)]
 pub struct Record {
     pub x: u8,
-    pub y:u8,
-    pub z:u8,
-    pub block_state: VarUInt
+    pub y: u8,
+    pub z: u8,
+    pub block_state: VarUInt,
 }
 
 impl ByteReadable for Record {
@@ -54,7 +54,7 @@ impl ByteReadable for Record {
             x: horizontal >> 4,
             y,
             z: horizontal << 4,
-            block_state: byte_reader.read()
+            block_state: byte_reader.read(),
         }
     }
 }
@@ -64,7 +64,7 @@ impl ByteReadable for Record {
 pub struct MultiBlock {
     pub chunk_x: i32,
     pub chunk_z: i32,
-    pub records: Vec<Record>
+    pub records: Vec<Record>,
 }
 
 #[derive(Packet, Debug, Readable)]
@@ -85,7 +85,7 @@ pub struct Respawn {
     pub dimension: Dimension,
     pub difficulty: u8,
     pub gamemode: GameMode,
-    pub level_type: String
+    pub level_type: String,
 }
 
 #[derive(Packet, Readable)]
@@ -241,17 +241,17 @@ impl ByteReadable for Explosion {
         };
 
 
-        let origin_block = BlockLocation(location.x as i64, location.y as i64, location.z as i64);
+        let origin_block = BlockLocation::from(location.x, location.y, location.z);
         let location: Location = location.into();
-        let records = records.into_iter().map(|record| BlockLocation(
-            origin_block.0 + record.x as i64,
-            origin_block.1 + record.y as i64,
-            origin_block.2 + record.z as i64,
+        let records = records.into_iter().map(|record| BlockLocation::new(
+            origin_block.x + record.x as i32,
+            origin_block.y + record.y as i16,
+            origin_block.z + record.z as i32,
         )).collect();
         Self {
             location,
             radius,
-            records
+            records,
         }
     }
 }
@@ -312,26 +312,26 @@ impl ByteReadableLike for ChunkSection {
     type Param = bool;
 
     fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
-            let bits_per_block: u8 = byte_reader.read();
-            let palette = if bits_per_block <= 8 {
-                let bits_per_block = max(bits_per_block, 4);
-                let block_state_ids: Vec<VarInt> = byte_reader.read();
-                let block_state_ids = block_state_ids.into_iter().map(|id| BlockState(id.0 as u32)).collect_vec();
-                let storage: Vec<u64> = byte_reader.read();
-                Palette::indirect(bits_per_block, block_state_ids, storage)
-            } else {
-                let VarInt(_place_holder) = byte_reader.read();
-                let storage: Vec<u64> = byte_reader.read();
-                Palette::direct(storage)
-            };
+        let bits_per_block: u8 = byte_reader.read();
+        let palette = if bits_per_block <= 8 {
+            let bits_per_block = max(bits_per_block, 4);
+            let block_state_ids: Vec<VarInt> = byte_reader.read();
+            let block_state_ids = block_state_ids.into_iter().map(|id| BlockState(id.0 as u32)).collect_vec();
+            let storage: Vec<u64> = byte_reader.read();
+            Palette::indirect(bits_per_block, block_state_ids, storage)
+        } else {
+            let VarInt(_place_holder) = byte_reader.read();
+            let storage: Vec<u64> = byte_reader.read();
+            Palette::direct(storage)
+        };
 
-            let block_light = byte_reader.read();
-            let sky_light = param.then(||byte_reader.read());
-            ChunkSection {
-                palette,
-                block_light,
-                sky_light,
-            }
+        let block_light = byte_reader.read();
+        let sky_light = param.then(|| byte_reader.read());
+        ChunkSection {
+            palette,
+            block_light,
+            sky_light,
+        }
     }
     // fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
     // }

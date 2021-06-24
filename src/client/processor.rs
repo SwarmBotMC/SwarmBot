@@ -6,7 +6,7 @@ use crate::storage::chunk::ChunkColumn;
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Chat, Location, LocationOrigin};
 use crate::client::pathfind::progress_checker::{NoVehicleProgressor, Progressor, Progression};
-use crate::client::pathfind::context::{GlobalContext, MoveContext};
+use crate::client::pathfind::context::{GlobalContext, MoveNode};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -44,10 +44,10 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                 match cmd.command {
                     "goto" => {
                         if let [a, b, c] = cmd.args[..] {
-                            let x: i64 = a.parse().unwrap();
-                            let y: i64 = b.parse().unwrap();
-                            let z: i64 = c.parse().unwrap();
-                            let dest = BlockLocation(x,y,z);
+                            let x = a.parse().unwrap();
+                            let y = b.parse().unwrap();
+                            let z = c.parse().unwrap();
+                            let dest = BlockLocation::new(x,y,z);
                             self.local.travel_to_block(dest);
                         }
                     }
@@ -71,10 +71,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                             world: &self.global.world_blocks,
                         };
                         let prog = NoVehicleProgressor::new(ctx);
-                        let loc = MoveContext {
-                            location: self.local.physics.location().into(),
-                            blocks_can_place: 30
-                        };
+                        let loc = MoveNode::simple(self.local.physics.location().into());
                         let progressions = prog.progressions(&loc);
                         if let Progression::Movements(neighbors) = progressions {
                             for neighbor in neighbors {

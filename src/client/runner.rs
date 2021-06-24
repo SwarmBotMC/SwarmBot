@@ -123,7 +123,6 @@ impl<T: Minecraft + 'static> Runner<T> {
                         dimension: Dimension::Overworld,
                         follower: None,
                         info,
-                        destination: BlockLocation(119, 72, 226),
                         travel_problem: None,
                         last_problem: None,
                         costs: Costs {

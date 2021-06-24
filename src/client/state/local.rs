@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use tokio::sync::Notify;
 
-use crate::client::pathfind::context::{MoveContext, Costs};
+use crate::client::pathfind::context::{MoveNode, Costs};
 use crate::client::pathfind::incremental::AStar;
 use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeuristic};
 use crate::storage::block::BlockLocation;
@@ -23,7 +23,6 @@ pub struct LocalState {
     pub inventory: Inventory,
     pub costs: Costs,
     pub info: ClientInfo,
-    pub destination: BlockLocation,
     pub alive: bool,
     pub dimension: Dimension,
     pub follower: Option<Follower>,
@@ -39,10 +38,7 @@ impl LocalState {
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.physics.location().into();
 
-        let start_node = MoveContext {
-            location: from,
-            blocks_can_place: self.inventory.placeable_blocks(),
-        };
+        let start_node = MoveNode::simple(from);
 
         let problem = TravelProblem::new(start_node, goal);
 

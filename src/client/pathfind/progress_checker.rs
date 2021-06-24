@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 
-use crate::client::pathfind::context::{MoveContext, GlobalContext};
+use crate::client::pathfind::context::{MoveNode, GlobalContext};
 use crate::client::pathfind::moves::{Movements};
 use crate::storage::block::BlockLocation;
 
@@ -43,8 +43,8 @@ pub struct NoVehicleHeuristic {
     pub goal: BlockLocation
 }
 
-impl Heuristic<MoveContext> for NoVehicleHeuristic {
-    fn heuristic(&self, input: &MoveContext) -> f64 {
+impl Heuristic<MoveNode> for NoVehicleHeuristic {
+    fn heuristic(&self, input: &MoveNode) -> f64 {
         let current = input.location;
         current.dist(self.goal) * self.move_cost
     }
@@ -66,8 +66,8 @@ impl NoVehicleGoalCheck {
     }
 }
 
-impl GoalCheck<MoveContext> for NoVehicleGoalCheck {
-    fn is_goal(&self, input: &MoveContext) -> bool {
+impl GoalCheck<MoveNode> for NoVehicleGoalCheck {
+    fn is_goal(&self, input: &MoveNode) -> bool {
         input.location == self.goal
     }
 }
@@ -77,8 +77,8 @@ pub struct NoVehicleProgressor<'a> {
     ctx: GlobalContext<'a>,
 }
 
-impl Progressor<MoveContext> for NoVehicleProgressor<'_> {
-    fn progressions(&self, location: &MoveContext) -> Progression<MoveContext> {
+impl Progressor<MoveNode> for NoVehicleProgressor<'_> {
+    fn progressions(&self, location: &MoveNode) -> Progression<MoveNode> {
         Movements::obtain_all(location, &self.ctx)
     }
 }

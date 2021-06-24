@@ -1,12 +1,11 @@
 use std::time::Duration;
 use crate::client::follow::{Follower, FollowResult};
-use crate::client::pathfind::context::{GlobalContext, MoveContext};
+use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::progress_checker::NoVehicleProgressor;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut};
-use crate::client::physics::{Walk};
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
@@ -37,7 +36,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
                 if let Some(mut problem) = self.state.last_problem.take() {
                     let block_loc = self.state.physics.location().into();
-                    problem.recalc(MoveContext::no_blocks(block_loc));
+                    problem.recalc(MoveNode::simple(block_loc));
                     self.state.travel_problem = Some(problem);
                 }
 

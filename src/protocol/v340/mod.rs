@@ -30,6 +30,7 @@ pub struct EventQueue340 {
     out: Interface340,
     location: Location,
     dimension: Dimension,
+
     /// we need to store state because sometimes death packets occur twice and we only want to send one event
     alive: bool,
 }
@@ -131,11 +132,11 @@ impl EventQueue340 {
             MultiBlock::ID => {
                 let MultiBlock{chunk_x, chunk_z, records} = data.read();
 
-                let base_x = (chunk_x as i64) << 4;
-                let base_z = (chunk_z as i64) << 4;
+                let base_x = chunk_x << 4;
+                let base_z = chunk_z << 4;
 
                 for Record { x, y, z, block_state } in records {
-                    let location = BlockLocation(base_x + x as i64, y as i64, base_z + z as i64);
+                    let location = BlockLocation::new(base_x + x as i32, y as i16, base_z + z as i32);
                     processor.on_block_change(location, BlockState(block_state.0 as u32))
                 }
             }

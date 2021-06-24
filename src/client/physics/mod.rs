@@ -209,7 +209,7 @@ impl Physics {
                 if world.get_block_simple(head_loc) == Some(SimpleType::Solid) {
                     // we hit our heads!
                     self.velocity.dy = 0.0;
-                    new_loc.y = (head_loc.1 as f64) - PLAYER_HEIGHT;
+                    new_loc.y = (head_loc.y as f64) - PLAYER_HEIGHT;
                 } else if !self.in_water{
                     // we can decelerate normally
                     self.velocity.dy -= ACC_G;
