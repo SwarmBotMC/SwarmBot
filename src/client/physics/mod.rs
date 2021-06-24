@@ -8,8 +8,8 @@ mod bounding_box;
 
 const JUMP_UPWARDS_MOTION: f64 = 0.42;
 
-const SPRINT_SPEED: f64 = 0.30000001192092896;
-const WALK_SPEED: f64 = SPRINT_SPEED * 0.6;
+const SPRINT_SPEED: f64 = 0.2806;
+const WALK_SPEED: f64 = 0.21585;
 const SWIM_SPEED: f64 = 0.11;
 
 const FALL_FACTOR: f64 = 0.02;
@@ -100,7 +100,7 @@ impl Physics {
         if self.in_water {
             SWIM_SPEED
         } else {
-            WALK_SPEED
+            SPRINT_SPEED
         }
     }
 
