@@ -5,6 +5,7 @@
 #![feature(once_cell)]
 #![feature(step_trait)]
 #![feature(option_get_or_insert_default)]
+#![feature(array_zip)]
 
 use std::fs::File;
 

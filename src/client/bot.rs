@@ -32,14 +32,18 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
     fn move_around(&mut self, global: &mut GlobalState) {
         if let Some(mut follower) = self.state.follower.take() {
-            if follower.follow(&mut self.state, global) == FollowResult::Failed {
+            let follow_result = follower.follow(&mut self.state, global);
+            if follow_result == FollowResult::Failed || follower.should_recalc() {
 
                 if let Some(mut problem) = self.state.last_problem.take() {
                     let block_loc = self.state.physics.location().into();
                     problem.recalc(MoveContext::no_blocks(block_loc));
                     self.state.travel_problem = Some(problem);
                 }
-                self.state.follower = None;
+
+                if follow_result == FollowResult::Failed {
+                    self.state.follower = None;
+                }
             } else {
                 self.state.follower = Some(follower);
             }
@@ -61,12 +65,9 @@ pub fn run_threaded(client: &mut LocalState, global: &GlobalState) {
         let res = traverse.iterate_for(Duration::from_millis(30), &progressor);
 
         if let Increment::Finished(res) = res {
-            if let Some(res) = res {
-                println!("found goal of size {}", res.len());
-                client.follower = Some(Follower::new(res));
-            } else {
-                println!("could not find goal");
-            }
+            println!("found goal of size {} .. complete = {}", res.value.len(), res.complete);
+            client.follower = Follower::new(res);
+
             // we are done finding the path
             client.last_problem = client.travel_problem.take();
         }

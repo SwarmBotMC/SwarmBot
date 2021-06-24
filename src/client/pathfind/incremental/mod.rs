@@ -7,11 +7,18 @@ use std::time::{Duration, Instant};
 use std::fmt::Debug;
 
 
+/// credit baritone
+const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
+const MIN_DIST: f64 = 5.0;
+const MIN_DIST2: f64 = MIN_DIST * MIN_DIST;
+
+const MAX_DURATION_SECS: u64 = 5;
+
 pub struct AStar<T: Clone> {
     state: Option<AStarState<T>>
 }
 
-
+/// The state of AStar. This is a separate object so that when the iteration is done the state can be moved
 struct AStarState<T: Clone> {
     /// stores values of object T
     nodes: Vec<T>,
@@ -21,12 +28,19 @@ struct AStarState<T: Clone> {
     /// the g-scores of all open nodes. How long it took to travel to them
     g_scores: HashMap<usize, f64>,
 
+    meta_heuristics: [f64; 7],
+    meta_heuristics_ids: [usize; 7],
+
+    total_duration_s: u64,
+
     /// The **open set**.
     /// a priority queue of nodes sorted my lowest f-score
     queue: BinaryHeap<HeapNode<usize>>,
 
     /// tracks ancestors of nodes to reconstruct the final path
     parent_map: HashMap<usize, usize>,
+
+    valid: bool
 }
 
 pub type Path<T> = Vec<T>;
@@ -52,11 +66,31 @@ fn reconstruct_path<T: Clone>(vec: Vec<T>, goal_idx: usize, parent_map: &HashMap
     res
 }
 
-pub type PathResult<T> = Option<Vec<T>>;
+pub struct PathResult<T>{
+    pub complete: bool,
+    pub value: Vec<T>
+}
+
+impl <T> PathResult<T> {
+    fn complete(value: Vec<T>) -> PathResult<T> {
+        PathResult {
+            complete: true,
+            value
+        }
+    }
+
+    fn incomplete(value: Vec<T>) -> PathResult<T> {
+        PathResult {
+            complete: false,
+            value
+        }
+    }
+}
 
 impl <T: Clone + Hash + Eq + Debug> AStar<T> {
 
     pub fn new(init_node: T) -> AStar<T> {
+
 
         let mut val_to_idx = HashMap::new();
         val_to_idx.insert(init_node.clone(), 0);
@@ -72,15 +106,41 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
 
         let state = Some(AStarState {
             nodes: vec![init_node],
+            meta_heuristics: [f64::MAX; 7],
             val_to_idx,
             g_scores,
             queue,
-            parent_map: Default::default()
+            total_duration_s: 0,
+            parent_map: Default::default(),
+            valid: false,
+            meta_heuristics_ids: [0; 7]
         });
 
         AStar {
             state
         }
+    }
+
+    pub fn select_best(&mut self, h: &impl Heuristic<T>) -> Increment<PathResult<T>> {
+        let state = self.state.take().unwrap();
+        let mut best = (f64::MAX, 0);
+        for i in 0..7 {
+            let heuristic = state.meta_heuristics[i];
+            let id = state.meta_heuristics_ids[i];
+            let value = state.nodes[id].clone();
+            if heuristic < best.0 {
+                best = (heuristic, id);
+            }
+            let g_score = state.g_scores[&id];
+            if g_score > MIN_DIST {
+                let h = h.heuristic(&value);
+                println!("g score is {} for coefficient {} and h score {} ", g_score, COEFFICIENTS[i],h);
+                let path = reconstruct_path(state.nodes, id, &state.parent_map);
+                return Increment::Finished(PathResult::incomplete(path));
+            }
+        }
+        let path = reconstruct_path(state.nodes, best.1, &state.parent_map);
+        Increment::Finished(PathResult::incomplete(path))
     }
 
     pub fn iterate_for(&mut self, duration: Duration, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T>> {
@@ -93,7 +153,13 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
             let current_duration = on.duration_since(start);
 
             if current_duration >= duration {
-                return Increment::InProgress;
+                let dur = &mut self.state.as_mut().unwrap().total_duration_s;
+                *dur += current_duration.as_secs();
+                return if *dur > MAX_DURATION_SECS {
+                    return self.select_best(heuristic);
+                } else {
+                    Increment::InProgress
+                }
             }
 
             match self.iterate(heuristic, progressor, goal_check)  {
@@ -119,30 +185,21 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
             if goal_check.is_goal(popped) {
                 let state = self.state.take().unwrap();
                 let path = reconstruct_path(state.nodes, idx, &state.parent_map);
-                return Increment::Finished(PathResult::Some(path))
+                return Increment::Finished(PathResult::complete(path));
             }
 
             let neighbors = match progressor.progressions(popped) {
-                Progression::Edge => {
-
-                    // still return a path of on edge
-                    let state = self.state.take().unwrap();
-                    let path = reconstruct_path(state.nodes, idx, &state.parent_map);
-
-                    return Increment::Finished(PathResult::Some(path));
-                }
                 Progression::Movements(neighbors) => {
                     neighbors
                 }
+                _ => return Increment::InProgress,
             };
-
-            // println!("neighbors {:?}", neighbors);
 
             let popped_g_score = *state.g_scores.get(&idx).unwrap();
 
             'neighbor_loop:
             for neighbor in neighbors {
-                let g_score = popped_g_score + neighbor.cost;
+                let tentative_g_score = popped_g_score + neighbor.cost;
                 let value = neighbor.value.clone();
 
                 let value_idx = state.val_to_idx.get(&value);
@@ -150,8 +207,8 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
                 let value_idx  = match value_idx {
                     Some(idx) => {
                         let prev_g_score = state.g_scores.get_mut(idx).unwrap();
-                        if g_score < *prev_g_score {
-                            *prev_g_score = g_score
+                        if tentative_g_score < *prev_g_score {
+                            *prev_g_score = tentative_g_score
                         } else {
                             continue 'neighbor_loop;
                         }
@@ -161,7 +218,7 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
                         let value_idx = state.nodes.len();
                         state.nodes.push(value.clone());
                         state.val_to_idx.insert(value.clone(), value_idx);
-                        state.g_scores.insert(value_idx, g_score);
+                        state.g_scores.insert(value_idx, tentative_g_score);
                         value_idx
                     }
                 };
@@ -169,7 +226,21 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
                 state.parent_map.insert(value_idx, idx);
 
                 let h_score = heuristic.heuristic(&neighbor.value);
-                let f_score = g_score + h_score;
+                let f_score = tentative_g_score + h_score;
+
+                for i in 0..state.meta_heuristics.len() {
+
+                    let meta_heuristic = h_score + tentative_g_score / COEFFICIENTS[i];
+                    let current = state.meta_heuristics[i];
+                    if meta_heuristic < current {
+                        state.meta_heuristics[i] = meta_heuristic;
+                        state.meta_heuristics_ids[i] = value_idx;
+                        if !state.valid && tentative_g_score > MIN_DIST {
+                            state.valid = true;
+                        }
+                    }
+
+                }
 
                 let heap_node = HeapNode {
                     contents: value_idx,
@@ -180,7 +251,8 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
 
             }
         } else {
-            return Increment::Finished(None)
+            println!("no more nodes");
+            return self.select_best(heuristic);
         }
 
         Increment::InProgress
