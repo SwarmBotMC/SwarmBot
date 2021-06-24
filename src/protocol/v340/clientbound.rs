@@ -43,7 +43,7 @@ pub struct Record {
     pub x: u8,
     pub y:u8,
     pub z:u8,
-    pub block_state: u32
+    pub block_state: VarUInt
 }
 
 impl ByteReadable for Record {

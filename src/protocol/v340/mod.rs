@@ -136,7 +136,7 @@ impl EventQueue340 {
 
                 for Record { x, y, z, block_state } in records {
                     let location = BlockLocation(base_x + x as i64, y as i64, base_z + z as i64);
-                    processor.on_block_change(location, BlockState(block_state))
+                    processor.on_block_change(location, BlockState(block_state.0 as u32))
                 }
             }
             PlayerPositionAndLook::ID => {

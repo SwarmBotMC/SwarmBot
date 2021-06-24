@@ -250,7 +250,7 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
 
             }
         } else {
-            println!("no more nodes");
+            println!("no more nodes .. expanded {}", state.nodes.len());
             return self.select_best(heuristic);
         }
 

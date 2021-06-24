@@ -10,13 +10,14 @@ const JUMP_UPWARDS_MOTION: f64 = 0.42;
 
 const SPRINT_SPEED: f64 = 0.30000001192092896;
 const WALK_SPEED: f64 = SPRINT_SPEED * 0.6;
+const SWIM_SPEED: f64 = 0.11;
 
 const FALL_FACTOR: f64 = 0.02;
 
 const FALL_TIMES: f64 = 0.9800000190734863;
 const FALL_OFF_LAND: f64 = 0.5;
 
-const LIQUID_MOTION_Y: f64 = 0.30000001192092896;
+const LIQUID_MOTION_Y: f64 = 0.095;
 
 fn jump_factor(jump_boost: Option<u32>) -> f64 {
     JUMP_UPWARDS_MOTION + match jump_boost {
@@ -27,6 +28,9 @@ fn jump_factor(jump_boost: Option<u32>) -> f64 {
 
 const JUMP_WATER: f64 = 0.03999999910593033;
 const ACC_G: f64 = 0.08;
+
+const WATER_DECEL: f64 = 0.2;
+
 const VEL_MULT: f64 = 0.9800000190734863;
 
 // player width divided by 2
@@ -52,6 +56,7 @@ pub struct Physics {
     horizontal: Displacement,
     velocity: Displacement,
     on_ground: bool,
+    just_jumped: bool,
     in_water: bool,
 }
 
@@ -79,14 +84,7 @@ impl Physics {
     }
 
     pub fn jump(&mut self) {
-        if self.in_water {
-            // we do not set in water false... we can jump infinite times
-            self.velocity.dy = LIQUID_MOTION_Y;
-        }
-        if self.on_ground {
-            self.on_ground = false;
-            self.velocity.dy = jump_factor(None);
-        }
+        self.just_jumped = true;
     }
 
     pub fn look(&mut self, direction: Direction) {
@@ -98,9 +96,17 @@ impl Physics {
         self.look
     }
 
+    fn speed(&self) -> f64 {
+        if self.in_water {
+            SWIM_SPEED
+        } else {
+            WALK_SPEED
+        }
+    }
+
     pub fn walk(&mut self, walk: Walk) {
         let mut velocity = self.horizontal;
-        velocity *= WALK_SPEED;
+        velocity *= self.speed();
         if let Walk::Backward = walk {
             velocity *= -1.0;
         }
@@ -113,7 +119,7 @@ impl Physics {
         let mut velocity = self.horizontal.cross(*UNIT_Y);
 
 
-        velocity *= WALK_SPEED;
+        velocity *= self.speed();
         if let Strafe::Left = strafe {
             velocity *= -1.0
         }
@@ -123,6 +129,18 @@ impl Physics {
     }
 
     pub fn tick(&mut self, world: &WorldBlocks) {
+        if self.just_jumped {
+            self.just_jumped = false;
+
+            if self.in_water {
+                // we do not set in water false... we can jump infinite times
+                self.velocity.dy = (self.velocity.dy + WATER_DECEL).min(LIQUID_MOTION_Y);
+            }
+            if self.on_ground {
+                self.on_ground = false;
+                self.velocity.dy = jump_factor(None);
+            }
+        }
         // move y, x, z
 
         let prev_loc = self.location;
@@ -134,8 +152,6 @@ impl Physics {
         let falling = matches!(world.get_block_simple(below_loc), Some(SimpleType::WalkThrough) | Some(SimpleType::Water));
         if falling {
             self.on_ground = false;
-        } else {
-            let kind = world.get_block(below_loc);
         }
 
         {
@@ -152,6 +168,7 @@ impl Physics {
             let end_vel = Displacement::new(end_dx, dy, end_dz);
             let test_loc = prev_loc + end_vel;
 
+            let prev_legs: BlockLocation = prev_loc.into();
             let legs: BlockLocation = test_loc.into();
             let head: BlockLocation = {
                 let mut head_loc =test_loc;
@@ -159,16 +176,21 @@ impl Physics {
                 head_loc.into()
             };
 
+            let prev_legs_block = world.get_block_simple(prev_legs);
             let leg_block = world.get_block_simple(legs);
             let head_block  = world.get_block_simple(head);
 
-            self.in_water = leg_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
 
-            if world.get_block_simple(legs) == Some(SimpleType::Solid) || world.get_block_simple(head) == Some(SimpleType::Solid) {
+            let against_block = leg_block == Some(SimpleType::Solid) || head_block == Some(SimpleType::Solid);
+            if against_block {
                 let new_dx = 0.0;
                 let new_dz = 0.0;
                 self.velocity.dx = new_dx;
                 self.velocity.dz = new_dz;
+
+                self.in_water = prev_legs_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
+            } else {
+                self.in_water = leg_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
             }
         }
 
@@ -183,12 +205,12 @@ impl Physics {
 
             let head_loc = new_loc.into();
 
-            if self.velocity.dy > 0.0 {// we are moving up
+            if self.velocity.dy >= 0.0 {// we are moving up
                 if world.get_block_simple(head_loc) == Some(SimpleType::Solid) {
                     // we hit our heads!
                     self.velocity.dy = 0.0;
                     new_loc.y = (head_loc.1 as f64) - PLAYER_HEIGHT;
-                } else {
+                } else if !self.in_water{
                     // we can decelerate normally
                     self.velocity.dy -= ACC_G;
                 }
@@ -204,7 +226,8 @@ impl Physics {
                         self.velocity.dy -= ACC_G;
                     }
                     Some(SimpleType::Water) => {
-                        self.velocity.dy -= ACC_G;
+                        // println!("water");
+                        // self.velocity.dy -= ACC_G;
                     }
                     // the chunk hasn't loaded, let's not apply physics
                     _ => {}

@@ -4,7 +4,7 @@ use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 
-pub const MAX_FALL: i32 = 22;
+pub const MAX_FALL: i32 = 3;
 
 enum MoveResult {
     Edge,

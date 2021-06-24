@@ -74,7 +74,7 @@ impl From<u8> for BitField {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct VarUInt(pub usize);
 
 impl From<i32> for VarInt {
