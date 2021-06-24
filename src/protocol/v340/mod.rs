@@ -18,7 +18,7 @@ use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState};
-use crate::storage::block::{BlockState};
+use crate::storage::block::{BlockState, BlockLocation};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Direction, Location, PacketData, Dimension};
 
@@ -62,6 +62,7 @@ impl EventQueue340 {
             JoinGame::ID => {
                 // don't have to do anything here... already processed in Minecraft::login
             }
+
             BlockChange::ID => {
                 let BlockChange { block_id, location } = data.read();
                 processor.on_block_change(location.into(), BlockState(block_id.0 as u32));
@@ -120,10 +121,23 @@ impl EventQueue340 {
                 let Respawn{dimension, ..} = data.read();
                 self.dimension = dimension;
             }
+
+            // need to do this because the chunk packet is read differently based on dimension
             clientbound::CHUNK_PKT_ID => {
                 let overworld = self.dimension == Dimension::Overworld;
                 let ChunkColumnPacket { chunk_x, chunk_z, column } = data.reader.read_like(&overworld);
                 processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column);
+            }
+            MultiBlock::ID => {
+                let MultiBlock{chunk_x, chunk_z, records} = data.read();
+
+                let base_x = (chunk_x as i64) << 4;
+                let base_z = (chunk_z as i64) << 4;
+
+                for Record { x, y, z, block_state } in records {
+                    let location = BlockLocation(base_x + x as i64, y as i64, base_z + z as i64);
+                    processor.on_block_change(location, BlockState(block_state))
+                }
             }
             PlayerPositionAndLook::ID => {
                 let PlayerPositionAndLook { location, rotation: _, teleport_id } = data.read();

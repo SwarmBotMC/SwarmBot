@@ -38,6 +38,35 @@ impl ByteReadable for GameMode {
     }
 }
 
+#[derive(Debug)]
+pub struct Record {
+    pub x: u8,
+    pub y:u8,
+    pub z:u8,
+    pub block_state: u32
+}
+
+impl ByteReadable for Record {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let horizontal: u8 = byte_reader.read();
+        let y: u8 = byte_reader.read();
+        Self {
+            x: horizontal >> 4,
+            y,
+            z: horizontal << 4,
+            block_state: byte_reader.read()
+        }
+    }
+}
+
+#[derive(Packet, Debug, Readable)]
+#[packet(0x10, Play)]
+pub struct MultiBlock {
+    pub chunk_x: i32,
+    pub chunk_z: i32,
+    pub records: Vec<Record>
+}
+
 #[derive(Packet, Debug, Readable)]
 #[packet(0x23, Play)]
 pub struct JoinGame {

@@ -16,7 +16,7 @@ const FALL_FACTOR: f64 = 0.02;
 const FALL_TIMES: f64 = 0.9800000190734863;
 const FALL_OFF_LAND: f64 = 0.5;
 
-// const LIQUID_MOTION_Y: f64 = 0.30000001192092896;
+const LIQUID_MOTION_Y: f64 = 0.30000001192092896;
 
 fn jump_factor(jump_boost: Option<u32>) -> f64 {
     JUMP_UPWARDS_MOTION + match jump_boost {
@@ -52,6 +52,7 @@ pub struct Physics {
     horizontal: Displacement,
     velocity: Displacement,
     on_ground: bool,
+    in_water: bool,
 }
 
 pub enum Strafe {
@@ -78,6 +79,10 @@ impl Physics {
     }
 
     pub fn jump(&mut self) {
+        if self.in_water {
+            // we do not set in water false... we can jump infinite times
+            self.velocity.dy = LIQUID_MOTION_Y;
+        }
         if self.on_ground {
             self.on_ground = false;
             self.velocity.dy = jump_factor(None);
@@ -126,8 +131,11 @@ impl Physics {
         below_loc.y -= 0.001;
 
         let below_loc: BlockLocation = below_loc.into();
-        if world.get_block_simple(below_loc) == Some(SimpleType::WalkThrough) {
+        let falling = matches!(world.get_block_simple(below_loc), Some(SimpleType::WalkThrough) | Some(SimpleType::Water));
+        if falling {
             self.on_ground = false;
+        } else {
+            let kind = world.get_block(below_loc);
         }
 
         {
@@ -151,6 +159,11 @@ impl Physics {
                 head_loc.into()
             };
 
+            let leg_block = world.get_block_simple(legs);
+            let head_block  = world.get_block_simple(head);
+
+            self.in_water = leg_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
+
             if world.get_block_simple(legs) == Some(SimpleType::Solid) || world.get_block_simple(head) == Some(SimpleType::Solid) {
                 let new_dx = 0.0;
                 let new_dz = 0.0;
@@ -173,7 +186,6 @@ impl Physics {
             if self.velocity.dy > 0.0 {// we are moving up
                 if world.get_block_simple(head_loc) == Some(SimpleType::Solid) {
                     // we hit our heads!
-                    println!("hit head");
                     self.velocity.dy = 0.0;
                     new_loc.y = (head_loc.1 as f64) - PLAYER_HEIGHT;
                 } else {
@@ -191,10 +203,8 @@ impl Physics {
                     Some(SimpleType::WalkThrough) => {
                         self.velocity.dy -= ACC_G;
                     }
-                    Some(kind) => {
+                    Some(SimpleType::Water) => {
                         self.velocity.dy -= ACC_G;
-                        // we are not going to do anything
-                        // panic!("unsupported physics block {:?}", kind);
                     }
                     // the chunk hasn't loaded, let's not apply physics
                     _ => {}

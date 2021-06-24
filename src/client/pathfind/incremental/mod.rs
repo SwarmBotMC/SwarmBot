@@ -134,7 +134,6 @@ impl <T: Clone + Hash + Eq + Debug> AStar<T> {
             let g_score = state.g_scores[&id];
             if g_score > MIN_DIST {
                 let h = h.heuristic(&value);
-                println!("g score is {} for coefficient {} and h score {} ", g_score, COEFFICIENTS[i],h);
                 let path = reconstruct_path(state.nodes, id, &state.parent_map);
                 return Increment::Finished(PathResult::incomplete(path));
             }
