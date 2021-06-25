@@ -294,7 +294,48 @@ pub const CHUNK_PKT_ID: u32 = 0x20;
 pub struct ChunkColumnPacket {
     pub chunk_x: i32,
     pub chunk_z: i32,
+    pub new_chunk: bool,
     pub column: ChunkColumn,
+}
+
+impl ByteReadableLike for ChunkColumnPacket {
+    type Param = bool;
+
+    fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
+        let chunk_x = byte_reader.read();
+        let chunk_z = byte_reader.read();
+        let ground_up_continuous: bool = byte_reader.read();
+        let VarUInt(mut primary_bitmask) = byte_reader.read();
+        let _size: VarUInt = byte_reader.read();
+
+        const INIT: Option<HighMemoryChunkSection> = None;
+        let mut sections = [INIT; 16];
+
+        let mut idx = 0;
+        while primary_bitmask != 0 {
+            if primary_bitmask & 0b1 == 1 {
+                let section: ChunkSection = byte_reader.read_like(param);
+                sections[idx] = Some(HighMemoryChunkSection::new(section.palette));
+            }
+            primary_bitmask >>= 1;
+            idx += 1;
+        }
+
+        let data = ChunkData {
+            sections
+        };
+
+        let column = ChunkColumn::HighMemory {
+            data
+        };
+
+        ChunkColumnPacket {
+            chunk_x,
+            chunk_z,
+            new_chunk: ground_up_continuous,
+            column,
+        }
+    }
 }
 
 pub struct ChunkSection {
@@ -307,6 +348,7 @@ pub struct ChunkSection {
     #[allow(unused)]
     sky_light: Option<[u8; 2048]>,
 }
+
 
 impl ByteReadableLike for ChunkSection {
     type Param = bool;
@@ -335,45 +377,6 @@ impl ByteReadableLike for ChunkSection {
     }
     // fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
     // }
-}
-
-impl ByteReadableLike for ChunkColumnPacket {
-    type Param = bool;
-
-    fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
-        let chunk_x = byte_reader.read();
-        let chunk_z = byte_reader.read();
-        let _ground_up_continuous: bool = byte_reader.read();
-        let VarUInt(mut primary_bitmask) = byte_reader.read();
-        let _size: VarUInt = byte_reader.read();
-
-        const INIT: Option<HighMemoryChunkSection> = None;
-        let mut sections = [INIT; 16];
-
-        let mut idx = 0;
-        while primary_bitmask != 0 {
-            if primary_bitmask & 0b1 == 1 {
-                let section: ChunkSection = byte_reader.read_like(param);
-                sections[idx] = Some(HighMemoryChunkSection::new(section.palette));
-            }
-            primary_bitmask >>= 1;
-            idx += 1;
-        }
-
-        let data = ChunkData {
-            sections
-        };
-
-        let column = ChunkColumn::HighMemory {
-            data
-        };
-
-        ChunkColumnPacket {
-            chunk_x,
-            chunk_z,
-            column,
-        }
-    }
 }
 
 impl ByteReadable for PlayerPositionAndLook {

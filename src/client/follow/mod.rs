@@ -34,7 +34,7 @@ impl Follower {
         let initial = path.len();
         let xs = path.into_iter().map(|ctx| {
             let loc = ctx.state.location;
-            loc.centered()
+            loc.center_bottom()
         }).collect();
 
         Some(Follower {

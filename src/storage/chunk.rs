@@ -303,6 +303,20 @@ pub enum ChunkColumn {
 }
 
 impl ChunkColumn {
+
+    pub fn modify(&mut self, column: ChunkColumn){
+        if let (ChunkColumn::HighMemory {data: left}, ChunkColumn::HighMemory {data: right}) = (self, column) {
+            for (idx, new_section) in IntoIterator::into_iter(right.sections).enumerate() {
+                if let Some(section) = new_section {
+                    left.sections[idx] = Some(section);
+                }
+            }
+        }
+        else {
+            panic!("cannot modify low memory chunks");
+        }
+    }
+
     pub fn set_block(&mut self, x: u8, y: u8, z: u8, state: BlockState) {
         let section_idx = (y >> 4) as u8;
         let y_offset = y - (section_idx << 4);

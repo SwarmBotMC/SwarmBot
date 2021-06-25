@@ -3,14 +3,15 @@ use std::fmt::{Display, Formatter};
 use std::lazy::SyncLazy;
 use std::ops::{Add, AddAssign, Index, MulAssign, Sub};
 
+use itertools::Itertools;
 use packets::*;
 use packets::read::{ByteReadable, ByteReader};
+use packets::write::{ByteWritable, ByteWriter};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
 use crate::storage::block::BlockLocation;
 use crate::types::Origin::{Abs, Rel};
-use packets::write::{ByteWritable, ByteWriter};
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -38,34 +39,34 @@ pub struct Chat {
 }
 
 #[derive(Debug)]
-pub struct Command<'a> {
-    pub player: &'a str,
-    pub command: &'a str,
-    pub args: Vec<&'a str>,
+pub struct Command {
+    pub player: String,
+    pub command: String,
+    pub args: Vec<String>,
 }
 
 
 #[derive(Debug)]
-pub struct PlayerMessage<'a> {
-    pub player: &'a str,
-    pub message: &'a str,
+pub struct PlayerMessage {
+    pub player: String,
+    pub message: String,
 }
 
-impl<'a> PlayerMessage<'a> {
-    pub fn into_cmd(self) -> Option<Command<'a>> {
+impl PlayerMessage {
+    pub fn into_cmd(self) -> Option<Command> {
         static RE: SyncLazy<Regex> = SyncLazy::new(|| {
             Regex::new(r"#(\S+)\s?(.*)").unwrap()
         });
-        let capture = RE.captures(self.message)?;
+        let capture = RE.captures(&self.message)?;
 
-        let command = capture.get(1)?.as_str();
-        let args = capture.get(2)?.as_str();
+        let command = capture.get(1)?.as_str().to_string();
+        let args = capture.get(2)?.as_str().to_string();
 
 
-        let args: Vec<_> = if args.is_empty() {
+        let args  = if args.is_empty() {
             Vec::new()
         } else {
-            args.split(' ').collect()
+            args.split(' ').map(|x| x.to_string()).collect()
         };
 
         Some(Command {
@@ -82,12 +83,14 @@ impl Chat {
             Regex::new(r"^<([A-Za-z_]+)> (.*)").unwrap()
         });
 
-        let text = &self.extra.as_ref()?.first()?.text;
+        let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
 
-        let captures: Captures = RE.captures(text)?;
+        println!("text is {}", text);
 
-        let player = captures.get(1)?.as_str();
-        let message = captures.get(2)?.as_str();
+        let captures: Captures = RE.captures(&text)?;
+
+        let player = captures.get(1)?.as_str().to_string();
+        let message = captures.get(2)?.as_str().to_string();
 
         Some(PlayerMessage {
             player,
@@ -109,6 +112,16 @@ pub struct Location {
     pub x: f64,
     pub y: f64,
     pub z: f64,
+}
+
+impl Location {
+    pub fn sub_y(&self, dy: f64) -> Location {
+        Location::new(self.x, self.y - dy, self.z)
+    }
+
+    pub fn add_y(&self, dy: f64) -> Location {
+        Location::new(self.x, self.y + dy, self.z)
+    }
 }
 
 #[derive(Writable, Readable, Debug, Copy, Clone, Default, PartialEq)]
@@ -479,7 +492,7 @@ impl ByteReadable for Position {
 
 impl ByteWritable for Position {
     fn write_to_bytes(self, writer: &mut ByteWriter) {
-        let Position{x,y,z} = self;
+        let Position { x, y, z } = self;
         let write = ((x as u64 & 0x3FFFFFF) << 38) | ((y as u64 & 0xFFF) << 26) | (z as u64 & 0x3FFFFFF);
         writer.write(write);
     }

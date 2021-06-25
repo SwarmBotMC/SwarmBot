@@ -23,6 +23,10 @@ impl WorldBlocks {
         self.storage.insert(location, column);
     }
 
+    pub fn modify_column(&mut self, location: ChunkLocation, column: ChunkColumn) {
+        self.storage.get_mut(&location).unwrap().modify(column);
+    }
+
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
         let BlockLocation { x, y, z } = location;
 

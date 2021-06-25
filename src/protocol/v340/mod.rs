@@ -126,8 +126,8 @@ impl EventQueue340 {
             // need to do this because the chunk packet is read differently based on dimension
             clientbound::CHUNK_PKT_ID => {
                 let overworld = self.dimension == Dimension::Overworld;
-                let ChunkColumnPacket { chunk_x, chunk_z, column } = data.reader.read_like(&overworld);
-                processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column);
+                let ChunkColumnPacket { chunk_x, chunk_z, column, new_chunk } = data.reader.read_like(&overworld);
+                processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column, new_chunk );
             }
             MultiBlock::ID => {
                 let MultiBlock{chunk_x, chunk_z, records} = data.read();

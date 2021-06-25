@@ -42,7 +42,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
         self.out.teleport(self.state.physics.location());
 
         let dir = self.state.physics.direction();
-        self.out.look(dir);
+        // self.out.look(dir);
 
         self.state.ticks += 1;
     }

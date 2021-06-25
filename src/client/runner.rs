@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 use tokio::sync::Notify;
 
@@ -97,12 +97,18 @@ impl<T: Minecraft + 'static> Runner<T> {
 
 
     pub async fn game_loop(&mut self) {
+        let mut previous_goal = Instant::now();
         loop {
-            let now = Instant::now();
-            let end_by = now + Duration::from_millis(50);
-
+            let end_by = previous_goal + Duration::from_millis(50);
             self.game_iter(end_by).await;
             tokio::time::sleep_until(tokio::time::Instant::from_std(end_by)).await;
+            let now = Instant::now();
+            let difference = now - end_by;
+            let millis_off = difference.as_millis();
+            if millis_off > 10 {
+                println!("off by {}ms", millis_off);
+            }
+            previous_goal = end_by;
         }
     }
 

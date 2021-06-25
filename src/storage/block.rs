@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter};
-
-use crate::types::Location;
-use crate::bootstrap::blocks::BlockData;
 use std::ops::Add;
+
+use crate::bootstrap::blocks::BlockData;
+use crate::types::Location;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -10,7 +10,7 @@ pub struct BlockKind(u32);
 
 impl From<u32> for BlockKind {
     fn from(id: u32) -> Self {
-        Self (id)
+        Self(id)
     }
 }
 
@@ -123,7 +123,7 @@ impl Add for BlockLocation {
     type Output = BlockLocation;
 
     fn add(self, rhs: Self) -> Self::Output {
-        let BlockLocation{x,y,z} = self;
+        let BlockLocation { x, y, z } = self;
         BlockLocation::new(x + rhs.x, y + rhs.y, z + rhs.z)
     }
 }
@@ -138,10 +138,15 @@ impl BlockLocation {
         let x = num::cast(x.floor()).unwrap();
         let y = num::cast(y.floor()).unwrap();
         let z = num::cast(z.floor()).unwrap();
-        BlockLocation::new(x,y,z)
+        BlockLocation::new(x, y, z)
     }
 
-    pub fn centered(&self) -> Location {
+    pub fn add_y(&self, dy: i16) -> BlockLocation {
+        let &BlockLocation { x, y, z } = self;
+        Self { x, y: y + dy, z }
+    }
+
+    pub fn center_bottom(&self) -> Location {
         Location {
             x: self.x as f64 + 0.5,
             y: self.y as f64,
@@ -184,7 +189,6 @@ pub enum BlockApprox {
 
 
 impl BlockApprox {
-
     pub const AIR: BlockApprox = BlockApprox::Estimate(SimpleType::WalkThrough);
 
     pub fn s_type(&self) -> SimpleType {
