@@ -154,7 +154,7 @@ impl Palette {
                 let value = map.iter().position(|&r| r == state);
                 match value {
                     None => {
-                        // println!("a");
+
                         let new_len = map.len() + 1;
                         let required_bits = bits_needed(new_len);
 
@@ -162,14 +162,14 @@ impl Palette {
 
                         if required_bits > self.bits_per_block {
 
-                            // println!("b");
+
                             let (required_bits, reverse_map) = if required_bits <= 8 {
                                 let reverse_map: HashMap<_, _> = map.iter().enumerate().map(|(k, v)| (*v, k)).collect();
-                                // println!("c");
+
                                 (required_bits.max(4), Some(reverse_map))
                             } else {
                                 self.id_to_state = None;
-                                // println!("d");
+
                                 (13, None)
                             };
 
@@ -212,18 +212,18 @@ impl Palette {
                             self.storage = storage;
                             return;
                         } else {
-                            // println!("f");
+
                             (new_len - 1) as u32
                         }
                     }
                     Some(value) => {
-                        // println!("g");
+
                         value as u32
                     }
                 }
             }
         };
-        // println!("h");
+
 
         let value = value as u64;
 
@@ -242,7 +242,7 @@ impl Palette {
         self.storage[start_long] |= value << start_offset;
 
         if start_long != end_long {
-            // println!("i");
+
             // zero out
             self.storage[end_long] &= !(indv_value_mask >> (64 - start_offset));
 

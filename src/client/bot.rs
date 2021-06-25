@@ -39,10 +39,8 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
         self.state.physics.tick(&global.world_blocks);
 
-        self.out.teleport(self.state.physics.location());
-
-        let dir = self.state.physics.direction();
-        // self.out.look(dir);
+        let physics = &self.state.physics;
+        self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 
         self.state.ticks += 1;
     }

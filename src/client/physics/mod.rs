@@ -6,6 +6,7 @@ use crate::types::{Direction, Displacement, Location};
 
 pub mod tools;
 
+const JUMP_UPWARDS_MOTION: f64 = 0.42;
 
 const SPRINT_SPEED: f64 = 0.2806;
 const WALK_SPEED: f64 = 0.21585;
@@ -26,13 +27,11 @@ fn jump_factor(jump_boost: Option<u32>) -> f64 {
 }
 
 const JUMP_WATER: f64 = 0.03999999910593033;
-
-const JUMP_UPWARDS_MOTION: f64 = 0.42;
+const ACC_G: f64 = 0.08;
 
 const WATER_DECEL: f64 = 0.2;
 
-const DRAG_MULT: f64 = 0.9800000190734863;
-const ACC_G: f64 = 0.08;
+const DRAG_MULT: f64 = 0.98; // 00000190734863;
 
 // player width divided by 2
 const PLAYER_WIDTH_2: f64 = 0.6 / 2.0;
@@ -105,8 +104,10 @@ impl Physics {
     fn speed(&self) -> f64 {
         if self.in_water {
             SWIM_SPEED
-        } else {
+        } else if self.on_ground {
             WALK_SPEED
+        } else {
+            0.05
         }
     }
 
@@ -134,48 +135,136 @@ impl Physics {
         self.velocity.dz = velocity.dz;
     }
 
-    pub fn tick(&mut self, world: &WorldBlocks) {
-        self.velocity.dy = (self.velocity.dy - ACC_G) * DRAG_MULT;
+    pub fn is_falling(&self, world: &WorldBlocks) -> bool {
+        let mut below_loc = self.location;
+        below_loc.y -= 0.001;
 
-        if self.just_jumped {
-            self.just_jumped = false;
+        let dif_x = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
+        let dif_z = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
 
-            if self.on_ground {
-                self.velocity.dy = jump_factor(None);
+        for dx in dif_x {
+            for dz in dif_z {
+                let test_loc = below_loc + Displacement::new(dx, 0., dz);
+                let below_loc: BlockLocation = test_loc.into();
+                let falling = matches!(world.get_block_simple(below_loc), Some(SimpleType::WalkThrough) | Some(SimpleType::Water));
+                if !falling {
+                    return false;
+                }
             }
         }
-        // move y, x, z
+        true
+    }
 
-        let prev_loc = self.location;
-        let next_loc = prev_loc + self.velocity;
+    pub fn tick(&mut self, world: &WorldBlocks) {
+        let jump = self.just_jumped;
 
-        let future_feet_bl = BlockLocation::from(next_loc);
-
-        match world.get_block_simple(future_feet_bl) {
-            None => return,
-            Some(SimpleType::Solid) => {
-                self.on_ground = true;
-                self.velocity.dy = 0.;
-                self.location = future_feet_bl.add_y(1).center_bottom();
-                return;
-            }
-            _ => {}
+        self.velocity.dy = if jump && self.on_ground {
+            self.on_ground = false;
+            jump_factor(None)
+        } else if !self.on_ground {
+            (self.velocity.dy - ACC_G) * DRAG_MULT
+        } else {
+            0.0
         };
 
-        if self.velocity.dy > 0.0 {
-            let future_head_bl = BlockLocation::from(next_loc.add_y(PLAYER_HEIGHT));
+        self.just_jumped = false;
 
-            match world.get_block_simple(future_head_bl){
-                None => return,
-                Some(SimpleType::Solid) => { // we hit our head
-                    self.velocity.dy = 0.0;
-                    self.location.y = future_feet_bl.y as f64 - PLAYER_HEIGHT;
-                }
-                _ => {}
+        // move y, x, z
+        let prev_loc = self.location;
+
+        let falling = self.is_falling(world);
+
+        if falling { self.on_ground = false; }
+
+        // if falling && self.in_water && self.just_descended {
+        //     self.just_descended = false;
+        //     self.velocity.dy = (self.velocity.dy + WATER_DECEL).min(-LIQUID_MOTION_Y);
+        // }
+
+        {
+            let dx = self.velocity.dx;
+            let extra_dx = if dx == 0.0 { 0.0 } else { dx.signum() * PLAYER_WIDTH_2 };
+            let end_dx = dx + extra_dx;
+
+            let dz = self.velocity.dz;
+            let extra_dz = if dz == 0.0 { 0.0 } else { dz.signum() * PLAYER_WIDTH_2 };
+            let end_dz = dz + extra_dz;
+
+            let dy = self.velocity.dy;
+
+            let end_vel = Displacement::new(end_dx, dy, end_dz);
+            let new_loc = prev_loc + end_vel;
+
+            let prev_legs: BlockLocation = prev_loc.into();
+            let legs: BlockLocation = new_loc.into();
+            let head: BlockLocation = {
+                let mut head_loc = new_loc;
+                head_loc.y += PLAYER_HEIGHT;
+                head_loc.into()
+            };
+
+            let prev_legs_block = world.get_block_simple(prev_legs);
+            let leg_block = world.get_block_simple(legs);
+            let head_block = world.get_block_simple(head);
+
+
+            let against_block = leg_block == Some(SimpleType::Solid) || head_block == Some(SimpleType::Solid);
+            if against_block {
+                let new_dx = 0.0;
+                let new_dz = 0.0;
+                self.velocity.dx = new_dx;
+                self.velocity.dz = new_dz;
+
+                // println!("against block ... {} => {}", prev_loc, new_loc);
+
+                self.in_water = prev_legs_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
+            } else {
+                self.in_water = leg_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
             }
         }
 
-        self.location = next_loc;
+        let mut new_loc = prev_loc + self.velocity;
+
+        if !self.on_ground {
+            let prev_block_loc: BlockLocation = prev_loc.into();
+            let next_block_loc: BlockLocation = new_loc.into();
+
+            let mut head_loc = new_loc;
+            head_loc.y += PLAYER_HEIGHT;
+
+            let head_loc = new_loc.into();
+
+                if self.velocity.dy >= 0.0 {// we are moving up
+                    if world.get_block_simple(head_loc) == Some(SimpleType::Solid) {
+                        // we hit our heads!
+                        self.velocity.dy = 0.0;
+                        new_loc.y = (head_loc.y as f64) - PLAYER_HEIGHT;
+                    } else if !self.in_water {
+                        // we can decelerate normally
+                        // self.velocity.dy -= ACC_G;
+                    }
+                } else { // we are moving down
+                    match world.get_block_simple(next_block_loc) {
+                        Some(SimpleType::Solid) => {
+                            new_loc = prev_block_loc.center_bottom();
+                            self.velocity.dy = 0.0;
+                            self.on_ground = true;
+                        }
+                        // we are falling
+                        Some(SimpleType::WalkThrough) => {
+                            // self.velocity.dy -= ACC_G;
+                        }
+                        Some(SimpleType::Water) => {
+                            // println!("water");
+                            // self.velocity.dy -= ACC_G;
+                        }
+                        // the chunk hasn't loaded, let's not apply physics
+                        _ => {}
+                    }
+                }
+        }
+
+        self.location = new_loc;
 
         // reset walk
         self.velocity.dx = 0.0;

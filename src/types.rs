@@ -119,8 +119,26 @@ impl Location {
         Location::new(self.x, self.y - dy, self.z)
     }
 
+    pub fn round(&self) -> Location {
+        let &Location{x,y,z} = self;
+        Location {x: x.round(), y: y.round(), z: z.round()}
+    }
+
     pub fn add_y(&self, dy: f64) -> Location {
         Location::new(self.x, self.y + dy, self.z)
+    }
+}
+
+impl Sub<Displacement> for Location {
+    type Output = Location;
+
+    fn sub(self, rhs: Displacement) -> Self::Output {
+        let Displacement{dx, dy, dz} = rhs;
+        Self {
+            x: self.x - dx,
+            y: self.y - dy,
+            z: self.z - dz,
+        }
     }
 }
 
@@ -192,7 +210,7 @@ pub struct Displacement {
 }
 
 impl Displacement {
-    pub fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
+    pub const fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement { dx, dy, dz }
     }
 

@@ -58,11 +58,11 @@ pub struct PlayerPosition {
 }
 
 #[derive(Writable, Packet)]
-#[packet(0x13, Play)]
+#[packet(0x0e, Play)]
 pub struct PlayerPositionAndRotation {
-    location: Location,
-    direction: Direction,
-    on_ground: bool,
+    pub location: Location,
+    pub direction: Direction,
+    pub on_ground: bool,
 }
 
 #[derive(Writable, Packet)]

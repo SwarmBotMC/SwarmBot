@@ -233,6 +233,14 @@ impl InterfaceOut for Interface340 {
             on_ground: false,
         })
     }
+
+    fn teleport_and_look(&mut self, location: Location, direction: Direction, on_ground: bool) {
+        self.write(serverbound::PlayerPositionAndRotation {
+            location,
+            direction,
+            on_ground
+        })
+    }
 }
 
 pub struct Protocol;
@@ -324,7 +332,7 @@ impl Minecraft for Protocol {
                     });
                 }
             };
-            // println!("login success for {}", email);
+
         }
 
         let (tx, rx) = std::sync::mpsc::channel();

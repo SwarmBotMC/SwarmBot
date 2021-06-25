@@ -1,12 +1,10 @@
-use crate::bootstrap::Connection;
-
-use crate::error::Res;
-use crate::types::{Location, Direction};
-
-
 use packets::types::UUID;
+
+use crate::bootstrap::Connection;
 use crate::client::processor::InterfaceIn;
+use crate::error::Res;
 use crate::storage::block::BlockLocation;
+use crate::types::{Direction, Location};
 
 pub mod v340;
 
@@ -18,7 +16,7 @@ mod encrypt;
 pub enum Mine {
     Start,
     Cancel,
-    Finished
+    Finished,
 }
 
 pub trait InterfaceOut {
@@ -28,6 +26,7 @@ pub trait InterfaceOut {
     fn respawn(&mut self);
     fn teleport(&mut self, location: Location);
     fn look(&mut self, direction: Direction);
+    fn teleport_and_look(&mut self, location: Location, direction: Direction, on_ground: bool);
 }
 
 #[async_trait::async_trait]
@@ -53,5 +52,5 @@ pub struct ClientInfo {
 pub struct Login<E: EventQueue, I: InterfaceOut> {
     pub queue: E,
     pub out: I,
-    pub info: ClientInfo
+    pub info: ClientInfo,
 }
