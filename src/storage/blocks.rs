@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
+use std::convert::TryFrom;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -16,9 +17,10 @@ impl WorldBlocks {
         self.storage.insert(location, column);
     }
 
-    // TODO: change to support i16 y
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
         let BlockLocation { x, y, z } = location;
+
+        let y = u8::try_from(y).expect("y not in the range of u8 is not yet supported");
 
         let chunk_x = x >> 4;
         let chunk_z = z >> 4;
@@ -30,8 +32,8 @@ impl WorldBlocks {
         let chunk_z = chunk_z as i32;
 
         let loc = ChunkLocation(chunk_x, chunk_z);
-        let chunk = self.storage.get(&loc)?;
-        let block = chunk.get_block(x, y as u8, z);
+        let column = self.storage.get(&loc)?;
+        let block = column.get_block(x, y as u8, z);
         Some(block)
     }
 
