@@ -37,7 +37,7 @@ impl ByteReader {
         !self.bytes.has_remaining()
     }
 
-    pub fn len(&self) -> usize {
+    pub fn len(&self) -> u64 {
         self.bytes.remaining()
     }
 

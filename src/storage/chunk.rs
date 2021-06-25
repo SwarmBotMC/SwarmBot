@@ -173,7 +173,7 @@ impl Palette {
                             let new_data_size = 4096 * (required_bits as usize) / 64;
                             let mut storage = vec![0_u64; new_data_size];
 
-                            for (block_number, state) in states.into_iter().enumerate() {
+                            for (block_number, state) in IntoIterator::into_iter(states).enumerate() {
                                 let start_long = (block_number * required_bits) / 64;
                                 let start_offset = (block_number * required_bits) % 64;
                                 let end_long = ((block_number + 1) * required_bits - 1) / 64;

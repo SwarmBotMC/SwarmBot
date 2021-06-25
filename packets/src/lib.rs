@@ -1,3 +1,5 @@
+#![feature(cursor_remaining)]
+
 pub mod read;
 pub mod write;
 pub mod types;
