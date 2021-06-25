@@ -119,6 +119,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_move(&mut self, location: Location) {
+        println!("received on move {}", location);
         self.local.physics.teleport(location);
     }
 

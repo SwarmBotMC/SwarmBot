@@ -108,9 +108,13 @@ impl Follower {
         let dir = Direction::from(displacement);
         local.physics.look(dir);
 
-        if displacement.dy > 0.0 {
-            local.physics.jump();
+        if displacement.dy > 0.0 || (displacement.dy > -0.1 && local.physics.in_water) {
             // we want to move vertically first (jump)
+            local.physics.jump();
+        }
+        else if displacement.dy < 0.0 {
+            // only will do anything if we are in water
+            local.physics.descend();
         }
 
         local.physics.walk(Walk::Forward);

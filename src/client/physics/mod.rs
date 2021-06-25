@@ -57,7 +57,8 @@ pub struct Physics {
     velocity: Displacement,
     on_ground: bool,
     just_jumped: bool,
-    in_water: bool,
+    just_descended:bool,
+    pub in_water: bool,
 }
 
 pub enum Strafe {
@@ -85,6 +86,10 @@ impl Physics {
 
     pub fn jump(&mut self) {
         self.just_jumped = true;
+    }
+
+    pub fn descend(&mut self) {
+        self.just_descended = true;
     }
 
     pub fn look(&mut self, direction: Direction) {
@@ -129,13 +134,15 @@ impl Physics {
     }
 
     pub fn tick(&mut self, world: &WorldBlocks) {
-        if self.just_jumped {
+        let jump = self.just_jumped;
+        if jump {
             self.just_jumped = false;
 
             if self.in_water {
                 // we do not set in water false... we can jump infinite times
                 self.velocity.dy = (self.velocity.dy + WATER_DECEL).min(LIQUID_MOTION_Y);
             }
+
             if self.on_ground {
                 self.on_ground = false;
                 self.velocity.dy = jump_factor(None);
@@ -150,8 +157,12 @@ impl Physics {
 
         let below_loc: BlockLocation = below_loc.into();
         let falling = matches!(world.get_block_simple(below_loc), Some(SimpleType::WalkThrough) | Some(SimpleType::Water));
-        if falling {
-            self.on_ground = false;
+
+        if falling { self.on_ground = false; }
+
+        if falling && self.in_water && self.just_descended {
+            self.just_descended = false;
+            self.velocity.dy = (self.velocity.dy + WATER_DECEL).min(-LIQUID_MOTION_Y);
         }
 
         {
@@ -166,12 +177,12 @@ impl Physics {
             let dy = self.velocity.dy;
 
             let end_vel = Displacement::new(end_dx, dy, end_dz);
-            let test_loc = prev_loc + end_vel;
+            let new_loc = prev_loc + end_vel;
 
             let prev_legs: BlockLocation = prev_loc.into();
-            let legs: BlockLocation = test_loc.into();
+            let legs: BlockLocation = new_loc.into();
             let head: BlockLocation = {
-                let mut head_loc =test_loc;
+                let mut head_loc = new_loc;
                 head_loc.y += PLAYER_HEIGHT;
                 head_loc.into()
             };
@@ -187,6 +198,8 @@ impl Physics {
                 let new_dz = 0.0;
                 self.velocity.dx = new_dx;
                 self.velocity.dz = new_dz;
+
+                // println!("against block ... {} => {}", prev_loc, new_loc);
 
                 self.in_water = prev_legs_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
             } else {

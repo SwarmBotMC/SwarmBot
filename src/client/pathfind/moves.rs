@@ -1,8 +1,8 @@
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
+use crate::client::pathfind::traits::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
-use crate::client::pathfind::traits::{Neighbor, Progression};
 
 pub const MAX_FALL: i32 = 3;
 
@@ -27,7 +27,7 @@ impl Movements {
     };
 
     pub fn obtain_all(on: &MoveNode, ctx: &GlobalContext) -> Progression<MoveNode> {
-        let BlockLocation{x, y, z} = on.location;
+        let BlockLocation { x, y, z } = on.location;
         let w = ctx.world;
 
         macro_rules! get_block {
@@ -81,9 +81,9 @@ impl Movements {
             let Change { dx, dz, .. } = direction.unit_change();
             if can_move_adj_noplace[idx] {
                 let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
-                let floor_walkable = floor == Solid;
-                traverse_possible_no_place[idx] = floor_walkable;
-                if floor_walkable {
+                let walkable = floor == Solid || adj_legs[idx] == Water || adj_head[idx] == Water;
+                traverse_possible_no_place[idx] = walkable;
+                if walkable {
                     res.push(Neighbor {
                         value: wrap!(BlockLocation::new(x + dx, y, z + dz)),
                         cost: ctx.path_config.costs.block_walk,
@@ -98,7 +98,7 @@ impl Movements {
 
             if can_move_adj_noplace[idx] && !traverse_possible_no_place[idx] {
                 let start = BlockLocation::new(x + dx, y, z + dz);
-                let collided_y = can_fall(start, w);
+                let collided_y = drop_y(start, w);
                 if let Some(collided_y) = collided_y {
                     let new_pos = BlockLocation::new(x + dx, collided_y + 1, z + dz);
 
@@ -110,7 +110,19 @@ impl Movements {
             }
         }
 
-        let can_jump = matches!(get_block!(x, y + 2, z).unwrap(), WalkThrough | Water);
+        let above = get_block!(x, y + 2, z).unwrap();
+        let floor = get_block!(x, y - 1, z).unwrap();
+
+        if above == Water {
+            res.push(Neighbor {
+                value: wrap!(BlockLocation::new(x,y+1,z)),
+                cost: ctx.path_config.costs.ascend,
+            });
+        }
+
+        // if it is water the jump will be too high
+        let can_jump = above == WalkThrough && floor != Water;
+
 
         // ascending adjacent
         if can_jump {
@@ -135,8 +147,8 @@ impl Movements {
     }
 }
 
-fn can_fall(start: BlockLocation, world: &WorldBlocks) -> Option<i16> {
-    let BlockLocation{x, y: init_y, z} = start;
+fn drop_y(start: BlockLocation, world: &WorldBlocks) -> Option<i16> {
+    let BlockLocation { x, y: init_y, z } = start;
 
     // only falling we could do would be into the void
     if init_y < 2 {
