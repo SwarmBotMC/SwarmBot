@@ -2,8 +2,8 @@ use std::collections::{HashMap, BinaryHeap};
 use std::hash::Hash;
 use crate::client::pathfind::HeapNode;
 use crate::client::timing::{Increment};
-use crate::client::pathfind::progress_checker::{Heuristic, Progressor, GoalCheck, Progression};
-use std::time::{Duration, Instant};
+use crate::client::pathfind::traits::{Heuristic, Progressor, GoalCheck, Progression};
+use std::time::{Instant};
 
 
 /// credit baritone
@@ -11,7 +11,7 @@ const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
 const MIN_DIST: f64 = 5.0;
 const MIN_DIST2: f64 = MIN_DIST * MIN_DIST;
 
-const MAX_DURATION_SECS: u64 = 5;
+const MAX_DURATION_MS: u128 = 5000;
 
 /// An A-star Node
 pub trait Node: Clone {
@@ -71,7 +71,7 @@ struct AStarState<T: Node> {
     valid: bool,
 
     /// the total amount of time we have spent on the problem
-    total_duration_s: u64,
+    total_duration_ms: u128,
 
     meta_heuristics: [f64; 7],
     meta_heuristics_ids: [usize; 7],
@@ -147,7 +147,7 @@ impl <T: Node> AStar<T> {
             record_to_idx,
             g_scores,
             open_set,
-            total_duration_s: 0,
+            total_duration_ms: 0,
             parent_map: Default::default(),
             valid: false,
             meta_heuristics_ids: [0; 7]
@@ -164,7 +164,6 @@ impl <T: Node> AStar<T> {
         for i in 0..7 {
             let heuristic = state.meta_heuristics[i];
             let id = state.meta_heuristics_ids[i];
-            let value = state.idx_to_record[id].clone();
             if heuristic < best.0 {
                 best = (heuristic, id);
             }
@@ -178,19 +177,20 @@ impl <T: Node> AStar<T> {
         Increment::Finished(PathResult::incomplete(path))
     }
 
-    pub fn iterate_for(&mut self, duration: Duration, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T::Record>> {
+    pub fn iterate_until(&mut self, end_at: Instant, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T::Record>> {
 
-        let start = Instant::now();
+        let iter_start = Instant::now();
 
         loop {
-            let on = Instant::now();
+            let now = Instant::now();
 
-            let current_duration = on.duration_since(start);
 
-            if current_duration >= duration {
-                let dur = &mut self.state.as_mut().unwrap().total_duration_s;
-                *dur += current_duration.as_secs();
-                return if *dur > MAX_DURATION_SECS {
+            if now >= end_at {
+                let iter_duration = now.duration_since(iter_start);
+                let dur = &mut self.state.as_mut().unwrap().total_duration_ms;
+                *dur += iter_duration.as_millis();
+                return if *dur > MAX_DURATION_MS {
+                    println!("reached maxed duration");
                     return self.select_best();
                 } else {
                     Increment::InProgress
@@ -292,6 +292,7 @@ impl <T: Node> AStar<T> {
 
             }
         } else {
+            println!("no more nodes");
             return self.select_best();
         }
 

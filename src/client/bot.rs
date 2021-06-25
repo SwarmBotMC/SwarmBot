@@ -1,11 +1,13 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
-use crate::client::pathfind::progress_checker::NoVehicleProgressor;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut};
+use crate::client::pathfind::implementations::Problem;
+
+type Prob = Box<dyn Problem<Node=MoveNode>>;
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
@@ -51,24 +53,22 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 }
 
+pub fn run_threaded(scope: &rayon::Scope, local: &mut LocalState, global: &GlobalState, end_by: Instant) {
 
-pub fn run_threaded(client: &mut LocalState, global: &GlobalState) {
-    if let Some(traverse) = client.travel_problem.as_mut() {
-        let ctx = GlobalContext {
-            path_config: &global.travel_config,
-            world: &global.world_blocks,
-        };
+    // TODO: this is pretty jank
+    if let Some(mut traverse) = local.travel_problem.take() {
 
-        let progressor = NoVehicleProgressor::new(ctx);
-
-        let res = traverse.iterate_for(Duration::from_millis(30), &progressor);
+        let res = traverse.iterate_until(end_by, local, global);
 
         if let Increment::Finished(res) = res {
             println!("found goal of size {} .. complete = {}", res.value.len(), res.complete);
-            client.follower = Follower::new(res);
+            local.follower = Follower::new(res);
 
             // we are done finding the path
-            client.last_problem = client.travel_problem.take();
+            local.last_problem = Some(traverse);
+        } else {
+            local.travel_problem = Some(traverse)
         }
+
     }
 }

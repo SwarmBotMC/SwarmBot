@@ -2,14 +2,17 @@ use crate::storage::blocks::WorldBlocks;
 use crate::storage::block::{BlockLocation, BlockState, BlockApprox};
 use crate::client::pathfind::incremental::Node;
 use std::hash::{Hash, Hasher};
-use fasthash::{FastHasher};
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct Costs {
     pub block_walk: f64,
+    pub mine_unrelated: f64,
+    pub mine_required: f64,
+    pub place_unrelated: f64,
+    pub place_required: f64,
     pub ascend: f64,
     pub fall: f64,
-    pub block_place: f64
 }
 
 pub struct PathConfig {
@@ -22,9 +25,12 @@ impl Default for PathConfig {
         Self {
             costs: Costs {
                 block_walk: 1.0,
+                mine_unrelated: 20.0,
                 ascend: 1.0,
                 fall: 1.0,
-                block_place: 200.0
+                place_unrelated: 20.0,
+                mine_required: 1.0,
+                place_required: 1.0
             },
             parkour: true
         }
@@ -33,11 +39,12 @@ impl Default for PathConfig {
 
 #[derive(Clone)]
 pub struct GlobalContext<'a> {
+    pub blocks_to_change: &'a HashMap<BlockLocation, BlockState>,
     pub path_config: &'a PathConfig,
     pub world: &'a WorldBlocks,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct MoveNode {
 
     /// # Building
@@ -56,9 +63,6 @@ pub struct MoveNode {
     pub location: BlockLocation,
 
     /// All the modified blocks we currently have that are different than the global state
-    modified_blocks: im_rc::HashMap<BlockLocation, BlockState>,
-
-    pub current_hash: u64,
 
     /// The action needed to obtain this node. Note: This different actions do not mean this node is not equal
     pub action_to_obtain: Option<Action>,
@@ -73,35 +77,41 @@ impl MoveNode {
         MoveNode {
             blocks_needed_change: 0,
             location,
-            modified_blocks: Default::default(),
-            current_hash: 0,
+            action_to_obtain: None,
+            throwaway_block_count: 0
+        }
+    }
+
+    pub fn new(location: BlockLocation, blocks_to_change: &std::collections::HashMap<BlockLocation, BlockState>) -> MoveNode {
+
+        let blocks_needed_change = blocks_to_change.len();
+
+        MoveNode {
+            blocks_needed_change,
+            location,
             action_to_obtain: None,
             throwaway_block_count: 0
         }
     }
 
     pub fn from(previous: &MoveNode) -> MoveNode {
-        previous.clone()
+        let mut previous = previous.clone();
+        previous.action_to_obtain = None;
+        previous
     }
 
-    pub fn set_block(&mut self, location: BlockLocation, state: BlockState){
-        self.modified_blocks.insert(location, state);
+}
 
-        let mut hasher = fasthash::MetroHasher::new();
-        location.hash(&mut hasher);
-        state.hash(&mut hasher);
+impl Clone for MoveNode {
+    fn clone(&self) -> Self {
 
-        // Order invariant hash. Unfortunately if a block is added and then removed this will be broken but oh well
-        self.current_hash ^= hasher.finish();
-    }
-
-    pub fn get_block(&self, location: BlockLocation, blocks: &WorldBlocks) -> Option<BlockApprox> {
-        match self.modified_blocks.get(&location) {
-            None => blocks.get_block(location),
-            Some(local) => Some(BlockApprox::Realized(*local))
+        Self {
+            blocks_needed_change: self.blocks_needed_change,
+            location: self.location,
+            action_to_obtain: None,
+            throwaway_block_count: self.throwaway_block_count
         }
     }
-
 }
 
 
@@ -110,11 +120,10 @@ impl Node for MoveNode {
 
     fn get_record(&self) -> Self::Record {
 
-        let &MoveNode  {current_hash, location, throwaway_block_count, action_to_obtain, ..} = self;
+        let &MoveNode  {location, throwaway_block_count, action_to_obtain, ..} = self;
 
         let state = MoveState {
             location,
-            current_hash,
             throwaway_block_count
         };
 
@@ -127,14 +136,12 @@ impl Node for MoveNode {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Action {
-    Mine(BlockLocation),
-    Place(BlockLocation, BlockState)
+    Change(BlockLocation, BlockState),
 }
 
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub struct MoveState {
     pub location: BlockLocation,
-    current_hash: u64,
     pub throwaway_block_count: usize
 }
 

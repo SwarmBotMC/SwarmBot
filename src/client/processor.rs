@@ -5,7 +5,7 @@ use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Chat, Location, LocationOrigin};
-use crate::client::pathfind::progress_checker::{NoVehicleProgressor, Progressor, Progression};
+use crate::client::pathfind::traits::{Progressor, Progression};
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 
 pub trait InterfaceIn {
@@ -61,21 +61,6 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                                 println!("follower {:?}", self.local.follower);
                                 println!("location {}", self.local.physics.location());
                                 println!();
-                            }
-                        }
-                    }
-                    "progressions" => {
-
-                        let ctx = GlobalContext {
-                            path_config: &self.global.travel_config,
-                            world: &self.global.world_blocks,
-                        };
-                        let prog = NoVehicleProgressor::new(ctx);
-                        let loc = MoveNode::simple(self.local.physics.location().into());
-                        let progressions = prog.progressions(&loc);
-                        if let Progression::Movements(neighbors) = progressions {
-                            for neighbor in neighbors {
-                                self.out.send_chat(&format!("{}", neighbor.value.location));
                             }
                         }
                     }

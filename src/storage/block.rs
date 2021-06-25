@@ -70,9 +70,11 @@ pub enum BlockApprox {
     Estimate(SimpleType),
 }
 
-pub const AIR: BlockApprox = BlockApprox::Estimate(SimpleType::WalkThrough);
 
 impl BlockApprox {
+
+    pub const AIR: BlockApprox = BlockApprox::Estimate(SimpleType::WalkThrough);
+    
     pub fn s_type(&self) -> SimpleType {
         match self {
             BlockApprox::Realized(x) => {
@@ -80,6 +82,14 @@ impl BlockApprox {
             }
             BlockApprox::Estimate(x) => *x
         }
+    }
+    
+    pub fn is_solid(&self) -> bool {
+        self.s_type() == SimpleType::Solid
+    }
+
+    pub fn is_walkable(&self) -> bool {
+        self.s_type() == SimpleType::WalkThrough
     }
 }
 

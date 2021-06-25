@@ -1,8 +1,8 @@
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
-use crate::client::pathfind::progress_checker::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
+use crate::client::pathfind::traits::{Neighbor, Progression};
 
 pub const MAX_FALL: i32 = 3;
 

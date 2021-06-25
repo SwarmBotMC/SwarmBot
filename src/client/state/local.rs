@@ -1,19 +1,14 @@
-use std::rc::Rc;
-
-use tokio::sync::Notify;
-
-use crate::client::pathfind::context::{MoveNode, Costs};
-use crate::client::pathfind::incremental::AStar;
-use crate::client::pathfind::progress_checker::{NoVehicleGoalCheck, NoVehicleHeuristic};
+use crate::client::pathfind::context::{MoveNode};
 use crate::storage::block::BlockLocation;
-
-
-use crate::client::state::travel::TravelProblem;
 use crate::client::physics::Physics;
 use crate::client::state::inventory::Inventory;
 use crate::protocol::ClientInfo;
 use crate::client::follow::Follower;
 use crate::types::Dimension;
+use crate::client::pathfind::implementations::Problem;
+use crate::client::pathfind::implementations::novehicle::TravelProblem;
+
+type Prob = Box<dyn Problem<Node=MoveNode>>;
 
 pub struct LocalState {
     pub ticks: usize,
@@ -21,28 +16,24 @@ pub struct LocalState {
     pub physics: Physics,
     pub disconnected: bool,
     pub inventory: Inventory,
-    pub costs: Costs,
     pub info: ClientInfo,
     pub alive: bool,
     pub dimension: Dimension,
     pub follower: Option<Follower>,
 
-    pub travel_problem: Option<TravelProblem>,
+    pub travel_problem: Option<Prob>,
 
-    // so we can restart if we get an invalid result
-    pub last_problem: Option<TravelProblem>,
+    /// so we can restart if we get an invalid result
+    pub last_problem: Option<Prob>,
 }
 
 impl LocalState {
 
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.physics.location().into();
-
-        let start_node = MoveNode::simple(from);
-
-        let problem = TravelProblem::new(start_node, goal);
+        println!("starting nav");
+        let problem = box TravelProblem::new(from, goal);
 
         self.travel_problem = Some(problem);
-        // notifier.notified().await;
     }
 }

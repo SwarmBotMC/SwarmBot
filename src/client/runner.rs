@@ -1,31 +1,37 @@
 use std::cell::RefCell;
-
 use std::rc::Rc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
-
-
+use tokio::sync::Notify;
 
 use crate::bootstrap::Connection;
 use crate::client::bot::{Bot, run_threaded};
-
-use crate::protocol::{Login, Minecraft, EventQueue};
-use crate::storage::blocks::WorldBlocks;
-use crate::client::pathfind::context::{Costs};
-use crate::storage::block::BlockLocation;
-use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
-use crate::client::state::inventory::Inventory;
-use crate::client::processor::SimpleInterfaceIn;
 use crate::client::physics::Physics;
+use crate::client::processor::SimpleInterfaceIn;
+use crate::client::state::global::GlobalState;
+use crate::client::state::inventory::Inventory;
+use crate::client::state::local::LocalState;
+use crate::protocol::{EventQueue, Login, Minecraft};
+use crate::storage::blocks::WorldBlocks;
 use crate::types::Dimension;
+
+struct SyncGlobal(*const GlobalState);
+
+struct SyncLocal(*mut LocalState);
+
+unsafe impl Sync for SyncGlobal {}
+
+unsafe impl Send for SyncGlobal {}
+
+unsafe impl Sync for SyncLocal {}
+
+unsafe impl Send for SyncLocal {}
 
 
 pub type Logins<T> = Rc<RefCell<Vec<Login<<T as Minecraft>::Queue, <T as Minecraft>::Interface>>>>;
 
 /// Runs the game loop and holds all bots.
 pub struct Runner<T: Minecraft> {
-
     /// logins that are about to be established
     pending_logins: Logins<T>,
 
@@ -35,7 +41,7 @@ pub struct Runner<T: Minecraft> {
     /// the bots created by pending logins
     bots: Vec<Bot<T::Queue, T::Interface>>,
 
-    id_on: u32
+    id_on: u32,
 }
 
 /// Runner launch options
@@ -44,7 +50,6 @@ pub struct RunnerOptions {
 }
 
 impl<T: Minecraft + 'static> Runner<T> {
-
     /// Start the runner process
     pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) {
         let _blocks = WorldBlocks::default();
@@ -84,20 +89,22 @@ impl<T: Minecraft + 'static> Runner<T> {
             pending_logins,
             global_state: GlobalState::default(),
             bots: Vec::new(),
-            id_on: 0
+            id_on: 0,
         }
     }
 
 
     pub async fn game_loop(&mut self) {
         loop {
-            self.game_iter();
-            // TODO: delay 50 ms
-            tokio::time::sleep(core::time::Duration::from_millis(50)).await;
+            let now = Instant::now();
+            let end_by = now + Duration::from_millis(50);
+
+            self.game_iter(end_by).await;
+            tokio::time::sleep_until(tokio::time::Instant::from_std(end_by)).await;
         }
     }
 
-    fn game_iter(&mut self) {
+    async fn game_iter(&mut self, end_by: Instant) {
         let old_count = self.bots.len();
         // first step: removing disconnected clients
         {
@@ -125,15 +132,9 @@ impl<T: Minecraft + 'static> Runner<T> {
                         info,
                         travel_problem: None,
                         last_problem: None,
-                        costs: Costs {
-                            block_walk: 1.0,
-                            ascend: 1.0,
-                            fall: 1.0,
-                            block_place: 1.0
-                        }
                     },
                     queue,
-                    out
+                    out,
                 };
                 self.id_on += 1;
                 self.bots.push(client);
@@ -159,22 +160,30 @@ impl<T: Minecraft + 'static> Runner<T> {
         }
 
         // fourth step: run threaded
-        for client in &mut self.bots {
-            run_threaded(&mut client.state, &self.global_state);
+        let thread_loop_end = Notify::new();
+
+        {
+            let global_state_sync = SyncGlobal(&self.global_state);
+            let states_sync: Vec<_> = self.bots.iter_mut()
+                .map(|bot| &mut bot.state)
+                .map(|state| state as *mut LocalState)
+                .map(|state| SyncLocal(state))
+                .collect();
+
+            rayon::spawn(move || {
+                let global_state = unsafe { &*global_state_sync.0 };
+                let states_sync = states_sync;
+                rayon::scope(|s| {
+                    for state_sync in states_sync {
+                        let state = unsafe { &mut *state_sync.0 };
+                        s.spawn(move |inner_scope| {
+                            run_threaded(inner_scope, state, global_state, end_by);
+                        });
+                    }
+                });
+
+                thread_loop_end.notify_one();
+            });
         }
-
-
-        // {
-        //     let global_state = &self.global_state;
-        //     let states: Vec<_> = self.clients.iter_mut().map(|x| &mut x.state).collect();
-        //
-        //     rayon::scope(|s| {
-        //         for state in states {
-        //             s.spawn(move |inner_scope| {
-        //                 run_client(inner_scope, state, global_state);
-        //             });
-        //         }
-        //     });
-        // }
     }
 }

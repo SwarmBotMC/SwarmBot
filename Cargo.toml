@@ -78,11 +78,6 @@ indexmap = {version = "1.6", features = ["std"]}
 
 float-ord = "0.3"
 
-im-rc = "15.0"
-
-# for hashing blocks in A-star
-fasthash = "0.4"
-
 # for num casting
 num = "0.4"
 

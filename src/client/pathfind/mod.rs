@@ -1,8 +1,9 @@
 use std::cmp::Ordering;
 
-pub mod progress_checker;
+pub mod traits;
 pub mod bidirectional;
 pub mod moves;
+pub mod implementations;
 pub mod context;
 pub mod incremental;
 
