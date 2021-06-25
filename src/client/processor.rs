@@ -43,24 +43,26 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
             if let Some(cmd) = player_msg.into_cmd() {
                 match cmd.command {
                     "goto" => {
+
+                        if let [id] = cmd.args[..] {
+                            let id: u32 = id.parse().unwrap();
+
+                            let loc = BlockLocation::from(self.local.physics.location());
+                            let iter = self.global.world_blocks.select(loc,|state| state.id() == id)
+                                .take(1);
+
+                            for loc in iter {
+                                self.out.send_chat(&format!("instance at {}", loc));
+                                self.local.travel_to_block(loc);
+                            }
+                        }
+
                         if let [a, b, c] = cmd.args[..] {
                             let x = a.parse().unwrap();
                             let y = b.parse().unwrap();
                             let z = c.parse().unwrap();
                             let dest = BlockLocation::new(x,y,z);
                             self.local.travel_to_block(dest);
-                        }
-                    }
-                    "find" => {
-                        if let [id] = cmd.args[..] {
-                            let id: u32 = id.parse().unwrap();
-
-                            let iter = self.global.world_blocks.select(|state| state.id() == id)
-                                .take(3);
-
-                            for loc in iter {
-                                self.out.send_chat(&format!("instance at {}", loc));
-                            }
                         }
                     }
                     "loc" => {

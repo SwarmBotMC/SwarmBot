@@ -148,7 +148,7 @@ impl Location {
 impl From<Location> for BlockLocation {
     fn from(location: Location) -> Self {
         let Location { x, y, z } = location;
-        BlockLocation::from(x, y, z)
+        BlockLocation::from_flts(x, y, z)
     }
 }
 

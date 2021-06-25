@@ -29,7 +29,7 @@ impl BlockLocation {
         BlockLocation { x, y, z }
     }
 
-    pub fn from(x: impl num::Float, y: impl num::Float, z: impl num::Float) -> BlockLocation {
+    pub fn from_flts(x: impl num::Float, y: impl num::Float, z: impl num::Float) -> BlockLocation {
         let x = num::cast(x.floor()).unwrap();
         let y = num::cast(y.floor()).unwrap();
         let z = num::cast(z.floor()).unwrap();
@@ -46,10 +46,10 @@ impl BlockLocation {
 }
 
 impl BlockLocation {
-    pub(crate) fn dist2(&self, other: BlockLocation) -> i64 {
-        let dx = (self.x - other.x) as i64;
-        let dy = (self.y - other.y) as i64;
-        let dz = (self.z - other.z) as i64;
+    pub(crate) fn dist2(&self, other: BlockLocation) -> u64 {
+        let dx = (self.x - other.x).abs() as u64;
+        let dy = (self.y - other.y).abs() as u64;
+        let dz = (self.z - other.z).abs() as u64;
         dx * dx + dy * dy + dz * dz
     }
 
@@ -74,7 +74,7 @@ pub enum BlockApprox {
 impl BlockApprox {
 
     pub const AIR: BlockApprox = BlockApprox::Estimate(SimpleType::WalkThrough);
-    
+
     pub fn s_type(&self) -> SimpleType {
         match self {
             BlockApprox::Realized(x) => {
@@ -83,7 +83,7 @@ impl BlockApprox {
             BlockApprox::Estimate(x) => *x
         }
     }
-    
+
     pub fn is_solid(&self) -> bool {
         self.s_type() == SimpleType::Solid
     }

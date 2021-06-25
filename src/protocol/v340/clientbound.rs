@@ -241,7 +241,7 @@ impl ByteReadable for Explosion {
         };
 
 
-        let origin_block = BlockLocation::from(location.x, location.y, location.z);
+        let origin_block = BlockLocation::from_flts(location.x, location.y, location.z);
         let location: Location = location.into();
         let records = records.into_iter().map(|record| BlockLocation::new(
             origin_block.x + record.x as i32,

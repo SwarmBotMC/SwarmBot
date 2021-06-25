@@ -4,6 +4,7 @@ use std::convert::TryFrom;
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
 use std::num::TryFromIntError;
+use itertools::Itertools;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -43,8 +44,12 @@ impl WorldBlocks {
         Some(block)
     }
 
-    pub fn select(&'a self, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
+    pub fn select(&'a self, around: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
         self.storage.iter()
+            .sorted_unstable_by_key(|(loc,_)|{
+                let chunk_center_loc = BlockLocation::new(loc.0 << 4, 64, loc.1 << 4);
+                chunk_center_loc.dist2(around)
+            })
             .filter_map(|(loc, column)| {
                 match column {
                     ChunkColumn::HighMemory { data } => {
