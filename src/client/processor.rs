@@ -51,6 +51,18 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                             self.local.travel_to_block(dest);
                         }
                     }
+                    "find" => {
+                        if let [id] = cmd.args[..] {
+                            let id: u32 = id.parse().unwrap();
+
+                            let iter = self.global.world_blocks.select(|state| state.id() == id)
+                                .take(3);
+
+                            for loc in iter {
+                                self.out.send_chat(&format!("instance at {}", loc));
+                            }
+                        }
+                    }
                     "loc" => {
                         let block_loc: BlockLocation = self.local.physics.location().into();
                         self.out.send_chat(&format!("my location is {}. My block loc is {}", self.local.physics.location(), block_loc));

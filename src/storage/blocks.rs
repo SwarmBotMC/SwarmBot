@@ -1,8 +1,9 @@
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
-use std::convert::TryFrom;
+use std::num::TryFromIntError;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -20,7 +21,12 @@ impl WorldBlocks {
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
         let BlockLocation { x, y, z } = location;
 
-        let y = u8::try_from(y).expect("y not in the range of u8 is not yet supported");
+        let y = match u8::try_from(y) {
+            Ok(inner) => inner,
+            Err(_) => {
+                panic!("y {} is not in range of u8. This is not yet supported", y)
+            }
+        };
 
         let chunk_x = x >> 4;
         let chunk_z = z >> 4;
@@ -35,6 +41,29 @@ impl WorldBlocks {
         let column = self.storage.get(&loc)?;
         let block = column.get_block(x, y as u8, z);
         Some(block)
+    }
+
+    pub fn select(&'a self, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
+        self.storage.iter()
+            .filter_map(|(loc, column)| {
+                match column {
+                    ChunkColumn::HighMemory { data } => {
+                        Some((loc, data))
+                    }
+                    _ => { None }
+                }
+            })
+            .flat_map(move |(loc, column)| {
+                let start_x = loc.0 << 4;
+                let start_z = loc.1 << 4;
+                column.select(selector).map(move |idx|{
+                    let x = idx % 16;
+                    let leftover = idx >> 4;
+                    let z = leftover % 16;
+                    let y = leftover / 16;
+                    BlockLocation::new(x as i32 + start_x, y as i16, z as i32 + start_z)
+                })
+            })
     }
 
     pub fn set_block(&mut self, location: BlockLocation, block: BlockState) {
@@ -55,12 +84,15 @@ impl WorldBlocks {
         let loc = ChunkLocation(chunk_x, chunk_z);
 
         match self.storage.get_mut(&loc) {
-            None => return,
+            None => {},
             Some(column) => column.set_block(x, y, z, block)
         };
     }
 
     pub fn get_block_simple(&self, location: BlockLocation) -> Option<SimpleType> {
+        if location.y < 0 {
+            return None;
+        }
         self.get_block(location).map(|x| x.s_type())
     }
 }

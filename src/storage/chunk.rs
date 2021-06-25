@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::storage::block::{BlockApprox, BlockState, SimpleType};
+use crate::storage::block::{BlockApprox, BlockState, SimpleType, BlockLocation};
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
@@ -36,7 +36,7 @@ impl Default for LowMemoryChunkSection {
 
 pub fn bits_needed(mut number: usize) -> u8 {
     let mut bits = 0_u8;
-    while number != 0  {
+    while number != 0 {
         number /= 2;
         bits += 1;
     }
@@ -82,6 +82,21 @@ pub struct ChunkData<T> {
     pub sections: [Option<T>; 16],
 }
 
+impl ChunkData<HighMemoryChunkSection> {
+    pub fn select(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a{
+        self.sections.iter().enumerate()
+            .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec|(chunk_idx << 12, sec)))
+            .flat_map(|(idx_start, section)| {
+                IntoIterator::into_iter(section.palette.all_states()).enumerate().map(move |(idx, state)|(idx_start + idx, state))
+            })
+            .filter(move |(_, state)| {
+                selector(*state)
+            })
+            .map(|(idx, _)| idx)
+
+    }
+}
+
 const SECTION_HEIGHT: usize = 16;
 const SECTION_WIDTH: usize = 16;
 
@@ -109,8 +124,10 @@ impl Palette {
         }
     }
 
-    pub fn all_states(&self) -> Vec<BlockState> {
-        (0..4096).map(|i| self.get_block_by_idx(i)).collect()
+    pub fn all_states(&self) -> [BlockState; 4096] {
+        let mut res = [BlockState::AIR; 4096];
+        (0..4096).for_each(|i| res[i] = self.get_block_by_idx(i));
+        res
     }
 
     pub fn set_block(&mut self, x: u8, y: u8, z: u8, state: BlockState) {
@@ -135,13 +152,11 @@ impl Palette {
                                 let reverse_map: HashMap<_, _> = map.iter().enumerate().map(|(k, v)| (*v, k)).collect();
                                 // println!("c");
                                 (required_bits.max(4), Some(reverse_map))
-
                             } else {
                                 self.id_to_state = None;
                                 // println!("d");
                                 (13, None)
                             };
-
 
 
                             // we have to recreate the palette
