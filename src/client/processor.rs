@@ -1,12 +1,13 @@
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::{LocalState, MineTask};
 use crate::protocol::{InterfaceOut, Mine};
-use crate::storage::block::{BlockLocation, BlockState};
+use crate::storage::block::{BlockLocation, BlockState, BlockKind};
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Chat, Location, LocationOrigin, Direction};
 use crate::client::pathfind::traits::{Progressor, Progression};
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
+use crate::client::physics::tools::{Tool, Material};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -46,9 +47,11 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
                         if let [id] = cmd.args[..] {
                             let id: u32 = id.parse().unwrap();
+                            let kind = BlockKind::from(id);
 
                             let loc = BlockLocation::from(self.local.physics.location());
-                            let iter = self.global.world_blocks.select(loc,|state| state.id() == id)
+
+                            let iter = self.global.world_blocks.select(loc,|state| state.kind() == kind)
                                 .take(1);
 
                             for loc in iter {
@@ -81,19 +84,24 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                     "mine" => {
                         if let [id] = cmd.args[..] {
                             let id: u32 = id.parse().unwrap();
+                            let kind = BlockKind::from(id);
 
                             let origin = BlockLocation::from(self.local.physics.location());
-                            let closest = self.global.world_blocks.select(origin,|state| state.id() == id)
+                            let closest = self.global.world_blocks.select(origin,|state| state.kind() == kind)
                                 .take(50)
                                 .min_by_key(|loc| loc.dist2(origin));
 
                             if let Some(closest) = closest {
-                                println!("started mining at {}", closest);
                                 let dir = closest.centered() - origin.centered();
                                 self.local.physics.look(dir.into());
 
+                                let tool = Tool::new(Material::DIAMOND);
+                                let ticks = tool.wait_time(kind, false, true , &self.global.block_data);
+
+                                println!("started mining at {} .. ticks {}", closest, ticks);
+
                                 let task = MineTask {
-                                    ticks: 20,
+                                    ticks,
                                     location: closest
                                 };
 

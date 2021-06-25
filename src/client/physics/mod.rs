@@ -4,7 +4,7 @@ use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
 
-mod bounding_box;
+pub mod tools;
 
 const JUMP_UPWARDS_MOTION: f64 = 0.42;
 

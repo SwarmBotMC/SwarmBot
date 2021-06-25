@@ -11,7 +11,7 @@ use crate::client::pathfind::implementations::novehicle::TravelProblem;
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
 pub struct MineTask {
-    pub ticks: u32,
+    pub ticks: usize,
     pub location: BlockLocation
 }
 

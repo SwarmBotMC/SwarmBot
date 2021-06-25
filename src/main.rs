@@ -7,6 +7,7 @@
 #![feature(option_get_or_insert_default)]
 #![feature(array_zip)]
 #![feature(box_syntax)]
+#![feature(default_free_fn)]
 
 use std::fs::File;
 
@@ -19,6 +20,7 @@ use crate::bootstrap::opts::Opts;
 use crate::bootstrap::storage::UserCache;
 use crate::client::runner::{Runner, RunnerOptions};
 use crate::error::{HasContext, ResContext};
+use crate::bootstrap::blocks::BlockData;
 
 mod error;
 mod bootstrap;
@@ -61,6 +63,8 @@ async fn run() -> ResContext<()> {
         cache.obtain_users(count, csv_users, proxies)
     };
 
+    let blocks = BlockData::read().context_str("error reading blocks file")?;
+
     if load {
         while proxy_users.recv().await.is_some() {
             // empty
@@ -70,7 +74,7 @@ async fn run() -> ResContext<()> {
         // taking the users and generating connections to the Minecraft server
         let connections = Connection::stream(address, proxy_users);
 
-        let opts = RunnerOptions { delay_millis: delay };
+        let opts = RunnerOptions { delay_millis: delay, blocks };
 
         match version {
             340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await,

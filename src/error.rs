@@ -11,6 +11,7 @@ pub enum Error {
     IO(std::io::Error),
     CSV(csv::Error),
     Socks5(tokio_socks::Error),
+    Serde(serde_json::Error),
     Reqwest(reqwest::Error),
     Resolve(trust_dns_resolver::error::ResolveError),
     WrongPacket {
@@ -20,6 +21,12 @@ pub enum Error {
     },
     Simple(String),
     Mojang(MojangErr),
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Self::Serde(err)
+    }
 }
 
 #[derive(Debug)]
@@ -51,7 +58,8 @@ impl Display for Error {
             Error::Socks5(socks) => std::fmt::Display::fmt(socks, f),
             Error::Mojang(inner) => std::fmt::Display::fmt(inner, f),
             Error::WrongPacket { state, actual, expected } => f.write_fmt(format_args!("wrong packet. Expected ID {}, got {} in state {}", expected, actual, state)),
-            Error::Resolve(r) => std::fmt::Display::fmt(r, f)
+            Error::Resolve(r) => std::fmt::Display::fmt(r, f),
+            Error::Serde(s) => std::fmt::Display::fmt(s, f)
         }
     }
 }

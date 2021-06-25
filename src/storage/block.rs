@@ -1,9 +1,23 @@
 use std::fmt::{Display, Formatter};
 
 use crate::types::Location;
-use std::convert::TryInto;
-use num::{ToPrimitive, NumCast};
-use bytes::Buf;
+use crate::bootstrap::blocks::BlockData;
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+#[repr(transparent)]
+pub struct BlockKind(u32);
+
+impl From<u32> for BlockKind {
+    fn from(id: u32) -> Self {
+        Self (id)
+    }
+}
+
+impl BlockKind {
+    pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
+        blocks.by_id(self.0).unwrap().hardness
+    }
+}
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -11,6 +25,87 @@ pub struct BlockState(pub u32);
 
 impl BlockState {
     pub const AIR: BlockState = BlockState(0);
+
+
+    pub fn id(&self) -> u32 {
+        self.0 >> 4
+    }
+
+    pub fn kind(&self) -> BlockKind {
+        BlockKind(self.id())
+    }
+
+    pub fn simple_type(&self) -> SimpleType {
+        if self.full_block() {
+            return SimpleType::Solid;
+        }
+
+        if self.is_water() {
+            return SimpleType::Water;
+        }
+
+        if self.walk_through() {
+            return SimpleType::WalkThrough;
+        }
+
+        SimpleType::Avoid
+    }
+
+    pub fn metadata(&self) -> u8 {
+        (self.0 & 0b1111) as u8
+    }
+
+    pub fn full_block(&self) -> bool {
+        //consider 54 |
+        matches!(self.id(),
+            1..=5 |7 | 12..=25 | 29 | 33 |35 | 41 ..=43 | 45..=49 | 52 | 56..=58 | 60..=62 | 73 | 74 |
+            78..=80| // snow, ice
+            82| // clay
+            84|86|87|89|91|95|
+            97| // TODO: avoid this is a monster egg
+            98..=100|
+            // TODO: account panes
+            103|110|112|118|121|123..=125|
+            129|133|137..=138|155|159|161|162|
+            165| // TODO: slime block special fall logic
+            166|
+            168..=170| // TODO: special haybale logic
+            172..=174|
+            179|181|199..=202|
+            204|206|208..=212|214..=255
+
+        )
+    }
+
+    pub fn is_water(&self) -> bool {
+        matches!(self.id(), 8 | 9)
+    }
+
+    pub fn walk_through(&self) -> bool {
+        self.is_water() || self.no_motion_effect()
+    }
+
+    pub fn no_motion_effect(&self) -> bool {
+        matches!(self.id(),
+            0| // air
+            6|// sapling
+            27|28| //  rail
+            31| // grass/fern/dead shrub
+            38|37|// flower
+            39|40| //mushroom
+            50|//torch
+            59|// wheat
+            66|68|69|70|72|75|76|77|83|
+            90| // portal
+            104|105|106|
+            115|119|
+            175..=177
+
+
+
+
+        )
+    }
 }
 
 
@@ -121,83 +216,5 @@ impl From<u8> for SimpleType {
             3 => SimpleType::WalkThrough,
             _ => panic!("invalid id")
         }
-    }
-}
-
-impl BlockState {
-    pub fn id(&self) -> u32 {
-        self.0 >> 4
-    }
-
-    pub fn simple_type(&self) -> SimpleType {
-        if self.full_block() {
-            return SimpleType::Solid;
-        }
-
-        if self.is_water() {
-            return SimpleType::Water;
-        }
-
-        if self.walk_through() {
-            return SimpleType::WalkThrough;
-        }
-
-        SimpleType::Avoid
-    }
-
-    pub fn metadata(&self) -> u8 {
-        (self.0 & 0b1111) as u8
-    }
-
-    pub fn full_block(&self) -> bool {
-        //consider 54 |
-        matches!(self.id(),
-            1..=5 |7 | 12..=25 | 29 | 33 |35 | 41 ..=43 | 45..=49 | 52 | 56..=58 | 60..=62 | 73 | 74 |
-            78..=80| // snow, ice
-            82| // clay
-            84|86|87|89|91|95|
-            97| // TODO: avoid this is a monster egg
-            98..=100|
-            // TODO: account panes
-            103|110|112|118|121|123..=125|
-            129|133|137..=138|155|159|161|162|
-            165| // TODO: slime block special fall logic
-            166|
-            168..=170| // TODO: special haybale logic
-            172..=174|
-            179|181|199..=202|
-            204|206|208..=212|214..=255
-
-        )
-    }
-
-    pub fn is_water(&self) -> bool {
-        matches!(self.id(), 8 | 9)
-    }
-
-    pub fn walk_through(&self) -> bool {
-        self.is_water() || self.no_motion_effect()
-    }
-
-    pub fn no_motion_effect(&self) -> bool {
-        matches!(self.id(),
-            0| // air
-            6|// sapling
-            27|28| //  rail
-            31| // grass/fern/dead shrub
-            38|37|// flower
-            39|40| //mushroom
-            50|//torch
-            59|// wheat
-            66|68|69|70|72|75|76|77|83|
-            90| // portal
-            104|105|106|
-            115|119|
-            175..=177
-
-
-
-
-        )
     }
 }

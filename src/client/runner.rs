@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 
 use tokio::sync::Notify;
 
+use crate::bootstrap::blocks::BlockData;
 use crate::bootstrap::Connection;
 use crate::client::bot::{Bot, run_threaded};
 use crate::client::physics::Physics;
@@ -47,18 +48,19 @@ pub struct Runner<T: Minecraft> {
 /// Runner launch options
 pub struct RunnerOptions {
     pub delay_millis: u64,
+    pub blocks: BlockData,
 }
 
 impl<T: Minecraft + 'static> Runner<T> {
     /// Start the runner process
     pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) {
-        let _blocks = WorldBlocks::default();
         let mut runner = Runner::<T>::init(connections, opts);
         runner.game_loop().await;
     }
 
 
     fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
+        let RunnerOptions { blocks, delay_millis } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
         // let handles = Rc::new(RefCell::new(Vec::new()));
 
@@ -79,7 +81,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                         logins.borrow_mut().push(login);
                     });
 
-                    tokio::time::sleep(Duration::from_millis(opts.delay_millis)).await;
+                    tokio::time::sleep(Duration::from_millis(delay_millis)).await;
                 }
             });
         }
@@ -87,7 +89,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         Runner {
             pending_logins,
-            global_state: GlobalState::default(),
+            global_state: GlobalState::init(blocks),
             bots: Vec::new(),
             id_on: 0,
         }

@@ -1,17 +1,30 @@
 use crate::client::pathfind::context::PathConfig;
 use crate::storage::blocks::WorldBlocks;
 use crate::storage::entities::WorldEntities;
+use crate::bootstrap::blocks::BlockData;
 
 
-#[derive(Default)]
 pub struct GlobalState {
     pub world_blocks: WorldBlocks,
+    pub block_data: BlockData,
     pub world_entities: WorldEntities,
     pub ticks: usize,
     pub travel_config: PathConfig,
 }
 
 impl GlobalState {
+
+    pub fn init(block_data: BlockData) -> GlobalState {
+        use std::default::default;
+
+        GlobalState {
+            world_blocks: default(),
+            block_data,
+            world_entities: default(),
+            ticks: 0,
+            travel_config: default()
+        }
+    }
     /// # Goal
     /// we want to assign regions to explore for each bot
     /// we want to explore in rings
