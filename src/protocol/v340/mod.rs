@@ -12,15 +12,15 @@ use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
-use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Minecraft};
+use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Minecraft, Mine};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
-use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState};
+use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState, DigStatus, Hand};
 use crate::storage::block::{BlockState, BlockLocation};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Direction, Location, PacketData, Dimension};
+use crate::types::{Direction, Location, PacketData, Dimension, Position};
 
 mod clientbound;
 mod serverbound;
@@ -187,6 +187,30 @@ impl InterfaceOut for Interface340 {
     fn send_chat(&mut self, message: &str) {
         self.write(serverbound::ChatMessage {
             message: message.to_string()
+        });
+    }
+
+    fn left_click(&mut self) {
+        self.write(serverbound::ArmAnimation {
+            hand: Hand::Main
+        });
+    }
+
+    fn mine(&mut self, position: BlockLocation, mine: Mine) {
+        let status = match mine {
+            Mine::Start => DigStatus::Started,
+            Mine::Cancel => DigStatus::Cancelled,
+            Mine::Finished => DigStatus::Finished
+        };
+
+        if status == DigStatus::Started {
+            self.left_click();
+        }
+
+        self.write(serverbound::PlayerDig {
+            status,
+            position,
+            face: 1
         });
     }
 

@@ -1,10 +1,10 @@
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
-use crate::protocol::InterfaceOut;
+use crate::client::state::local::{LocalState, MineTask};
+use crate::protocol::{InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Chat, Location, LocationOrigin};
+use crate::types::{Chat, Location, LocationOrigin, Direction};
 use crate::client::pathfind::traits::{Progressor, Progression};
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 
@@ -78,22 +78,35 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                             }
                         }
                     }
+                    "mine" => {
+                        if let [id] = cmd.args[..] {
+                            let id: u32 = id.parse().unwrap();
+
+                            let origin = BlockLocation::from(self.local.physics.location());
+                            let closest = self.global.world_blocks.select(origin,|state| state.id() == id)
+                                .take(50)
+                                .min_by_key(|loc| loc.dist2(origin));
+
+                            if let Some(closest) = closest {
+                                println!("started mining at {}", closest);
+                                let dir = closest.centered() - origin.centered();
+                                self.local.physics.look(dir.into());
+
+                                let task = MineTask {
+                                    ticks: 20,
+                                    location: closest
+                                };
+
+                                self.local.mining = Some(task);
+                                self.out.mine(closest, Mine::Start);
+                            }
+                        }
+                    }
                     _ => {
                         self.out.send_chat("invalid command");
                     }
                 }
             }
-            // match player_msg.message {
-            //     "nearby" => {
-            //         let mut below = self.local.block_location();
-            //         below.1 -= 1;
-            //         let below_block = self.global.world_blocks.get_block(below);
-            //         if let Some(BlockApprox::Realized(below_block)) = below_block {
-            //             let message = format!("below {:?} is {:?}", self.local.block_location(), below_block.id());
-            //             self.out.send_chat(&message);
-            //         }
-            //     }
-            // }
         }
     }
 

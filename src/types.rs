@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::storage::block::BlockLocation;
 use crate::types::Origin::{Abs, Rel};
+use packets::write::{ByteWritable, ByteWriter};
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -397,14 +398,24 @@ impl Direction {
         res.pitch = 0.0;
         res
     }
+}
 
-    pub fn from(displacement: Displacement) -> Direction {
+impl From<Displacement> for Direction {
+    fn from(displacement: Displacement) -> Self {
         let Displacement { dx, dy, dz } = displacement;
         let (dx, dy, dz) = (dx as f32, dy as f32, dz as f32);
         let r = (dx * dx + dy * dy + dz * dz).sqrt();
         let mut yaw = -dx.atan2(dz) / PI * 180.0;
+
+
         if yaw < 0.0 {
             yaw += 360.0
+        }
+
+        const EPSILON: f32 = 0.1;
+
+        if yaw.abs() < EPSILON {
+            yaw = 0.0;
         }
         let pitch = -(dy / r).asin() / PI * 180.0;
         Direction {
@@ -435,23 +446,9 @@ impl ByteReadable for Dimension {
 }
 
 
-/// total of 8 bytes
-/// [See](https://wiki.vg/index.php?title=Protocol&oldid=14204#Position)
-#[derive(Copy, Clone, Debug)]
-pub struct Position {
-    pub x: i32,
-    pub y: i16,
-    pub z: i32,
-}
-
-impl From<Position> for BlockLocation {
-    fn from(pos: Position) -> Self {
-        BlockLocation::new(pos.x, pos.y, pos.z)
-    }
-}
+pub type Position = BlockLocation;
 
 
-// TODO: is this right
 impl ByteReadable for Position {
     ///
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
@@ -477,5 +474,13 @@ impl ByteReadable for Position {
             y,
             z,
         }
+    }
+}
+
+impl ByteWritable for Position {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        let Position{x,y,z} = self;
+        let write = ((x as u64 & 0x3FFFFFF) << 38) | ((y as u64 & 0xFFF) << 26) | (z as u64 & 0x3FFFFFF);
+        writer.write(write);
     }
 }

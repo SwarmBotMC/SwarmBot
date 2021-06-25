@@ -122,6 +122,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let client = Bot {
                     state: LocalState {
                         ticks: 0,
+                        mining: None,
                         bot_id: self.id_on,
                         physics: Physics::default(),
                         disconnected: false,
@@ -167,7 +168,7 @@ impl<T: Minecraft + 'static> Runner<T> {
             let states_sync: Vec<_> = self.bots.iter_mut()
                 .map(|bot| &mut bot.state)
                 .map(|state| state as *mut LocalState)
-                .map(|state| SyncLocal(state))
+                .map(SyncLocal)
                 .collect();
 
             rayon::spawn(move || {

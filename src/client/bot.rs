@@ -2,10 +2,11 @@ use std::time::{Duration, Instant};
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
+use crate::client::state::local::{LocalState, MineTask};
 use crate::client::timing::Increment;
-use crate::protocol::{EventQueue, InterfaceOut};
+use crate::protocol::{EventQueue, InterfaceOut, Mine};
 use crate::client::pathfind::implementations::Problem;
+use itertools::min;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
@@ -21,12 +22,27 @@ const fn ticks_from_secs(seconds: usize) -> usize {
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
+
+        match self.state.mining.as_mut() {
+            None => {}
+            Some(mining) => {
+                mining.ticks -= 1;
+                self.out.left_click();
+                if mining.ticks == 0 {
+                    println!("finished mining");
+                    self.out.mine(mining.location, Mine::Finished);
+                    self.state.mining = None;
+                }
+            }
+        }
         self.move_around(global);
 
         self.state.physics.tick(&global.world_blocks);
 
         self.out.teleport(self.state.physics.location());
-        self.out.look(self.state.physics.direction());
+
+        let dir = self.state.physics.direction();
+        self.out.look(dir);
 
         self.state.ticks += 1;
     }

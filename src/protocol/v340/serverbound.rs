@@ -1,7 +1,8 @@
 use packets::*;
-use packets::types::{VarInt};
+use packets::types::VarInt;
 use packets::write::{ByteWritable, ByteWriter};
-use crate::types::{Location, Direction};
+
+use crate::types::{Direction, Location, Position};
 
 #[derive(Packet, Writable)]
 #[packet(0x00, Handshake)]
@@ -18,9 +19,7 @@ pub struct Handshake {
 
 #[derive(Copy, Clone, EnumWritable)]
 #[repr(i32)]
-
 pub enum HandshakeNextState {
-
     #[deprecated]
     Invalid,
 
@@ -69,7 +68,7 @@ pub struct PlayerPositionAndRotation {
 #[derive(Writable, Packet)]
 #[packet(0x02, Play)]
 pub struct ChatMessage {
-    pub message: String
+    pub message: String,
 }
 
 #[derive(Writable, Packet)]
@@ -77,23 +76,6 @@ pub struct ChatMessage {
 pub struct HeldItemChangeSb {
     pub slot: u16,
 }
-
-// pub enum DigStatus {
-//     StartDig,
-//     CancelDig,
-//     FinishDig,
-//     DropItemStack,
-//     DropItem,
-//     ShootArrowFinishEat,
-//     SwapItem,
-// }
-//
-// #[derive(Writable, Packet)]
-// #[packet(0x1b, Play)]
-// pub struct PlayerDigging {
-//     pub status: DigStatus,
-//
-// }
 
 #[derive(Writable, Packet)]
 #[packet(0x0f, Play)]
@@ -103,7 +85,7 @@ pub struct PlayerLook {
 }
 
 #[derive(Writable, Packet)]
-#[packet(0x2c, Play)]
+#[packet(0x1d, Play)]
 pub struct ArmAnimation {
     pub hand: Hand,
 }
@@ -131,9 +113,27 @@ pub struct VehicleMove {
     direction: Direction,
 }
 
+#[derive(EnumWritable, Eq, PartialEq, Copy, Clone)]
+pub enum DigStatus {
+	Started,
+	Cancelled,
+	Finished,
+	DropItemStack,
+	DropItem,
+	ShootArrow,
+	SwapItem // location 0,0,0 face-y
+}
+
+#[derive(Writable, Packet)]
+#[packet(0x14, Play)]
+pub struct PlayerDig {
+    pub status: DigStatus,
+    pub position: Position,
+    pub face: u8
+}
+
 #[repr(i32)]
 #[derive(EnumWritable)]
-
 pub enum ClientStatusAction {
     Respawn = 0,
     Stats = 1,
@@ -154,14 +154,12 @@ pub struct KeepAlive {
 
 
 #[derive(EnumWritable, Debug)]
-
 pub enum Hand {
     Main,
     Off,
 }
 
 #[derive(EnumWritable, Debug)]
-
 pub enum Action {
     SneakStart,
     SneakStop,
@@ -176,7 +174,6 @@ pub enum Action {
 
 #[derive(Debug, AdtWritable)]
 #[repr(i32)]
-
 pub enum InteractEntityKind {
     Interact {
         target_x: f32,

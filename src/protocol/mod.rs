@@ -6,6 +6,7 @@ use crate::types::{Location, Direction};
 
 use packets::types::UUID;
 use crate::client::processor::InterfaceIn;
+use crate::storage::block::BlockLocation;
 
 pub mod v340;
 
@@ -13,8 +14,17 @@ mod io;
 mod transform;
 mod encrypt;
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Mine {
+    Start,
+    Cancel,
+    Finished
+}
+
 pub trait InterfaceOut {
     fn send_chat(&mut self, message: &str);
+    fn left_click(&mut self);
+    fn mine(&mut self, location: BlockLocation, mine: Mine);
     fn respawn(&mut self);
     fn teleport(&mut self, location: Location);
     fn look(&mut self, direction: Direction);

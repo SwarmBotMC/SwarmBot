@@ -10,8 +10,14 @@ use crate::client::pathfind::implementations::novehicle::TravelProblem;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
+pub struct MineTask {
+    pub ticks: u32,
+    pub location: BlockLocation
+}
+
 pub struct LocalState {
     pub ticks: usize,
+    pub mining: Option<MineTask>,
     pub bot_id: u32,
     pub physics: Physics,
     pub disconnected: bool,
