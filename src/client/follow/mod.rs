@@ -1,11 +1,14 @@
 use std::collections::VecDeque;
 
-use crate::client::pathfind::context::{MoveNode, MoveRecord};
+use crate::client::pathfind::context::{MoveRecord};
 use crate::client::physics::Walk;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::types::{Direction, Displacement, Location};
 use crate::client::pathfind::incremental::PathResult;
+
+const PROGRESS_THRESHOLD: f64 = 0.4;
+const PROGRESS_THRESHOLD_Y: f64 = 1.3;
 
 #[derive(Eq, PartialEq)]
 pub enum FollowResult {
@@ -81,7 +84,6 @@ impl Follower {
         let current = local.physics.location();
         let displacement = next - current;
 
-        let mag2 = displacement.mag2();
         let mag2_horizontal = Displacement::new(displacement.dx, 0.0, displacement.dz).mag2();
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
@@ -89,15 +91,17 @@ impl Follower {
             return FollowResult::Failed;
         }
 
-        let res = if mag2 < 0.2 * 0.2 {
+        let res = if mag2_horizontal < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && displacement.dy.abs() < PROGRESS_THRESHOLD_Y {
             self.next();
             FollowResult::Success
         } else {
             FollowResult::InProgress
         };
 
+        let mag2 = Displacement::new(displacement.dx, 0.0, displacement.dz).mag2();
+
         if mag2 < 0.01 * 0.01 {
-            // want to avoid divide by 0
+            // want to avoid divide by 0 for direction
             return FollowResult::Success;
         }
 
