@@ -4,9 +4,7 @@ use crate::protocol::{InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState, BlockKind};
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Chat, Location, LocationOrigin, Direction};
-use crate::client::pathfind::traits::{Progressor, Progression};
-use crate::client::pathfind::context::{GlobalContext, MoveNode};
+use crate::types::{Chat, Location, LocationOrigin};
 use crate::client::physics::tools::{Tool, Material};
 
 pub trait InterfaceIn {
@@ -51,13 +49,12 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
                             let loc = BlockLocation::from(self.local.physics.location());
 
-                            let iter = self.global.world_blocks.select(loc,|state| state.kind() == kind)
-                                .take(1);
+                            let closest = self.global.world_blocks.closest(loc,|state| state.kind() == kind);
 
-                            for loc in iter {
-                                self.out.send_chat(&format!("instance at {}", loc));
-                                self.local.travel_to_block(loc);
+                            if let Some(closest) = closest {
+                                self.local.travel_to_block(closest);
                             }
+
                         }
 
                         if let [a, b, c] = cmd.args[..] {
@@ -87,9 +84,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                             let kind = BlockKind::from(id);
 
                             let origin = BlockLocation::from(self.local.physics.location());
-                            let closest = self.global.world_blocks.select(origin,|state| state.kind() == kind)
-                                .take(50)
-                                .min_by_key(|loc| loc.dist2(origin));
+                            let closest = self.global.world_blocks.closest(origin,|state| state.kind() == kind);
 
                             if let Some(closest) = closest {
                                 let dir = closest.centered() - origin.centered();

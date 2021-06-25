@@ -1,6 +1,6 @@
 use std::collections::{HashMap, BinaryHeap};
 use std::hash::Hash;
-use crate::client::pathfind::HeapNode;
+use crate::client::pathfind::MinHeapNode;
 use crate::client::timing::{Increment};
 use crate::client::pathfind::traits::{Heuristic, Progressor, GoalCheck, Progression};
 use std::time::{Instant};
@@ -65,7 +65,7 @@ struct AStarState<T: Node> {
     g_scores: HashMap<usize, f64>,
 
     /// a priority queue of nodes sorted my lowest f-score
-    open_set: BinaryHeap<HeapNode<T>>,
+    open_set: BinaryHeap<MinHeapNode<T, f64>>,
 
     /// if A-star is valid
     valid: bool,
@@ -136,9 +136,9 @@ impl <T: Node> AStar<T> {
 
         let mut open_set = BinaryHeap::new();
 
-        open_set.push(HeapNode {
+        open_set.push(MinHeapNode {
             contents: init_node,
-            f_score: f64::MAX
+            score: f64::MAX
         });
 
         let state = Some(AStarState {
@@ -283,9 +283,9 @@ impl <T: Node> AStar<T> {
 
                 }
 
-                let heap_node = HeapNode {
+                let heap_node = MinHeapNode {
                     contents: value,
-                    f_score,
+                    score: f_score,
                 };
 
                 state.open_set.push(heap_node);

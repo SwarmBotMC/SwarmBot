@@ -100,11 +100,23 @@ impl ChunkData<HighMemoryChunkSection> {
 const SECTION_HEIGHT: usize = 16;
 const SECTION_WIDTH: usize = 16;
 
-#[derive(Default)]
 pub struct Palette {
     bits_per_block: u8,
     id_to_state: Option<Vec<BlockState>>,
+
+    /// invariant: must always be at bits_per_block * 4096 / 64 ... if 4 we have 256 ... if we have 1 we get 64
     storage: Vec<u64>,
+}
+
+impl Default for Palette {
+    fn default() -> Self {
+        Self {
+            /// the smallest bpb
+            bits_per_block: 1,
+            id_to_state: Some(vec![BlockState::AIR]),
+            storage: vec![0; 64]
+        }
+    }
 }
 
 impl Palette {
@@ -117,6 +129,9 @@ impl Palette {
     }
 
     pub fn indirect(bits_per_block: u8, id_to_state: Vec<BlockState>, storage: Vec<u64>) -> Palette {
+        assert!(bits_per_block >= 4);
+        assert!(bits_per_block <= 8);
+        assert_eq!(storage.len(), 4096  / 64 * bits_per_block as usize);
         Palette {
             bits_per_block,
             id_to_state: Some(id_to_state),
@@ -170,6 +185,7 @@ impl Palette {
                             let indv_value_mask = (1 << required_bits) - 1;
 
 
+                            assert!(required_bits >= 4);
                             let new_data_size = 4096 * (required_bits as usize) / 64;
                             let mut storage = vec![0_u64; new_data_size];
 
@@ -192,7 +208,7 @@ impl Palette {
                                 }
                             }
 
-                            // println!("e");
+                            // TODO: culprit?
                             self.storage = storage;
                             return;
                         } else {
@@ -219,7 +235,7 @@ impl Palette {
         let start_offset = (block_number * bits_per_block) % 64;
         let end_long = ((block_number + 1) * bits_per_block - 1) / 64;
 
-        // zero out
+        // zero out TODO: thread 'main' panicked at 'index out of bounds: the len is 0 but the index is 0', below...
         self.storage[start_long] &= !(indv_value_mask << start_offset);
 
         // place

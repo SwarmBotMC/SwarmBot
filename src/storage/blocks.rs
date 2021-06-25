@@ -1,10 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{BinaryHeap, HashMap};
 use std::convert::TryFrom;
+use std::iter::FromIterator;
+use std::num::TryFromIntError;
 
+use itertools::{Itertools, min};
+use tokio_stream::StreamExt;
+
+use crate::client::pathfind::MinHeapNode;
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
-use std::num::TryFromIntError;
-use itertools::Itertools;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -44,12 +48,32 @@ impl WorldBlocks {
         Some(block)
     }
 
-    pub fn select(&'a self, around: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
-        self.storage.iter()
-            .sorted_unstable_by_key(|(loc,_)|{
-                let chunk_center_loc = BlockLocation::new(loc.0 << 4, 64, loc.1 << 4);
-                chunk_center_loc.dist2(around)
-            })
+    pub fn closest(&'a self, origin: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> Option<BlockLocation> {
+        self.select(origin, 4, selector)
+            .min_by_key(|loc|loc.dist2(origin))
+    }
+
+    pub fn select(&'a self, around: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
+        let iter = self.storage.iter().map(|(loc, column)| {
+            let edge1 = BlockLocation::new(loc.0 << 4, 64, loc.1 << 4);
+            let edge2 = edge1 + BlockLocation::new(16, 0, 0);
+            let edge3 = edge1 + BlockLocation::new(0, 0, 16);
+            let edge4 = edge1 + BlockLocation::new(16, 0, 16);
+
+            // get the chunks which are closest
+            let arr = [edge1, edge2, edge3, edge4];
+            let value = IntoIterator::into_iter(arr).map(|edge| edge.dist2(around)).min().unwrap();
+            MinHeapNode {
+                contents: (loc, column),
+                score: value,
+            }
+        });
+
+        let min_heap = BinaryHeap::from_iter(iter);
+
+        min_heap.into_iter()
+            .take(max_chunks)
+            .map(|node| node.contents)
             .filter_map(|(loc, column)| {
                 match column {
                     ChunkColumn::HighMemory { data } => {
@@ -61,7 +85,7 @@ impl WorldBlocks {
             .flat_map(move |(loc, column)| {
                 let start_x = loc.0 << 4;
                 let start_z = loc.1 << 4;
-                column.select(selector).map(move |idx|{
+                column.select(selector).map(move |idx| {
                     let x = idx % 16;
                     let leftover = idx >> 4;
                     let z = leftover % 16;
@@ -89,7 +113,7 @@ impl WorldBlocks {
         let loc = ChunkLocation(chunk_x, chunk_z);
 
         match self.storage.get_mut(&loc) {
-            None => {},
+            None => {}
             Some(column) => column.set_block(x, y, z, block)
         };
     }

@@ -7,39 +7,39 @@ pub mod implementations;
 pub mod context;
 pub mod incremental;
 
-pub struct HeapNode<T> {
+pub struct MinHeapNode<T, C: PartialOrd + PartialEq> {
     pub contents: T,
-    pub f_score: f64,
+    pub score: C,
 }
 
-impl <T: Clone> Clone for HeapNode<T> {
+impl <T: Clone, C: Clone + PartialOrd + PartialEq> Clone for MinHeapNode<T, C> {
     fn clone(&self) -> Self {
-        HeapNode {
+        MinHeapNode {
             contents: self.contents.clone(),
-            f_score: self.f_score
+            score: self.score.clone()
         }
     }
 }
 
-impl <T> Ord for HeapNode<T> {
+impl <T, C: PartialOrd + PartialEq> Ord for MinHeapNode<T, C> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.partial_cmp(other).unwrap()
     }
 }
 
-impl <T> PartialOrd for HeapNode<T> {
+impl <T,C :PartialOrd + PartialEq> PartialOrd for MinHeapNode<T, C> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        other.f_score.partial_cmp(&self.f_score)
+        other.score.partial_cmp(&self.score)
     }
 }
 
-impl <T> PartialEq for HeapNode<T> {
+impl <T, C: PartialOrd + PartialEq> PartialEq for MinHeapNode<T, C> {
     fn eq(&self, other: &Self) -> bool {
-        self.f_score.eq(&other.f_score)
+        self.score.eq(&other.score)
     }
 }
 
-impl <T> Eq for HeapNode<T> {
+impl <T, C: PartialOrd + PartialEq> Eq for MinHeapNode<T, C> {
 
 }
 

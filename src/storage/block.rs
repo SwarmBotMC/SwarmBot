@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::types::Location;
 use crate::bootstrap::blocks::BlockData;
+use std::ops::Add;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -118,6 +119,15 @@ pub struct BlockLocation {
     pub z: i32,
 }
 
+impl Add for BlockLocation {
+    type Output = BlockLocation;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let BlockLocation{x,y,z} = self;
+        BlockLocation::new(x + rhs.x, y + rhs.y, z + rhs.z)
+    }
+}
+
 
 impl BlockLocation {
     pub fn new(x: i32, y: i16, z: i32) -> BlockLocation {
@@ -146,6 +156,13 @@ impl BlockLocation {
         let dy = (self.y - other.y).abs() as u64;
         let dz = (self.z - other.z).abs() as u64;
         dx * dx + dy * dy + dz * dz
+    }
+
+    pub(crate) fn manhatten(&self, other: BlockLocation) -> u64 {
+        let dx = (self.x - other.x).abs() as u64;
+        let dy = (self.y - other.y).abs() as u64;
+        let dz = (self.z - other.z).abs() as u64;
+        dx + dy + dz
     }
 
     pub(crate) fn dist(&self, other: BlockLocation) -> f64 {

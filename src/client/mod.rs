@@ -1,7 +1,7 @@
 pub mod bot;
 pub mod runner;
 pub mod processor;
-mod pathfind;
+pub mod pathfind;
 mod timing;
 mod follow;
 mod priorities;
