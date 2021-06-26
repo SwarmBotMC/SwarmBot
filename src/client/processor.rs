@@ -47,6 +47,9 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                     "jump" => {
                         self.local.physics.jump();
                     }
+                    "follow" => {
+                        self.local.follow_closest = true;
+                    }
                     "goto" => {
 
                         if let [id] = &cmd.args[..] {

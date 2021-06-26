@@ -18,6 +18,7 @@ pub struct MineTask {
 pub struct LocalState {
     pub ticks: usize,
     pub mining: Option<MineTask>,
+    pub follow_closest: bool,
     pub bot_id: u32,
     pub physics: Physics,
     pub disconnected: bool,

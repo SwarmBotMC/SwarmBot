@@ -1,12 +1,18 @@
 use std::time::{Duration, Instant};
+
+use itertools::min;
+
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
+use crate::client::pathfind::implementations::Problem;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::{LocalState, MineTask};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut, Mine};
-use crate::client::pathfind::implementations::Problem;
-use itertools::min;
+use float_ord::FloatOrd;
+use crate::types::Direction;
+use crate::client::physics::Line;
+use crate::client::physics::speed::Speed;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
@@ -22,7 +28,6 @@ const fn ticks_from_secs(seconds: usize) -> usize {
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
-
         match self.state.mining.as_mut() {
             None => {}
             Some(mining) => {
@@ -49,7 +54,6 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
         if let Some(mut follower) = self.state.follower.take() {
             let follow_result = follower.follow(&mut self.state, global);
             if follow_result == FollowResult::Failed || follower.should_recalc() {
-
                 if let Some(mut problem) = self.state.last_problem.take() {
                     let block_loc = self.state.physics.location().into();
                     problem.recalc(MoveNode::simple(block_loc));
@@ -62,7 +66,21 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             } else {
                 self.state.follower = Some(follower);
             }
+        } else if self.state.follow_closest {
+            let current_loc = self.state.physics.location();
+            let closest = global.world_entities.iter().min_by_key(|(id, data)| {
+                FloatOrd(data.location.dist2(current_loc))
+            });
 
+            if let Some((id, data)) = closest {
+                let displacement = data.location - current_loc;
+                if displacement.has_length() {
+                    let dir = Direction::from(displacement);
+                    self.state.physics.look(dir);
+                    self.state.physics.line(Line::Forward);
+                    self.state.physics.speed(Speed::WALK);
+                }
+            }
         }
     }
 }
@@ -71,7 +89,6 @@ pub fn run_threaded(scope: &rayon::Scope, local: &mut LocalState, global: &Globa
 
     // TODO: this is pretty jank
     if let Some(mut traverse) = local.travel_problem.take() {
-
         let res = traverse.iterate_until(end_by, local, global);
 
         if let Increment::Finished(res) = res {
@@ -83,6 +100,5 @@ pub fn run_threaded(scope: &rayon::Scope, local: &mut LocalState, global: &Globa
         } else {
             local.travel_problem = Some(traverse)
         }
-
     }
 }

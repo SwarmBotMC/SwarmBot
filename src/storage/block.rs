@@ -15,8 +15,19 @@ impl From<u32> for BlockKind {
 }
 
 impl BlockKind {
+    
+    pub const DEFAULT_SLIP: f64 =  0.6;
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
         blocks.by_id(self.0).unwrap().hardness
+    }
+
+    pub fn slip(&self) -> f64 {
+        match self.0 {
+            266 => 0.989, // blue ice
+            79 | 174 | 212 => 0.98, // ice, packed ice, or frosted ice
+            37 => 0.8, // slime block
+            _ => Self::DEFAULT_SLIP
+        }
     }
 }
 

@@ -1,11 +1,12 @@
 use std::collections::VecDeque;
 
 use crate::client::pathfind::context::{MoveRecord};
-use crate::client::physics::Walk;
+use crate::client::physics::Line;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::types::{Direction, Displacement, Location};
 use crate::client::pathfind::incremental::PathResult;
+use crate::client::physics::speed::Speed;
 
 const PROGRESS_THRESHOLD: f64 = 0.4;
 const PROGRESS_THRESHOLD_Y: f64 = 1.3;
@@ -108,16 +109,17 @@ impl Follower {
         let dir = Direction::from(displacement);
         local.physics.look(dir);
 
-        if displacement.dy > 0.0 || (displacement.dy > -0.1 && local.physics.in_water) {
+        if displacement.dy > 0.0 {
             // we want to move vertically first (jump)
             local.physics.jump();
         }
         else if displacement.dy < 0.0 {
             // only will do anything if we are in water
-            local.physics.descend();
+            // local.physics.descend();
         }
 
-        local.physics.walk(Walk::Forward);
+        local.physics.line(Line::Forward);
+        local.physics.speed(Speed::SPRINT);
 
         res
     }

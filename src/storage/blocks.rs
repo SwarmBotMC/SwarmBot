@@ -1,10 +1,7 @@
 use std::collections::{BinaryHeap, HashMap};
-use std::convert::TryFrom;
 use std::iter::FromIterator;
-use std::num::TryFromIntError;
 
-use itertools::{Itertools, min};
-use tokio_stream::StreamExt;
+use itertools::min;
 
 use crate::client::pathfind::MinHeapNode;
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
@@ -30,12 +27,9 @@ impl WorldBlocks {
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
         let BlockLocation { x, y, z } = location;
 
-        let y = match u8::try_from(y) {
-            Ok(inner) => inner,
-            Err(_) => {
-                panic!("y {} is not in range of u8. This is not yet supported", y)
-            }
-        };
+        if y < 0 {
+            return None;
+        }
 
         let chunk_x = x >> 4;
         let chunk_z = z >> 4;
@@ -54,7 +48,7 @@ impl WorldBlocks {
 
     pub fn closest(&'a self, origin: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> Option<BlockLocation> {
         self.select(origin, 4, selector)
-            .min_by_key(|loc|loc.dist2(origin))
+            .min_by_key(|loc| loc.dist2(origin))
     }
 
     pub fn select(&'a self, around: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {

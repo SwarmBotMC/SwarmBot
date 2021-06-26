@@ -131,6 +131,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                     state: LocalState {
                         ticks: 0,
                         mining: None,
+                        follow_closest: false,
                         bot_id: self.id_on,
                         physics: Physics::default(),
                         disconnected: false,
