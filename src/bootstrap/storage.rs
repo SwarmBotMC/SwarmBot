@@ -119,7 +119,8 @@ impl UserCache {
                     }
 
                     // we cannot do anything more -> change to invalid
-                    Err(_) => {
+                    Err(e) => {
+                        println!("failed authentication for {} .. {}", user.email, e);
                         let invalid = InvalidUser {
                             email: user.email.clone(),
                             password: user.password.clone(),
@@ -141,7 +142,9 @@ impl UserCache {
                         }
 
                         let is_valid = mojang.validate(&valid.access_id, &valid.client_id).await.unwrap();
+
                         if !is_valid {
+                            println!("failed validating {}", user.email);
                             match mojang.refresh(&valid.access_id, &valid.client_id).await {
                                 Ok(auth) => {
                                     valid.access_id = auth.access_token;
@@ -153,7 +156,8 @@ impl UserCache {
                                 }
 
                                 // we could not refresh -> try to authenticate
-                                Err(_) => {
+                                Err(e) => {
+                                    println!("failed refreshing {} .. {}", user.email, e);
                                     match mojang.authenticate(&valid.email, &valid.password).await {
                                         Ok(auth) => {
                                             valid.access_id = auth.access_token;
@@ -165,7 +169,8 @@ impl UserCache {
                                         }
 
                                         // we cannot do anything more -> change to invalid
-                                        Err(_) => {
+                                        Err(e) => {
+                                            println!("failed authenticating {} .. {}", user.email, e);
                                             *cached = User::Invalid(InvalidUser {
                                                 email: valid.email.clone(),
                                                 password: valid.password.clone(),

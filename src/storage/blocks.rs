@@ -47,7 +47,7 @@ impl WorldBlocks {
     }
 
     pub fn closest(&'a self, origin: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> Option<BlockLocation> {
-        self.select(origin, 4, selector)
+        self.select(origin, usize::MAX, selector)
             .min_by_key(|loc| loc.dist2(origin))
     }
 

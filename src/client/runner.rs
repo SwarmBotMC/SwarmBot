@@ -105,7 +105,7 @@ impl<T: Minecraft + 'static> Runner<T> {
             let now = Instant::now();
             let difference = now - end_by;
             let millis_off = difference.as_millis();
-            if millis_off > 10 {
+            if millis_off > 100 {
                 println!("off by {}ms", millis_off);
             }
             previous_goal = end_by;
