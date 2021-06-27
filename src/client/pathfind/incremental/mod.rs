@@ -169,6 +169,7 @@ impl <T: Node> AStar<T> {
             }
             let g_score = state.g_scores[&id];
             if g_score > MIN_DIST {
+                println!("larger than min dist");
                 let path = reconstruct_path(state.idx_to_record, id, &state.parent_map);
                 return Increment::Finished(PathResult::incomplete(path));
             }
@@ -292,7 +293,7 @@ impl <T: Node> AStar<T> {
 
             }
         } else {
-            println!("no more nodes");
+            println!("no more nodes iterated through {}", state.idx_to_record.len());
             return self.select_best();
         }
 

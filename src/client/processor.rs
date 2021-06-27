@@ -59,6 +59,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool) {
+        // println!("getting chunk at {}, {}", location.0 << 4, location.1 << 4);
         if new {
             self.global.world_blocks.add_column(location, column);
         } else {

@@ -68,7 +68,6 @@ impl Follower {
     }
 
     pub fn follow(&mut self, local: &mut LocalState, global: &mut GlobalState) -> FollowResult {
-
         if self.xs.is_empty() {
             return FollowResult::Finished;
         }
@@ -77,7 +76,7 @@ impl Follower {
 
         // more than 7 seconds on same block => failed
         if self.ticks >= 20 * 3 {
-            println!("follower failed (time)");
+            println!("follower failed (time) for {} -> {}", local.physics.location(), self.xs.front().unwrap());
             return FollowResult::Failed;
         }
 

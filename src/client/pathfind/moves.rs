@@ -45,6 +45,15 @@ impl Movements {
             }};
         }
 
+        let (head, multiplier) = match get_block!(x, y + 1, z) {
+            None => return Progression::Edge,
+            Some(inner) => {
+                // we do not like our head in water (breathing is nice)
+                let multiplier = if inner == Water { ctx.path_config.costs.no_breathe_mult } else {1.0};
+                (inner, multiplier)
+            }
+        };
+
 
         use crate::storage::block::SimpleType::*;
 
@@ -86,7 +95,7 @@ impl Movements {
                 if walkable {
                     res.push(Neighbor {
                         value: wrap!(BlockLocation::new(x + dx, y, z + dz)),
-                        cost: ctx.path_config.costs.block_walk,
+                        cost: ctx.path_config.costs.block_walk * multiplier,
                     })
                 }
             }
@@ -104,20 +113,19 @@ impl Movements {
 
                     res.push(Neighbor {
                         value: wrap!(new_pos),
-                        cost: ctx.path_config.costs.fall,
+                        cost: ctx.path_config.costs.fall * multiplier,
                     })
                 }
             }
         }
 
         let above = get_block!(x, y + 2, z).unwrap();
-        let head = get_block!(x, y + 1, z).unwrap();
         let floor = get_block!(x, y - 1, z).unwrap();
 
         if above == Water || head == Water {
             res.push(Neighbor {
                 value: wrap!(BlockLocation::new(x,y+1,z)),
-                cost: ctx.path_config.costs.ascend,
+                cost: ctx.path_config.costs.ascend * multiplier,
             });
         }
 
@@ -136,7 +144,7 @@ impl Movements {
                     if can_jump {
                         res.push(Neighbor {
                             value: wrap!(BlockLocation::new(x+dx,y+1,z+dz)),
-                            cost: ctx.path_config.costs.ascend,
+                            cost: ctx.path_config.costs.ascend * multiplier,
                         });
                     }
                 }

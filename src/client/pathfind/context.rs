@@ -12,6 +12,7 @@ pub struct Costs {
     pub place_unrelated: f64,
     pub place_required: f64,
     pub ascend: f64,
+    pub no_breathe_mult: f64,
     pub fall: f64,
 }
 
@@ -27,6 +28,7 @@ impl Default for PathConfig {
                 block_walk: 1.0,
                 mine_unrelated: 20.0,
                 ascend: 1.0,
+                no_breathe_mult: 5.0,
                 fall: 1.0,
                 place_unrelated: 20.0,
                 mine_required: 1.0,

@@ -67,7 +67,7 @@ impl EventQueue340 {
 
             BlockChange::ID => {
                 let BlockChange { block_id, location } = data.read();
-                processor.on_block_change(location.into(), BlockState(block_id.0 as u32));
+                processor.on_block_change(location, BlockState(block_id.0 as u32));
             }
             Explosion::ID => {
                 let Explosion { records, .. } = data.read();
