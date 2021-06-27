@@ -1,15 +1,17 @@
+use std::default::default;
+
 use num::traits::Pow;
 
 use crate::client::physics::speed::Speed;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
-use crate::types::{Direction, Displacement, Location, MathVec};
-use std::default::default;
+use crate::types::{Direction, Displacement, Location};
 
 pub mod tools;
 pub mod speed;
 
 const JUMP_UPWARDS_MOTION: f64 = 0.42;
+const WATER_JUMP_UPWARDS: f64 = 0.04;
 
 const SPRINT_SPEED: f64 = 0.2806;
 const WALK_SPEED: f64 = 0.21585;
@@ -26,6 +28,7 @@ const JUMP_WATER: f64 = 0.03999999910593033;
 const ACC_G: f64 = 0.08;
 
 const WATER_DECEL: f64 = 0.2;
+
 
 const DRAG_MULT: f64 = 0.98; // 00000190734863;
 
@@ -97,14 +100,18 @@ struct MovementState {
     falling: bool,
 }
 
-impl Default for MovementState{
+impl Default for MovementState {
     fn default() -> Self {
         MovementState {
             speeds: default(),
             slip: BlockKind::DEFAULT_SLIP,
-            falling: false
+            falling: false,
         }
     }
+}
+
+fn threshold(value: f64) -> f64 {
+    value
 }
 
 /// # Purpose
@@ -248,28 +255,49 @@ impl Physics {
 
         let MovementState { speeds: prev_speeds, slip: prev_slip, .. } = self.prev;
 
-        self.velocity.dy = if falling {
-            // when falling the slip of air is 1.0
-            slip = 1.0;
-            for i in 0..2 {
-                speeds[i] = air_speed(prev_speeds[i], prev_slip, move_mults[i])
-            }
-            ver_speed(self.velocity.dy)
-        } else if self.pending.jump {
+        self.velocity.dy = if !self.in_water {
+            if falling {
+                // when falling the slip of air is 1.0
+                slip = 1.0;
 
-            for i in 0..2 {
-                let is_sprinting = self.pending.speed == Speed::SPRINT;
-                speeds[i] = jump_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip, is_sprinting);
+                for i in 0..2 {
+                    speeds[i] = air_speed(prev_speeds[i], prev_slip, move_mults[i])
+                }
+
+                ver_speed(self.velocity.dy)
+            } else if self.pending.jump {
+                for i in 0..2 {
+                    let is_sprinting = self.pending.speed == Speed::SPRINT;
+                    speeds[i] = jump_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip, is_sprinting);
+                }
+                initial_ver(0)
+            } else {
+
+                // we are not falling and not jumping
+                for i in 0..2 {
+                    speeds[i] = ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
+                }
+                0.0
             }
-            initial_ver(0)
         } else {
+            const WATER_SLOW_DOWN: f64 = 0.8;
 
-            // we are not falling and not jumping
             for i in 0..2 {
-                speeds[i] = ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
+                let momentum = prev_speeds[i] * 0.8;
+                let acc = 0.02 * move_mults[i];
+                speeds[i] = momentum + acc
             }
-            0.0
+
+            let res = self.velocity.dy * WATER_SLOW_DOWN - 0.02 + if self.pending.jump { 0.04 } else { 0. };
+            if falling {
+                res
+            } else {
+                // we can't go down if there is a block below us.
+                res.max(0.0)
+            }
+
         };
+
 
         self.velocity.dx = speeds[0];
         self.velocity.dz = speeds[1];
@@ -319,8 +347,6 @@ impl Physics {
         let mut new_loc = prev_loc + self.velocity;
 
         if falling {
-
-
             if self.velocity.dy >= 0.0 {// we are moving up
 
                 let mut head_loc = new_loc + EPSILON_Y;
@@ -347,7 +373,7 @@ impl Physics {
         self.prev = MovementState {
             speeds,
             slip,
-            falling
+            falling,
         }
     }
 

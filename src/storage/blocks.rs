@@ -1,8 +1,6 @@
 use std::collections::{BinaryHeap, HashMap};
 use std::iter::FromIterator;
 
-use itertools::min;
-
 use crate::client::pathfind::MinHeapNode;
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;

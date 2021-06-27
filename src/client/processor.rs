@@ -50,6 +50,12 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                     "follow" => {
                         self.local.follow_closest = true;
                     }
+                    "kys" => {
+
+                        // self.
+                        // let closest = self.global.world_blocks.closest(loc,|state| state.kind() == kind);
+                        // if
+                    }
                     "goto" => {
 
                         if let [id] = &cmd.args[..] {
