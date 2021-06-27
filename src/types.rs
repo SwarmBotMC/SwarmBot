@@ -110,7 +110,7 @@ impl PlayerMessage {
 impl Chat {
     pub fn player_message(&self) -> Option<PlayerMessage> {
         static RE: SyncLazy<Regex> = SyncLazy::new(|| {
-            Regex::new(r"^<([A-Za-z_]+)> (.*)").unwrap()
+            Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap()
         });
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");

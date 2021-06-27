@@ -36,13 +36,19 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
     }
 }
 
+
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
-        if let Some(player_msg) = message.player_message() {
 
-            println!("player msg {}", player_msg.message);
+        macro_rules! chat {
+            ($($msg: expr),*) => {{
+                self.out.send_chat(&format!($($msg),*))
+            }};
+        }
+
+
+        if let Some(player_msg) = message.player_message() {
             if let Some(cmd) = player_msg.into_cmd() {
-                println!("command {}", cmd.command);
                 match cmd.command.as_str() {
                     "jump" => {
                         self.local.physics.jump();
@@ -68,6 +74,8 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
                             if let Some(closest) = closest {
                                 self.local.travel_to_block(closest);
+                            } else {
+                                chat!("There is no block {} by me", id);
                             }
 
                         }
@@ -81,8 +89,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                         }
                     }
                     "loc" => {
-                        let block_loc: BlockLocation = self.local.physics.location().into();
-                        self.out.send_chat(&format!("my location is {}. My block loc is {}", self.local.physics.location(), block_loc));
+                        chat!("My location is {}", self.local.physics.location());
                     }
                     "state" => {
                         if let [name] = &cmd.args[..] {
@@ -99,8 +106,8 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                             let y = b.parse().unwrap();
                             let z = c.parse().unwrap();
                             let location = BlockLocation::new(x,y,z);
-                            self.out.send_chat(&format!("we have {:?}", self.global.world_blocks.get_block(location)))
 
+                            chat!("The block is {:?}", self.global.world_blocks.get_block(location));
                         }
                     }
                     "mine" => {
