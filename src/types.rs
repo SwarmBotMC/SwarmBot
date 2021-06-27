@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::storage::block::BlockLocation;
 use crate::types::Origin::{Abs, Rel};
+use ansi_term::Style;
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -29,6 +30,10 @@ impl PacketData {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChatSection {
     pub color: Option<String>,
+    pub bold: Option<bool>,
+    pub italic: Option<bool>,
+    pub underlined: Option<bool>,
+    pub strikethrough: Option<bool>,
     pub text: String,
 }
 
@@ -51,7 +56,8 @@ impl Chat {
 impl ChatSection {
     fn colorize(self) -> String {
         use ansi_term::Color::*;
-        let color = match self.color.unwrap_or(String::new()).as_str() {
+
+        let color = match self.color.unwrap_or_default().as_str() {
             "dark_blue" | "blue" => Blue,
             "dark_aqua" | "aqua" => Cyan,
             "red" | "dark_red" => Red,
@@ -64,7 +70,25 @@ impl ChatSection {
             _ => Black
         };
 
-        color.paint(self.text).to_string()
+        let mut res = Style::from(color);
+
+        if self.bold.unwrap_or_default() {
+            res = res.bold();
+        }
+
+        if self.italic.unwrap_or_default() {
+            res = res.italic();
+        }
+
+        if self.underlined.unwrap_or_default() {
+            res = res.underline();
+        }
+
+        if self.strikethrough.unwrap_or_default() {
+            res = res.strikethrough();
+        }
+
+        res.paint(self.text).to_string()
     }
 }
 
