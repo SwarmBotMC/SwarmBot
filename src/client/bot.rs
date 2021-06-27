@@ -194,7 +194,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
                 }
             }
             _ => {
-                self.out.send_chat("invalid command");
+                // self.out.send_chat("invalid command");
             }
         }
     }

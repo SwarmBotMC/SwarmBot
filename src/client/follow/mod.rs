@@ -8,7 +8,7 @@ use crate::types::{Direction, Displacement, Location};
 use crate::client::pathfind::incremental::PathResult;
 use crate::client::physics::speed::Speed;
 
-const PROGRESS_THRESHOLD: f64 = 0.4;
+const PROGRESS_THRESHOLD: f64 = 0.2;
 const PROGRESS_THRESHOLD_Y: f64 = 1.3;
 
 #[derive(Eq, PartialEq)]
@@ -102,6 +102,7 @@ impl Follower {
         let mag2 = Displacement::new(displacement.dx, 0.0, displacement.dz).mag2();
 
         if mag2 < 0.01 * 0.01 {
+            self.next();
             // want to avoid divide by 0 for direction
             return FollowResult::Success;
         }

@@ -289,6 +289,7 @@ impl Physics {
             }
 
             let res = self.velocity.dy * WATER_SLOW_DOWN - 0.02 + if self.pending.jump { 0.04 } else { 0. };
+
             if falling {
                 res
             } else {
