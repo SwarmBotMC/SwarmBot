@@ -25,10 +25,6 @@ impl WorldBlocks {
     pub fn get_block(&self, location: BlockLocation) -> Option<BlockApprox> {
         let BlockLocation { x, y, z } = location;
 
-        if y < 0 {
-            return None;
-        }
-
         let chunk_x = x >> 4;
         let chunk_z = z >> 4;
 
@@ -40,6 +36,13 @@ impl WorldBlocks {
 
         let loc = ChunkLocation(chunk_x, chunk_z);
         let column = self.storage.get(&loc)?;
+
+        // this *should* be either the void or the sky (at least pre-1.17)
+        // we do this check here because we want to return None if there is no chunk column in that position
+        if !(0..256).contains(&y) {
+            return Some(BlockApprox::Realized(BlockState::AIR));
+        }
+
         let block = column.get_block(x, y as u8, z);
         Some(block)
     }

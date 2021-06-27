@@ -111,9 +111,10 @@ impl Movements {
         }
 
         let above = get_block!(x, y + 2, z).unwrap();
+        let head = get_block!(x, y + 1, z).unwrap();
         let floor = get_block!(x, y - 1, z).unwrap();
 
-        if above == Water {
+        if above == Water || head == Water {
             res.push(Neighbor {
                 value: wrap!(BlockLocation::new(x,y+1,z)),
                 cost: ctx.path_config.costs.ascend,
@@ -122,7 +123,6 @@ impl Movements {
 
         // if it is water the jump will be too high
         let can_jump = above == WalkThrough && floor != Water;
-
 
         // ascending adjacent
         if can_jump {

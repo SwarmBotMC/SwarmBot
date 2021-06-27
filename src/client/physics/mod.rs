@@ -33,7 +33,7 @@ const WATER_DECEL: f64 = 0.2;
 const DRAG_MULT: f64 = 0.98; // 00000190734863;
 
 // player width divided by 2
-const PLAYER_WIDTH_2: f64 = 0.6 / 2.0;
+const PLAYER_WIDTH_2: f64 = (0.6 / 2.0) + 0.001;
 
 // remove 0.1
 const PLAYER_HEIGHT: f64 = 1.79999;
@@ -96,6 +96,7 @@ fn air_speed(prev_speed: f64, prev_slip: f64, move_mult: f64) -> f64 {
 #[derive(Debug)]
 struct MovementState {
     speeds: [f64; 2],
+    y_vel: f64,
     slip: f64,
     falling: bool,
 }
@@ -104,6 +105,7 @@ impl Default for MovementState {
     fn default() -> Self {
         MovementState {
             speeds: default(),
+            y_vel: 0.0,
             slip: BlockKind::DEFAULT_SLIP,
             falling: false,
         }
@@ -124,7 +126,6 @@ pub struct Physics {
     look: Direction,
     prev: MovementState,
     horizontal: Displacement,
-    velocity: Displacement,
     pending: PendingMovement,
     in_water: bool,
 }
@@ -163,7 +164,7 @@ impl Physics {
     /// move to location and zero out velocity
     pub fn teleport(&mut self, location: Location) {
         self.location = location;
-        self.velocity = Displacement::default();
+        self.prev = MovementState::default();
     }
 
     pub fn jump(&mut self) {
@@ -255,7 +256,8 @@ impl Physics {
 
         let MovementState { speeds: prev_speeds, slip: prev_slip, .. } = self.prev;
 
-        self.velocity.dy = if !self.in_water {
+
+        let mut y_vel = if !self.in_water {
             if falling {
                 // when falling the slip of air is 1.0
                 slip = 1.0;
@@ -264,7 +266,7 @@ impl Physics {
                     speeds[i] = air_speed(prev_speeds[i], prev_slip, move_mults[i])
                 }
 
-                ver_speed(self.velocity.dy)
+                ver_speed(self.prev.y_vel)
             } else if self.pending.jump {
                 for i in 0..2 {
                     let is_sprinting = self.pending.speed == Speed::SPRINT;
@@ -288,7 +290,7 @@ impl Physics {
                 speeds[i] = momentum + acc
             }
 
-            let res = self.velocity.dy * WATER_SLOW_DOWN - 0.02 + if self.pending.jump { 0.04 } else { 0. };
+            let res = self.prev.y_vel * WATER_SLOW_DOWN - 0.02 + if self.pending.jump { 0.04 } else { 0. };
 
             if falling {
                 res
@@ -299,25 +301,17 @@ impl Physics {
 
         };
 
-
-        self.velocity.dx = speeds[0];
-        self.velocity.dz = speeds[1];
-
         let prev_loc = self.location;
 
         {
-            let dx = self.velocity.dx;
-            let extra_dx = if dx == 0.0 { 0.0 } else { dx.signum() * PLAYER_WIDTH_2 };
-            let end_dx = dx + extra_dx;
 
-            let dz = self.velocity.dz;
-            let extra_dz = if dz == 0.0 { 0.0 } else { dz.signum() * PLAYER_WIDTH_2 };
-            let end_dz = dz + extra_dz;
-
-            // let dy = self.velocity.dy;
-
-            let end_vel = Displacement::new(end_dx, self.velocity.dy, end_dz);
+            let end_vel = Displacement::new(speeds[0], y_vel, speeds[1]);
             let new_loc = prev_loc + end_vel;
+
+            let against_block = !self.cross_section_empty(new_loc + EPSILON_Y, world) ||
+                !self.cross_section_empty(new_loc + UNIT_Y, world) ||
+                !self.cross_section_empty(new_loc + Displacement::new(0.,PLAYER_HEIGHT,0.), world);
+
 
             let prev_legs: BlockLocation = prev_loc.into();
             let legs: BlockLocation = new_loc.into();
@@ -331,12 +325,9 @@ impl Physics {
             let leg_block = world.get_block_simple(legs);
             let head_block = world.get_block_simple(head);
 
-
-            let against_block = leg_block == Some(SimpleType::Solid) || head_block == Some(SimpleType::Solid);
             if against_block {
-                // TODO: might break shit
-                self.velocity.dx = 0.0;
-                self.velocity.dz = 0.0;
+                speeds[0] = 0.0;
+                speeds[1] = 0.0;
 
                 self.in_water = prev_legs_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
             } else {
@@ -345,22 +336,23 @@ impl Physics {
         }
 
 
-        let mut new_loc = prev_loc + self.velocity;
+        let velocity = Displacement::new(speeds[0], y_vel, speeds[1]);
+        let mut new_loc = prev_loc + velocity;
 
         if falling {
-            if self.velocity.dy >= 0.0 {// we are moving up
+            if velocity.dy >= 0.0 {// we are moving up
 
                 let mut head_loc = new_loc + EPSILON_Y;
                 head_loc.y += PLAYER_HEIGHT;
 
                 if !self.cross_section_empty(head_loc, world) {
                     new_loc.y = head_loc.y.round() - PLAYER_HEIGHT - 0.0001;
-                    self.velocity.dy = 0.0;
+                    y_vel = 0.0;
                 }
             } else { // we are moving down
                 if !self.cross_section_empty(new_loc - EPSILON_Y, world) {
                     new_loc.y = new_loc.y.round();
-                    self.velocity.dy = 0.0;
+                    y_vel = 0.0;
                 }
             }
         }
@@ -368,11 +360,9 @@ impl Physics {
         self.location = new_loc;
         self.pending = PendingMovement::default();
 
-        speeds[0] = self.velocity.dx;
-        speeds[1] = self.velocity.dz;
-
         self.prev = MovementState {
             speeds,
+            y_vel,
             slip,
             falling,
         }
@@ -383,10 +373,5 @@ impl Physics {
     }
     pub fn location(&self) -> Location {
         self.location
-    }
-
-
-    pub fn velocity(&self) -> Displacement {
-        self.velocity
     }
 }
