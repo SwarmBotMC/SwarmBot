@@ -61,7 +61,8 @@ impl EventQueue340 {
         use clientbound::*;
         match data.id {
             JoinGame::ID => {
-                // don't have to do anything here... already processed in Minecraft::login
+                let JoinGame{dimension, ..} = data.read();
+                processor.on_dimension_change(dimension);
             }
 
             BlockChange::ID => {
@@ -120,6 +121,7 @@ impl EventQueue340 {
             }
             Respawn::ID => {
                 let Respawn{dimension, ..} = data.read();
+                processor.on_dimension_change(dimension);
                 self.dimension = dimension;
             }
 

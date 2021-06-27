@@ -145,7 +145,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
                 self.state.last_problem = None;
             }
             "loc" => {
-                msg!("My location is {}", self.state.physics.location());
+                msg!("My location is {} in {}", self.state.physics.location(), self.state.dimension);
             }
             "state" => {
                 if let [name] = args {

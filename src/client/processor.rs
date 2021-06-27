@@ -4,12 +4,13 @@ use crate::protocol::{InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState, BlockKind};
 use crate::storage::chunk::ChunkColumn;
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Chat, Location, LocationOrigin};
+use crate::types::{Chat, Location, LocationOrigin, Dimension};
 use crate::client::physics::tools::{Tool, Material};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
     fn on_death(&mut self);
+    fn on_dimension_change(&mut self, dimension: Dimension);
     fn on_move(&mut self, location: Location);
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool);
     fn on_entity_move(&mut self, id: u32, location: LocationOrigin);
@@ -45,6 +46,10 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_death(&mut self) {
         self.out.respawn();
         self.out.send_chat("I died... oof... well I guess I should respawn");
+    }
+
+    fn on_dimension_change(&mut self, dimension: Dimension) {
+        self.local.dimension = dimension;
     }
 
     fn on_move(&mut self, location: Location) {

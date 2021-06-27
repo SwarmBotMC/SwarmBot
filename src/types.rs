@@ -515,6 +515,17 @@ pub enum Dimension {
     End,
 }
 
+impl Display for Dimension {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let to_write = match self {
+            Dimension::Nether => "nether",
+            Dimension::Overworld => "overworld",
+            Dimension::End => "end"
+        };
+        f.write_str(to_write)
+    }
+}
+
 impl ByteReadable for Dimension {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         use Dimension::*;
