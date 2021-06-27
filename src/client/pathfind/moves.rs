@@ -112,7 +112,9 @@ impl Movements {
         for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
             let Change { dx, dz, .. } = direction.unit_change();
 
-            if can_move_adj_noplace[idx] && !traverse_possible_no_place[idx] {
+            let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
+            if can_move_adj_noplace[idx] && !traverse_possible_no_place[idx] && floor != Avoid {
+
                 let start = BlockLocation::new(x + dx, y, z + dz);
                 let collided_y = drop_y(start, w);
                 if let Some(collided_y) = collided_y {
