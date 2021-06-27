@@ -13,8 +13,9 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::inventory::Inventory;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
-use crate::storage::blocks::WorldBlocks;
 use crate::types::Dimension;
+use tokio::io::AsyncBufReadExt;
+use std::sync::mpsc::TryRecvError;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -35,6 +36,7 @@ pub type Logins<T> = Rc<RefCell<Vec<Login<<T as Minecraft>::Queue, <T as Minecra
 pub struct Runner<T: Minecraft> {
     /// logins that are about to be established
     pending_logins: Logins<T>,
+    stdin: std::sync::mpsc::Receiver<String>,
 
     /// the global state of the program containing chunks and global config
     global_state: GlobalState,
@@ -86,8 +88,22 @@ impl<T: Minecraft + 'static> Runner<T> {
             });
         }
 
+        let stdin = {
+            let (tx, rx) = std::sync::mpsc::channel();
+
+            tokio::task::spawn_local(async move {
+                let stdin = tokio::io::stdin();
+                let buf = tokio::io::BufReader::new(stdin);
+                let mut lines = buf.lines();
+                while let Some(line) = lines.next_line().await.unwrap() {
+                    tx.send(line).unwrap();
+                }
+            });
+            rx
+        };
 
         Runner {
+            stdin,
             pending_logins,
             global_state: GlobalState::init(blocks),
             bots: Vec::new(),
@@ -158,18 +174,21 @@ impl<T: Minecraft + 'static> Runner<T> {
             println!("{} clients", new_count);
         }
 
-        // third step: process packets from game loop
+        // third step: process commands
+        self.process_commands();
+
+        // fourth step: process packets from game loop
         for bot in &mut self.bots {
             // protocol-specific logic
 
             let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out);
             bot.queue.flush(&mut processor);
 
-            // general sync logic that isn't dependent on protocol implementation
+            // fifth step: general sync logic that isn't dependent on protocol implementation
             bot.run_sync(&mut self.global_state);
         }
 
-        // fourth step: run threaded
+        // sixth step: run threaded
         let thread_loop_end = Notify::new();
 
         {
@@ -196,4 +215,30 @@ impl<T: Minecraft + 'static> Runner<T> {
             });
         }
     }
+
+    fn process_commands(&mut self){
+        match self.stdin.try_recv() {
+
+            Ok(command) => {
+
+                let parts: Vec<_> = command.split(' ').collect();
+
+                if parts.is_empty() {
+                    return;
+                }
+                let name = parts[0];
+                let args = &parts[1..];
+
+                for bot in &mut self.bots {
+                    bot.process_command(name, args, &mut self.global_state);
+                }
+            },
+            Err(TryRecvError::Empty) => {},
+            Err(e) => {
+                println!("receive err");
+            }
+        }
+    }
+
+
 }

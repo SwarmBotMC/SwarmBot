@@ -50,26 +50,7 @@ impl WorldBlocks {
     }
 
     pub fn select(&'a self, around: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
-        let iter = self.storage.iter().map(|(loc, column)| {
-            let edge1 = BlockLocation::new(loc.0 << 4, 64, loc.1 << 4);
-            let edge2 = edge1 + BlockLocation::new(16, 0, 0);
-            let edge3 = edge1 + BlockLocation::new(0, 0, 16);
-            let edge4 = edge1 + BlockLocation::new(16, 0, 16);
-
-            // get the chunks which are closest
-            let arr = [edge1, edge2, edge3, edge4];
-            let value = IntoIterator::into_iter(arr).map(|edge| edge.dist2(around)).min().unwrap();
-            MinHeapNode {
-                contents: (loc, column),
-                score: value,
-            }
-        });
-
-        let min_heap = BinaryHeap::from_iter(iter);
-
-        min_heap.into_iter()
-            .take(max_chunks)
-            .map(|node| node.contents)
+        self.storage.iter()
             .filter_map(|(loc, column)| {
                 match column {
                     ChunkColumn::HighMemory { data } => {

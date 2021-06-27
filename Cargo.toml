@@ -23,7 +23,7 @@ tokio-socks = "0.5"
 tokio-stream = "0.1"
 
 # tokio
-tokio = { version = "1.7", features = ["full"] }
+tokio = { version = "1.7", features = ["rt", "io-std", "io-util", "sync", "parking_lot"] }
 
 # async trait
 async-trait = "0.1"
