@@ -26,16 +26,46 @@ impl PacketData {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChatSection {
     pub color: Option<String>,
     pub text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Chat {
     pub extra: Option<Vec<ChatSection>>,
     pub text: Option<String>,
+}
+
+impl Chat {
+    pub fn colorize(self) -> String {
+        if let Some(extra) = self.extra {
+            extra.into_iter().map(|section| section.colorize()).join("")
+        } else {
+            String::new()
+        }
+    }
+}
+
+impl ChatSection {
+    fn colorize(self) -> String {
+        use ansi_term::Color::*;
+        let color = match self.color.unwrap_or(String::new()).as_str() {
+            "dark_blue" | "blue" => Blue,
+            "dark_aqua" | "aqua" => Cyan,
+            "red" | "dark_red" => Red,
+            "purple" | "light_purple" => Purple,
+            "gold" | "yellow" => Yellow,
+            "gray" => White,
+            "dark_gray" => Black,
+            "green" | "dark_green" => Green,
+            "white" => White,
+            _ => Black
+        };
+
+        color.paint(self.text).to_string()
+    }
 }
 
 #[derive(Debug)]
@@ -63,7 +93,7 @@ impl PlayerMessage {
         let args = capture.get(2)?.as_str().to_string();
 
 
-        let args  = if args.is_empty() {
+        let args = if args.is_empty() {
             Vec::new()
         } else {
             args.split(' ').map(|x| x.to_string()).collect()
@@ -84,8 +114,6 @@ impl Chat {
         });
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
-
-        println!("text is {}", text);
 
         let captures: Captures = RE.captures(&text)?;
 
@@ -120,8 +148,8 @@ impl Location {
     }
 
     pub fn round(&self) -> Location {
-        let &Location{x,y,z} = self;
-        Location {x: x.round(), y: y.round(), z: z.round()}
+        let &Location { x, y, z } = self;
+        Location { x: x.round(), y: y.round(), z: z.round() }
     }
 
     pub fn add_y(&self, dy: f64) -> Location {
@@ -133,7 +161,7 @@ impl Sub<Displacement> for Location {
     type Output = Location;
 
     fn sub(self, rhs: Displacement) -> Self::Output {
-        let Displacement{dx, dy, dz} = rhs;
+        let Displacement { dx, dy, dz } = rhs;
         Self {
             x: self.x - dx,
             y: self.y - dy,
@@ -477,11 +505,11 @@ impl ByteReadable for Dimension {
 }
 
 
-pub struct MathVec<const S: usize>{
-    inner: [f64; S]
+pub struct MathVec<const S: usize> {
+    inner: [f64; S],
 }
 
-impl <const S: usize> MathVec<S> {
+impl<const S: usize> MathVec<S> {
     pub fn new(inner: [f64; S]) -> MathVec<S> {
         Self {
             inner
@@ -489,7 +517,7 @@ impl <const S: usize> MathVec<S> {
     }
 }
 
-impl <const S: usize> MulAssign<f64> for MathVec<S> {
+impl<const S: usize> MulAssign<f64> for MathVec<S> {
     fn mul_assign(&mut self, rhs: f64) {
         for x in &mut self.inner {
             *x *= rhs;

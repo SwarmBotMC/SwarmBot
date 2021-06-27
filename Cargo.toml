@@ -81,6 +81,9 @@ float-ord = "0.3"
 # for num casting
 num = "0.4"
 
+# for coloring terminal
+ansi_term = "0.12"
+
 packets = { path = "packets" } # from a path in the local filesystem
 
 

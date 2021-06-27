@@ -136,7 +136,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                 }
             }
         }
-        println!("{:?}", message);
+        println!("{}", message.colorize());
     }
 
     fn on_death(&mut self) {
