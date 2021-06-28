@@ -128,7 +128,7 @@ impl Follower {
         }
 
         local.physics.line(Line::Forward);
-        local.physics.speed(Speed::WALK);
+        local.physics.speed(Speed::SPRINT);
 
         FollowResult::InProgress
     }

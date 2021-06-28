@@ -13,6 +13,8 @@ use crate::client::physics::speed::Speed;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
+use std::collections::HashSet;
+use std::collections::hash_map::RandomState;
 
 pub mod tools;
 pub mod speed;
@@ -44,6 +46,7 @@ const PLAYER_WIDTH_2: f64 = (0.6 / 2.0) + 0.001;
 
 // remove 0.1
 const PLAYER_HEIGHT: f64 = 1.79999;
+const PLAYER_HEIGHT_Y: Displacement = Displacement::new(0., PLAYER_HEIGHT, 0.);
 
 const UNIT_Y: Displacement = Displacement::new(0., 1., 0.);
 const EPSILON_Y: Displacement = Displacement::new(0., 0.001, 0.);
@@ -199,6 +202,23 @@ impl Physics {
         self.pending.speed = speed;
     }
 
+    pub fn in_cross_section(&self, loc: Location, world: &WorldBlocks, set: &mut HashSet<BlockLocation>) {
+        let dif_x = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
+        let dif_z = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
+
+
+        for dx in dif_x {
+            for dz in dif_z {
+                let test_loc = loc + Displacement::new(dx, 0., dz);
+                let test_block_loc = BlockLocation::from(test_loc);
+                let solid = matches!(world.get_block_simple(test_block_loc), Some(SimpleType::Solid));
+                if solid {
+                    set.insert(test_block_loc);
+                }
+            }
+        }
+    }
+
     pub fn cross_section_empty(&self, loc: Location, world: &WorldBlocks) -> bool {
         let dif_x = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
         let dif_z = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
@@ -315,9 +335,26 @@ impl Physics {
             let end_vel = Displacement::new(speeds[0], y_vel, speeds[1]);
             let new_loc = prev_loc + end_vel;
 
-            let against_block = !self.cross_section_empty(new_loc + EPSILON_Y, world) ||
-                !self.cross_section_empty(new_loc + UNIT_Y, world) ||
-                !self.cross_section_empty(new_loc + Displacement::new(0.,PLAYER_HEIGHT,0.), world);
+            let mut locs = HashSet::new();
+
+            self.in_cross_section(new_loc + EPSILON_Y, world, &mut locs);
+            self.in_cross_section(new_loc + UNIT_Y, world, &mut locs);
+            self.in_cross_section(new_loc + PLAYER_HEIGHT_Y, world, &mut locs);
+
+            let mut stop_x: bool = false;
+            let mut stop_z: bool = false;
+
+            locs.into_iter().for_each(|loc| {
+                let difference = loc.center_bottom() - prev_loc;
+                let change_x = difference.dx.abs();
+                let change_z = difference.dz.abs();
+                if change_x <= change_z {
+                    stop_z = true;
+                }
+                if change_z <= change_x {
+                    stop_x = true;
+                }
+            });
 
 
             let prev_legs: BlockLocation = prev_loc.into();
@@ -332,9 +369,16 @@ impl Physics {
             let leg_block = world.get_block_simple(legs);
             let head_block = world.get_block_simple(head);
 
+            let against_block = stop_x || stop_z;
             if against_block {
-                speeds[0] = 0.0;
-                speeds[1] = 0.0;
+
+                if stop_x {
+                    speeds[0] = 0.0;
+                }
+
+                if stop_z {
+                    speeds[1] = 0.0;
+                }
 
                 self.in_water = prev_legs_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
             } else {
