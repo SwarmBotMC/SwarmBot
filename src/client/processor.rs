@@ -13,6 +13,7 @@ use crate::storage::chunk::ChunkColumn;
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Chat, Location, LocationOrigin, Dimension};
 use crate::client::physics::tools::{Tool, Material};
+use crate::client::bot::{Bot, process_command};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -47,7 +48,14 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
 
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
-        println!("{}", message.colorize());
+        println!("{}", message.clone().colorize());
+        if let Some(msg) = message.player_message() {
+            if let Some(cmd) = msg.into_cmd() {
+                let name = cmd.command;
+                let args_str: Vec<&str> = cmd.args.iter().map(|x|x.as_str()).collect();
+                process_command(&name, &args_str, self.local, self.global, self.out);
+            }
+        }
     }
 
     fn on_death(&mut self) {

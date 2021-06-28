@@ -86,6 +86,8 @@ ansi_term = "0.12"
 
 packets = { path = "packets" } # from a path in the local filesystem
 
+smallvec = {version="1.6", features = ["const_generics"]}
+
 
 [profile.release]
 debug = true

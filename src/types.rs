@@ -273,6 +273,20 @@ impl Displacement {
         Displacement { dx, dy, dz }
     }
 
+    pub fn mag(&self) -> f64 {
+        self.mag2().sqrt()
+    }
+
+    pub fn normalize(&mut self) {
+        let mag = self.mag();
+        if mag == 0. {
+            // we can't normalize 0-length
+            return;
+        }
+        let mult = 1.0 / mag;
+        *self *= mult;
+    }
+
     pub fn mag2(&self) -> f64 {
         let Displacement { dx, dy, dz } = *self;
         dx * dx + dy * dy + dz * dz

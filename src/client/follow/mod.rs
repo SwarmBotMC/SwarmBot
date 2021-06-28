@@ -13,10 +13,13 @@ use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::types::{Direction, Displacement, Location};
+use crate::types::{Direction, Location};
 
-const PROGRESS_THRESHOLD: f64 = 0.15;
+const PROGRESS_THRESHOLD: f64 = 0.8;
 const PROGRESS_THRESHOLD_Y: f64 = 1.3;
+const JUMP_DIST: f64 = 1.3;
+const JUMP_CAN_REACH: f64 = 4.3;
+const JUMP_EDGE_DIST: f64 = 3.;
 
 #[derive(Eq, PartialEq)]
 pub enum FollowResult {
@@ -79,44 +82,66 @@ impl Follower {
             return FollowResult::Finished;
         }
 
+        local.physics.line(Line::Forward);
+        local.physics.speed(Speed::SPRINT);
+
         self.ticks += 1;
 
-        // more than 7 seconds on same block => failed
-        if self.ticks >= 20 * 3 {
+        // more than 1.5 seconds on same block => failed
+        if self.ticks >= 30 {
             println!("follower failed (time) for {} -> {}", local.physics.location(), self.xs.front().unwrap());
             return FollowResult::Failed;
         }
 
-        let next = self.xs.front();
-
-        let next = match next {
-            None => return if self.complete { FollowResult::InProgress } else { FollowResult::Failed },
-            Some(next) => *next
-        };
+        let mag2_horizontal;
+        let displacement;
 
         let current = local.physics.location();
-        let displacement = next - current;
-
-        let mag2_horizontal = Displacement::new(displacement.dx, 0.0, displacement.dz).mag2();
+        loop {
+            let on = match self.xs.front() {
+                None => return if self.complete { FollowResult::Finished } else { FollowResult::Failed },
+                Some(on) => *on
+            };
+            let disp = on - current;
+            let mut displacement_horiz = disp;
+            displacement_horiz.dy = 0.;
+            let a = displacement_horiz.mag2();
+            if a < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && disp.dy.abs() < PROGRESS_THRESHOLD_Y {
+                if local.physics.on_ground() {
+                    self.xs.pop_front();
+                } else {
+                    local.physics.line(Line::Forward);
+                    local.physics.speed(Speed::SPRINT);
+                    return FollowResult::InProgress;
+                }
+            } else {
+                mag2_horizontal = a;
+                displacement = disp;
+                break;
+            }
+        }
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
-        if mag2_horizontal > 1.6 * 1.6 {
-            println!("follower failed ... dist was {}", mag2_horizontal.sqrt());
-            return FollowResult::Failed;
+        if mag2_horizontal > JUMP_DIST * JUMP_DIST {
+            // it is far away... we probably have to jump to it
+
+            if mag2_horizontal < JUMP_CAN_REACH * JUMP_CAN_REACH {
+                local.physics.jump();
+            }
+
+            // so we can run before we jump
+
+            // if mag2_horizontal > JUMP_EDGE_DIST * JUMP_EDGE_DIST {
+            //     // if local.physics.on_edge() {
+            //         local.physics.jump();
+            //     // }
+            // } else {
+            //     local.physics.jump();
+            // }
         }
 
-        if mag2_horizontal < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && displacement.dy.abs() < PROGRESS_THRESHOLD_Y {
-            self.next();
-        }
-
-        let mag2 = Displacement::new(displacement.dx, 0.0, displacement.dz).mag2();
-
-        if mag2 < 0.01 * 0.01 {
-            // want to avoid divide by 0 for direction
-            return FollowResult::InProgress;
-        }
-
-        let dir = Direction::from(displacement);
+        let mut dir = Direction::from(displacement);
+        dir.pitch = 0.;
         local.physics.look(dir);
 
         if displacement.dy > 0.0 {
@@ -126,9 +151,6 @@ impl Follower {
             // only will do anything if we are in water
             // local.physics.descend();
         }
-
-        local.physics.line(Line::Forward);
-        local.physics.speed(Speed::SPRINT);
 
         FollowResult::InProgress
     }

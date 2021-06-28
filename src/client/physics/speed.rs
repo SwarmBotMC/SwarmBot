@@ -6,17 +6,17 @@
  */
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Speed {
     multiplier: f64
 }
 
-impl Eq for Speed {}
-impl PartialEq for Speed {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(other, self)
-    }
-}
+// impl Eq for Speed {}
+// impl PartialEq for Speed {
+//     fn eq(&self, other: &Self) -> bool {
+//         std::ptr::eq(other, self)
+//     }
+// }
 
 impl Speed {
 

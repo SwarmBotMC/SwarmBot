@@ -5,6 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
  */
 
+use std::collections::HashSet;
 use std::default::default;
 
 use num::traits::Pow;
@@ -13,8 +14,6 @@ use crate::client::physics::speed::Speed;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
-use std::collections::HashSet;
-use std::collections::hash_map::RandomState;
 
 pub mod tools;
 pub mod speed;
@@ -202,6 +201,15 @@ impl Physics {
         self.pending.speed = speed;
     }
 
+    pub fn on_edge(&self) -> bool {
+        let block_loc = BlockLocation::from(self.location());
+        let centered = block_loc.center_bottom();
+        let dx = (centered.x - self.location.x).abs();
+        let dz = (centered.z - self.location.z).abs();
+        let dist = dx.max(dz);
+        dist > 0.35
+    }
+
     pub fn in_cross_section(&self, loc: Location, world: &WorldBlocks, set: &mut HashSet<BlockLocation>) {
         let dif_x = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
         let dif_z = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
@@ -296,8 +304,13 @@ impl Physics {
                 ver_speed(self.prev.y_vel)
             } else if self.pending.jump {
                 for i in 0..2 {
-                    let is_sprinting = self.pending.speed == Speed::SPRINT;
-                    speeds[i] = jump_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip, is_sprinting);
+                    speeds[i] = ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
+                }
+                if self.pending.speed == Speed::SPRINT {
+                    let mut move_displacement = Displacement::new(move_mults[0], 0., move_mults[1]);
+                    move_displacement.normalize();
+                    speeds[0] += move_displacement.dx * 0.2;
+                    speeds[1] += move_displacement.dz * 0.2;
                 }
                 initial_ver(0)
             } else {
@@ -325,15 +338,33 @@ impl Physics {
                 // we can't go down if there is a block below us.
                 res.max(0.0)
             }
-
         };
+
+        let mut new_loc_first = self.location + Displacement::new(0., y_vel, 0.);
+
+        if y_vel < 0.0 {
+            if !self.cross_section_empty(new_loc_first - EPSILON_Y, world) {
+                new_loc_first.y = new_loc_first.y.round();
+                y_vel = 0.0;
+            }
+        } else if y_vel >= 0.0 {// we are moving up
+
+            let mut head_loc = new_loc_first + EPSILON_Y;
+            head_loc.y += PLAYER_HEIGHT;
+
+            if !self.cross_section_empty(head_loc, world) {
+                new_loc_first.y = head_loc.y.round() - PLAYER_HEIGHT - 0.0001;
+                y_vel = 0.0;
+            }
+        }
+
 
         let prev_loc = self.location;
 
         {
-
-            let end_vel = Displacement::new(speeds[0], y_vel, speeds[1]);
-            let new_loc = prev_loc + end_vel;
+            let mut new_loc = new_loc_first;
+            new_loc.x += speeds[0];
+            new_loc.z += speeds[1];
 
             let mut locs = HashSet::new();
 
@@ -371,7 +402,6 @@ impl Physics {
 
             let against_block = stop_x || stop_z;
             if against_block {
-
                 if stop_x {
                     speeds[0] = 0.0;
                 }
@@ -386,29 +416,11 @@ impl Physics {
             }
         }
 
+        new_loc_first.x += speeds[0];
+        new_loc_first.z += speeds[1];
 
-        let velocity = Displacement::new(speeds[0], y_vel, speeds[1]);
-        let mut new_loc = prev_loc + velocity;
 
-        if falling {
-            if velocity.dy >= 0.0 {// we are moving up
-
-                let mut head_loc = new_loc + EPSILON_Y;
-                head_loc.y += PLAYER_HEIGHT;
-
-                if !self.cross_section_empty(head_loc, world) {
-                    new_loc.y = head_loc.y.round() - PLAYER_HEIGHT - 0.0001;
-                    y_vel = 0.0;
-                }
-            } else { // we are moving down
-                if !self.cross_section_empty(new_loc - EPSILON_Y, world) {
-                    new_loc.y = new_loc.y.round();
-                    y_vel = 0.0;
-                }
-            }
-        }
-
-        self.location = new_loc;
+        self.location = new_loc_first;
         self.pending = PendingMovement::default();
 
         self.prev = MovementState {
@@ -422,7 +434,12 @@ impl Physics {
     pub fn on_ground(&self) -> bool {
         !self.prev.falling
     }
+    
     pub fn location(&self) -> Location {
         self.location
+    }
+
+    pub fn velocity(&self) -> Displacement {
+        Displacement::new(self.prev.speeds[0], self.prev.y_vel, self.prev.speeds[1])
     }
 }

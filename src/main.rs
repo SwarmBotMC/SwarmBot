@@ -9,6 +9,8 @@
 #![deny(unused_must_use)]
 #![feature(in_band_lifetimes)]
 #![feature(path_try_exists)]
+#![feature(const_evaluatable_checked)]
+#![feature(const_generics)]
 #![feature(once_cell)]
 #![feature(step_trait)]
 #![feature(option_get_or_insert_default)]
@@ -21,13 +23,13 @@ use std::fs::File;
 use tokio::runtime::Runtime;
 use tokio::task;
 
+use crate::bootstrap::blocks::BlockData;
 use crate::bootstrap::Connection;
 use crate::bootstrap::dns::normalize_address;
 use crate::bootstrap::opts::Opts;
 use crate::bootstrap::storage::UserCache;
 use crate::client::runner::{Runner, RunnerOptions};
 use crate::error::{HasContext, ResContext};
-use crate::bootstrap::blocks::BlockData;
 
 mod error;
 mod bootstrap;

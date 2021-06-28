@@ -13,7 +13,7 @@ use tokio::sync::Notify;
 
 use crate::bootstrap::blocks::BlockData;
 use crate::bootstrap::Connection;
-use crate::client::bot::{Bot, run_threaded};
+use crate::client::bot::{Bot, run_threaded, process_command};
 use crate::client::physics::Physics;
 use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
@@ -237,7 +237,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let args = &parts[1..];
 
                 for bot in &mut self.bots {
-                    bot.process_command(name, args, &mut self.global_state);
+                    process_command(name, args, &mut bot.state, &mut self.global_state, &mut bot.out);
                 }
             },
             Err(TryRecvError::Empty) => {},

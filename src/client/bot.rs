@@ -51,6 +51,17 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
         }
         self.move_around(global);
 
+        if self.state.follower.is_none() {
+            let mut vel = self.state.physics.velocity();
+            vel.dy = 0.;
+            if vel.mag2() > 0.01 {
+                vel *=-1.;
+                self.state.physics.look(Direction::from(vel));
+                self.state.physics.speed(Speed::SPRINT);
+                self.state.physics.line(Line::Forward);
+            }
+        }
+
         self.state.physics.tick(&global.world_blocks);
 
         let physics = &self.state.physics;
@@ -99,10 +110,12 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 
 
-    pub(crate) fn process_command(&mut self, name: &str, args: &[&str], global: &mut GlobalState){
+}
 
-        // println! but bold
-        macro_rules! msg {
+pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut){
+
+    // println! but bold
+    macro_rules! msg {
             () => {{
                 println!();
             }};
@@ -113,101 +126,100 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             }};
         }
 
-        match name {
-            "jump" => {
-                self.state.physics.jump();
-            }
-            "follow" => {
-                self.state.follow_closest = true;
-            }
-            "kys" => {
+    match name {
+        "jump" => {
+            local.physics.jump();
+        }
+        "follow" => {
+            local.follow_closest = true;
+        }
+        "kys" => {
 
-                // self.
-                // let closest = self.global.world_blocks.closest(loc,|state| state.kind() == kind);
-                // if
-            }
-            "goto" => {
+            // self.
+            // let closest = self.global.world_blocks.closest(loc,|state| state.kind() == kind);
+            // if
+        }
+        "goto" => {
 
-                if let [id] = args {
-                    let id: u32 = id.parse().unwrap();
-                    let kind = BlockKind::from(id);
+            if let [id] = args {
+                let id: u32 = id.parse().unwrap();
+                let kind = BlockKind::from(id);
 
-                    let loc = BlockLocation::from(self.state.physics.location());
+                let loc = BlockLocation::from(local.physics.location());
 
-                    let closest = global.world_blocks.closest(loc,|state| state.kind() == kind);
+                let closest = global.world_blocks.closest(loc,|state| state.kind() == kind);
 
-                    if let Some(closest) = closest {
-                        self.state.travel_to_block(closest);
-                    } else {
-                        msg!("There is no block {} by me", id);
-                    }
-
+                if let Some(closest) = closest {
+                    local.travel_to_block(closest);
+                } else {
+                    msg!("There is no block {} by me", id);
                 }
 
-                if let [a, b, c] = args {
-                    let x = a.parse().unwrap();
-                    let y = b.parse().unwrap();
-                    let z = c.parse().unwrap();
-                    let dest = BlockLocation::new(x,y,z);
-                    self.state.travel_to_block(dest);
+            }
+
+            if let [a, b, c] = args {
+                let x = a.parse().unwrap();
+                let y = b.parse().unwrap();
+                let z = c.parse().unwrap();
+                let dest = BlockLocation::new(x,y,z);
+                local.travel_to_block(dest);
+            }
+        }
+        "stop" => {
+            local.travel_problem = None;
+            local.last_problem = None;
+        }
+        "loc" => {
+            msg!("My location is {} in {}", local.physics.location(), local.dimension);
+        }
+        "state" => {
+            if let [name] = args {
+                if name == &local.info.username {
+                    msg!("follower {:?}", local.follower);
+                    msg!("location {}", local.physics.location());
+                    msg!();
                 }
             }
-            "stop" => {
-                self.state.travel_problem = None;
-                self.state.last_problem = None;
+        }
+        "get" => {
+            if let [a, b, c] = args {
+                let x = a.parse().unwrap();
+                let y = b.parse().unwrap();
+                let z = c.parse().unwrap();
+                let location = BlockLocation::new(x,y,z);
+
+                msg!("The block is {:?}", global.world_blocks.get_block(location));
             }
-            "loc" => {
-                msg!("My location is {} in {}", self.state.physics.location(), self.state.dimension);
-            }
-            "state" => {
-                if let [name] = args {
-                    if name == &self.state.info.username {
-                        msg!("follower {:?}", self.state.follower);
-                        msg!("location {}", self.state.physics.location());
-                        msg!();
-                    }
+        }
+        "mine" => {
+            if let [id] = args {
+                let id: u32 = id.parse().unwrap();
+                let kind = BlockKind::from(id);
+
+                let origin = BlockLocation::from(local.physics.location());
+                let closest = global.world_blocks.closest(origin,|state| state.kind() == kind);
+
+                if let Some(closest) = closest {
+                    let dir = closest.center_bottom() - origin.center_bottom();
+                    local.physics.look(dir.into());
+
+                    let tool = Tool::new(Material::DIAMOND);
+                    let ticks = tool.wait_time(kind, false, true , &global.block_data);
+
+                    msg!("started mining at {} .. ticks {}", closest, ticks);
+
+                    let task = MineTask {
+                        ticks,
+                        location: closest
+                    };
+
+                    local.mining = Some(task);
+                    out.mine(closest, Mine::Start);
                 }
             }
-            "get" => {
-                if let [a, b, c] = args {
-                    let x = a.parse().unwrap();
-                    let y = b.parse().unwrap();
-                    let z = c.parse().unwrap();
-                    let location = BlockLocation::new(x,y,z);
-
-                    msg!("The block is {:?}", global.world_blocks.get_block(location));
-                }
-            }
-            "mine" => {
-                if let [id] = args {
-                    let id: u32 = id.parse().unwrap();
-                    let kind = BlockKind::from(id);
-
-                    let origin = BlockLocation::from(self.state.physics.location());
-                    let closest = global.world_blocks.closest(origin,|state| state.kind() == kind);
-
-                    if let Some(closest) = closest {
-                        let dir = closest.center_bottom() - origin.center_bottom();
-                        self.state.physics.look(dir.into());
-
-                        let tool = Tool::new(Material::DIAMOND);
-                        let ticks = tool.wait_time(kind, false, true , &global.block_data);
-
-                        msg!("started mining at {} .. ticks {}", closest, ticks);
-
-                        let task = MineTask {
-                            ticks,
-                            location: closest
-                        };
-
-                        self.state.mining = Some(task);
-                        self.out.mine(closest, Mine::Start);
-                    }
-                }
-            }
-            _ => {
-                // self.out.send_chat("invalid command");
-            }
+        }
+        _ => {
+            // self.out.send_chat("invalid command");
         }
     }
 }

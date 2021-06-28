@@ -5,13 +5,20 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
  */
 
+use std::ops::{Index, IndexMut};
+
+use smallvec::SmallVec;
+
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
+use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::traits::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 
 pub const MAX_FALL: i32 = 3;
+
+mod cenetered_arr;
 
 enum MoveResult {
     Edge,
@@ -23,13 +30,25 @@ pub enum Movements {
     TraverseCardinal(CardinalDirection),
 }
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+enum State {
+    Open,
+    Closed,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self::Open
+    }
+}
+
 impl Movements {
     const ALL: [Movements; 4] = {
         [
-            TraverseCardinal(CardinalDirection::NORTH),
-            TraverseCardinal(CardinalDirection::WEST),
-            TraverseCardinal(CardinalDirection::SOUTH),
-            TraverseCardinal(CardinalDirection::EAST),
+            TraverseCardinal(CardinalDirection::North),
+            TraverseCardinal(CardinalDirection::West),
+            TraverseCardinal(CardinalDirection::South),
+            TraverseCardinal(CardinalDirection::East),
         ]
     };
 
@@ -56,7 +75,7 @@ impl Movements {
             None => return Progression::Edge,
             Some(inner) => {
                 // we do not like our head in water (breathing is nice)
-                let multiplier = if inner == Water { ctx.path_config.costs.no_breathe_mult } else {1.0};
+                let multiplier = if inner == Water { ctx.path_config.costs.no_breathe_mult } else { 1.0 };
                 (inner, multiplier)
             }
         };
@@ -114,7 +133,6 @@ impl Movements {
 
             let floor = get_block!(x + dx, y - 1, z + dz).unwrap();
             if can_move_adj_noplace[idx] && !traverse_possible_no_place[idx] && floor != Avoid {
-
                 let start = BlockLocation::new(x + dx, y, z + dz);
                 let collided_y = drop_y(start, w);
                 if let Some(collided_y) = collided_y {
@@ -141,8 +159,9 @@ impl Movements {
         // if it is water the jump will be too high
         let can_jump = above == WalkThrough && floor != Water;
 
-        // ascending adjacent
         if can_jump {
+
+            // ascending adjacent
             for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
                 let Change { dx, dz, .. } = direction.unit_change();
 
@@ -158,7 +177,105 @@ impl Movements {
                     }
                 }
             }
+
+            // we can jump in a 3 block radius
+
+            const RADIUS: i32 = 4;
+            const RADIUS_S: usize = RADIUS as usize;
+
+            // let mut not_jumpable = SmallVec::<[_; RADIUS_S * RADIUS_S]>::new();
+            let mut not_jumpable = Vec::new();
+            let mut edge = false;
+
+
+            'check_loop:
+            for dx in -RADIUS..=RADIUS {
+                for dz in -RADIUS..=RADIUS {
+                    let adj_above = get_block!(x+dx, y+2, z+dz);
+                    if adj_above == None {
+                        edge = true;
+                        break 'check_loop;
+                    }
+
+                    // if dx.abs() + dz.abs() > RADIUS {
+                    //     continue 'check_loop;
+                    // }
+
+                    let adj_above = adj_above.unwrap() == WalkThrough;
+                    let adj_head = get_block!(x+dx, y+1, z+dz).unwrap() == WalkThrough;
+                    let adj_feet = get_block!(x+dx, y, z+dz).unwrap() == WalkThrough;
+                    if !(adj_above && adj_head && adj_feet) {
+                        not_jumpable.push((dx, dz));
+                    }
+                }
+            }
+
+            if edge {
+                return Progression::Edge;
+            }
+
+
+            let mut open = CenteredArray::init::<_, RADIUS_S>();
+
+            // so we do not add the origin (it is already added)
+            open[(0, 0)] = State::Closed;
+
+            for (block_dx, block_dz) in not_jumpable {
+                if block_dx == 0 {
+                    let range = if block_dz > 0 { block_dz..=RADIUS } else { (-RADIUS)..=block_dz };
+                    for dz in range {
+                        open[(0, dz)] = State::Closed;
+                        open[(1, dz)] = State::Closed;
+                        open[(-1, dz)] = State::Closed;
+                    }
+                } else if block_dz == 0 {
+                    let range = if block_dx > 0 { block_dx..=RADIUS } else { (-RADIUS)..=block_dx };
+                    for dx in range {
+                        open[(dx, 0)] = State::Closed;
+                        open[(dx, 1)] = State::Closed;
+                        open[(dx, -1)] = State::Closed;
+                    }
+                } else {
+                    // we are on a corner
+                    let sign_x = block_dx.signum(); // -1
+                    let sign_z = block_dz.signum(); // + 1
+
+                    let increments = RADIUS - block_dx.abs().max(block_dz.abs()) + 1;
+                    for inc in 0..increments {
+                        let dx = block_dx + inc * sign_x;
+                        let dz = block_dz + inc * sign_z;
+                        open[(dx, dz)] = State::Closed;
+                        if dx.abs() < RADIUS {
+                            open[(dx + sign_x, dz)] = State::Closed;
+                        }
+
+                        if dz.abs() < RADIUS {
+                            open[(dx, dz + sign_z)] = State::Closed;
+                        }
+                    }
+                }
+            }
+
+            for dx in -RADIUS..=RADIUS {
+                for dz in -RADIUS..=RADIUS {
+                    let is_open = open[(dx, dz)] == State::Open;
+
+                    let has_floor = get_block!(x+dx, y - 1, z+dz).unwrap() == Solid;
+
+                    let rad = dx.abs() + dz.abs();
+
+                    const MIN_RAD: i32 = 2;
+
+                    if rad <= RADIUS && rad > MIN_RAD && is_open && has_floor {
+                        res.push(Neighbor {
+                            value: wrap!(BlockLocation::new(x+dx,y,z+dz)),
+                            cost: ctx.path_config.costs.block_walk * multiplier,
+                        });
+                    }
+                }
+            }
         }
+
 
         Progression::Movements(res)
     }
@@ -197,16 +314,16 @@ fn drop_y(start: BlockLocation, world: &WorldBlocks) -> Option<i16> {
 }
 
 pub enum CardinalDirection {
-    NORTH,
-    SOUTH,
-    WEST,
-    EAST,
+    North,
+    South,
+    West,
+    East,
 }
 
 pub enum CardinalDirection3D {
     Plane(CardinalDirection),
-    UP,
-    DOWN,
+    Up,
+    Down,
 }
 
 impl CardinalDirection3D {
@@ -214,26 +331,26 @@ impl CardinalDirection3D {
         use CardinalDirection::*;
         use CardinalDirection3D::*;
         [
-            Plane(NORTH),
-            Plane(SOUTH),
-            Plane(EAST),
-            Plane(WEST),
-            DOWN,
-            UP,
+            Plane(North),
+            Plane(South),
+            Plane(East),
+            Plane(West),
+            Down,
+            Up,
         ]
     };
 
     pub const ALL_BUT_UP: [CardinalDirection3D; 5] = {
         use CardinalDirection::*;
         use CardinalDirection3D::*;
-        [Plane(NORTH), Plane(SOUTH), Plane(EAST), Plane(WEST), DOWN]
+        [Plane(North), Plane(South), Plane(East), Plane(West), Down]
     };
 }
 
 impl CardinalDirection {
     pub const ALL: [CardinalDirection; 4] = {
         use CardinalDirection::*;
-        [NORTH, SOUTH, EAST, WEST]
+        [North, South, East, West]
     };
 }
 
@@ -258,10 +375,10 @@ impl CardinalDirection3D {
 impl CardinalDirection {
     fn unit_change(&self) -> Change {
         match self {
-            CardinalDirection::NORTH => Change::new(1, 0, 0),
-            CardinalDirection::SOUTH => Change::new(-1, 0, 0),
-            CardinalDirection::WEST => Change::new(0, 0, 1),
-            CardinalDirection::EAST => Change::new(0, 0, -1)
+            CardinalDirection::North => Change::new(1, 0, 0),
+            CardinalDirection::South => Change::new(-1, 0, 0),
+            CardinalDirection::West => Change::new(0, 0, 1),
+            CardinalDirection::East => Change::new(0, 0, -1)
         }
     }
 }
