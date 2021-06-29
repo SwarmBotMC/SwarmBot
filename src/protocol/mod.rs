@@ -37,7 +37,7 @@ pub trait InterfaceOut {
 }
 
 #[async_trait::async_trait]
-pub trait Minecraft: Sized {
+pub trait Minecraft: Sized { 
     type Queue: EventQueue;
     type Interface: InterfaceOut;
     async fn login(conn: Connection) -> Res<Login<Self::Queue, Self::Interface>>;

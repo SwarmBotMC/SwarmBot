@@ -15,11 +15,12 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::types::{Direction, Location};
 
-const PROGRESS_THRESHOLD: f64 = 0.8;
-const PROGRESS_THRESHOLD_Y: f64 = 1.3;
-const JUMP_DIST: f64 = 1.3;
-const JUMP_CAN_REACH: f64 = 4.3;
-const JUMP_EDGE_DIST: f64 = 3.;
+const PROGRESS_THRESHOLD: f64 = 0.6;
+const PROGRESS_THRESHOLD_Y: f64 = 0.2;
+
+const JUMP_DIST: f64 = 2.0;
+const JUMP_CAN_REACH: f64 = 3.7;
+const MAX_TICKS: usize = 30;
 
 #[derive(Eq, PartialEq)]
 pub enum FollowResult {
@@ -88,7 +89,7 @@ impl Follower {
         self.ticks += 1;
 
         // more than 1.5 seconds on same block => failed
-        if self.ticks >= 30 {
+        if self.ticks >= MAX_TICKS {
             println!("follower failed (time) for {} -> {}", local.physics.location(), self.xs.front().unwrap());
             return FollowResult::Failed;
         }
@@ -107,8 +108,8 @@ impl Follower {
             displacement_horiz.dy = 0.;
             let a = displacement_horiz.mag2();
             if a < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && disp.dy.abs() < PROGRESS_THRESHOLD_Y {
-                if local.physics.on_ground() {
-                    self.xs.pop_front();
+                if true || self.xs.len() == 1 {
+                    self.next();
                 } else {
                     local.physics.line(Line::Forward);
                     local.physics.speed(Speed::SPRINT);
@@ -120,6 +121,7 @@ impl Follower {
                 break;
             }
         }
+
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
         if mag2_horizontal > JUMP_DIST * JUMP_DIST {

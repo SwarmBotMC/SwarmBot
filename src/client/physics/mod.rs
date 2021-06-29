@@ -368,6 +368,7 @@ impl Physics {
 
             let mut locs = HashSet::new();
 
+
             self.in_cross_section(new_loc + EPSILON_Y, world, &mut locs);
             self.in_cross_section(new_loc + UNIT_Y, world, &mut locs);
             self.in_cross_section(new_loc + PLAYER_HEIGHT_Y, world, &mut locs);
@@ -434,7 +435,7 @@ impl Physics {
     pub fn on_ground(&self) -> bool {
         !self.prev.falling
     }
-    
+
     pub fn location(&self) -> Location {
         self.location
     }

@@ -38,8 +38,8 @@ mod client;
 mod storage;
 mod types;
 
-
 fn main() {
+
     let rt = Runtime::new().unwrap();
     let local = task::LocalSet::new();
     local.block_on(&rt, async move {
@@ -49,6 +49,7 @@ fn main() {
         }
     });
 }
+
 
 async fn run() -> ResContext<()> {
     let Opts { users_file, proxy: _, proxies_file, host, count, version, port, db: _, delay, load, .. } = Opts::get();
@@ -86,7 +87,7 @@ async fn run() -> ResContext<()> {
         let opts = RunnerOptions { delay_millis: delay, blocks };
 
         match version {
-            340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await,
+            340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await, // 1.12
             _ => { panic!("version {} does not exist", version) }
         }
     }
