@@ -11,6 +11,7 @@ use std::collections::{HashMap};
 
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
+use crate::storage::block::SimpleType::WalkThrough;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -106,9 +107,6 @@ impl WorldBlocks {
     }
 
     pub fn get_block_simple(&self, location: BlockLocation) -> Option<SimpleType> {
-        if location.y < 0 {
-            return None;
-        }
         self.get_block(location).map(|x| x.s_type())
     }
 }

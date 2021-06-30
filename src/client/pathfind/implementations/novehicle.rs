@@ -41,7 +41,7 @@ struct NoVehicleHeuristic {
 impl Heuristic<MoveNode> for NoVehicleHeuristic {
     fn heuristic(&self, input: &MoveNode) -> f64 {
         let current = input.location;
-        current.dist(self.goal) * self.move_cost
+        current.dist(self.goal) * self.move_cost * 0.2
     }
 }
 
