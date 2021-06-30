@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
+ * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
+ * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
 
@@ -196,10 +196,6 @@ impl Movements {
                         break 'check_loop;
                     }
 
-                    // if dx.abs() + dz.abs() > RADIUS {
-                    //     continue 'check_loop;
-                    // }
-
                     let adj_above = adj_above.unwrap() == WalkThrough;
                     let adj_head = get_block!(x+dx, y+1, z+dz).unwrap() == WalkThrough;
                     let adj_feet = get_block!(x+dx, y, z+dz).unwrap() == WalkThrough;
@@ -219,27 +215,14 @@ impl Movements {
             // so we do not add the origin (it is already added)
             open[(0, 0)] = State::Closed;
 
+            // we iterate through every single block which is not jumpable and set blocks behind it as not jumpable as well
             for (block_dx, block_dz) in not_jumpable {
-                if block_dx == 0 {
-                    let range = if block_dz > 0 { block_dz..=RADIUS } else { (-RADIUS)..=block_dz };
-                    for dz in range {
-                        open[(0, dz)] = State::Closed;
-                        open[(1, dz)] = State::Closed;
-                        open[(-1, dz)] = State::Closed;
-                    }
-                } else if block_dz == 0 {
-                    let range = if block_dx > 0 { block_dx..=RADIUS } else { (-RADIUS)..=block_dx };
-                    for dx in range {
-                        open[(dx, 0)] = State::Closed;
-                        open[(dx, 1)] = State::Closed;
-                        open[(dx, -1)] = State::Closed;
-                    }
-                } else {
-                    // we are on a corner
-                    let sign_x = block_dx.signum(); // -1
-                    let sign_z = block_dz.signum(); // + 1
 
+                // we will set blocks to closed in the direction of the block
+
+                let mut update = |sign_x: i32, sign_z: i32| {
                     let increments = RADIUS - block_dx.abs().max(block_dz.abs()) + 1;
+
                     for inc in 0..increments {
                         let dx = block_dx + inc * sign_x;
                         let dz = block_dz + inc * sign_z;
@@ -252,7 +235,26 @@ impl Movements {
                             open[(dx, dz + sign_z)] = State::Closed;
                         }
                     }
+                };
+
+                let sign_x = block_dx.signum();
+                let sign_z = block_dz.signum();
+
+                if block_dx == 0 {
+                    // special case: we need to update blocks in both directions
+                    update(-1, sign_z);
+                    update(1, sign_z);
                 }
+                else if block_dz == 0 {
+                    // special case: we need to update blocks in both directions
+                    update(sign_x, -1);
+                    update(sign_x, 1);
+                }
+                else {
+                    // we only update blocks in the direction it is in
+                    update(sign_x, sign_z);
+                }
+
             }
 
             for dx in -RADIUS..=RADIUS {
