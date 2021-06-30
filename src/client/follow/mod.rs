@@ -19,8 +19,8 @@ const PROGRESS_THRESHOLD: f64 = 0.6;
 const PROGRESS_THRESHOLD_Y: f64 = 0.48;
 
 const MIN_JUMP_DIST: f64 = 1.2;
-const MIN_SPRINT_DIST: f64 = 3.0;
-const MAX_JUMP_DIST: f64 = 4.0;
+const MIN_SPRINT_DIST: f64 = 3.2;
+const MAX_JUMP_DIST: f64 = 3.95;
 
 const MAX_TICKS: usize = 29;
 
@@ -222,7 +222,7 @@ mod tests {
     use more_asserts::*;
 
     #[test]
-    fn test_parkour() {
+    fn test_parkour_course() {
         let mut reader = OpenOptions::new()
             .read(true)
             .open("test-data/parkour.schematic")
@@ -266,6 +266,44 @@ mod tests {
         while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
             local_state.physics.tick(&global_state.world_blocks);
             assert!(local_state.physics.location().y > 79.0, "the player fell... location was {}", local_state.physics.location());
+        }
+
+        assert_eq!(follower.follow(&mut local_state, &mut global_state), FollowResult::Finished);
+        assert_lt!(local_state.physics.location().dist2(end.center_bottom()), 0.6 * 0.6);
+    }
+
+
+    #[test]
+    fn test_bedrock() {
+
+        let mut local_state = LocalState::mock();
+        let mut global_state = GlobalState::init();
+
+        let start = BlockLocation::new(0,1,0);
+        let end = BlockLocation::new(950, 1, 950);
+
+        let world = &mut global_state.world_blocks;
+        world.set_random_floor();
+
+        let mut problem = TravelProblem::new(start, end);
+
+        let increment = problem.iterate_until(Instant::now() + Duration::from_secs(20), &mut local_state, &global_state);
+
+        let result = match increment {
+            Increment::InProgress => panic!("not finished"),
+            Increment::Finished(res) => res
+        };
+
+
+        assert!(result.complete, "result is not complete. length was {}", result.value.len());
+
+        let mut follower = Follower::new(result).unwrap();
+
+        local_state.physics.teleport(start.center_bottom());
+
+        while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
+            local_state.physics.tick(&global_state.world_blocks);
+            assert!(local_state.physics.location().y >= 0.0, "the player fell... location was {} front was {:?} left {}", local_state.physics.location(), follower.xs.front(), follower.xs.len());
         }
 
         assert_eq!(follower.follow(&mut local_state, &mut global_state), FollowResult::Finished);

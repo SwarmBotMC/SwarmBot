@@ -12,6 +12,8 @@ use std::collections::{HashMap};
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
 use crate::schematic::Schematic;
+use rand::rngs::{ThreadRng, StdRng};
+use rand::{SeedableRng, Rng};
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -34,7 +36,25 @@ impl WorldBlocks {
         }
         world
     }
-    
+
+    /// similar to a bedrock floor. (0,0) is guaranteed to be a solid as well as (950, 950)
+    pub fn set_random_floor(&mut self) {
+        const RADIUS: i32 = 1000;
+        let mut rdm = StdRng::seed_from_u64(12338971);
+        for x in -RADIUS..=RADIUS {
+            for z in -RADIUS..=RADIUS {
+                let res = rdm.gen_range(0..5);
+                let loc = BlockLocation::new(x,0,z);
+                if res == 0 {
+                    self.set_block(loc, BlockState::STONE);
+                }
+            }
+        }
+
+        self.set_block(BlockLocation::default(), BlockState::STONE);
+        self.set_block(BlockLocation::new(950, 0, 950), BlockState::STONE);
+    }
+
     pub fn load(&mut self, schematic: &Schematic){
         for (location, state) in schematic.blocks() {
             self.set_block(location, state)

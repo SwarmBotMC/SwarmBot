@@ -102,6 +102,6 @@ more-asserts = "0.2"
 opt-level = 2
 
 [profile.release]
-debug = true
+#debug = true
 #lto = "fat"
 #codegen-units = 1
