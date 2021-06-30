@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::collections::HashMap;
 
-use crate::storage::block::{BlockApprox, BlockState, SimpleType, BlockLocation};
+use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
@@ -90,17 +90,16 @@ pub struct ChunkData<T> {
 }
 
 impl ChunkData<HighMemoryChunkSection> {
-    pub fn select(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a{
+    pub fn select(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
         self.sections.iter().enumerate()
-            .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec|(chunk_idx << 12, sec)))
+            .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec| (chunk_idx << 12, sec)))
             .flat_map(|(idx_start, section)| {
-                IntoIterator::into_iter(section.palette.all_states()).enumerate().map(move |(idx, state)|(idx_start + idx, state))
+                IntoIterator::into_iter(section.palette.all_states()).enumerate().map(move |(idx, state)| (idx_start + idx, state))
             })
             .filter(move |(_, state)| {
                 selector(*state)
             })
             .map(|(idx, _)| idx)
-
     }
 }
 
@@ -121,7 +120,7 @@ impl Default for Palette {
             /// the smallest bpb
             bits_per_block: 1,
             id_to_state: Some(vec![BlockState::AIR]),
-            storage: vec![0; 64]
+            storage: vec![0; 64],
         }
     }
 }
@@ -138,7 +137,7 @@ impl Palette {
     pub fn indirect(bits_per_block: u8, id_to_state: Vec<BlockState>, storage: Vec<u64>) -> Palette {
         assert!(bits_per_block >= 4);
         assert!(bits_per_block <= 8);
-        assert_eq!(storage.len(), 4096  / 64 * bits_per_block as usize);
+        assert_eq!(storage.len(), 4096 / 64 * bits_per_block as usize);
         Palette {
             bits_per_block,
             id_to_state: Some(id_to_state),
@@ -161,15 +160,12 @@ impl Palette {
                 let value = map.iter().position(|&r| r == state);
                 match value {
                     None => {
-
                         let new_len = map.len() + 1;
                         let required_bits = bits_needed(new_len);
 
                         map.push(state);
 
                         if required_bits > self.bits_per_block {
-
-
                             let (required_bits, reverse_map) = if required_bits <= 8 {
                                 let reverse_map: HashMap<_, _> = map.iter().enumerate().map(|(k, v)| (*v, k)).collect();
 
@@ -219,12 +215,10 @@ impl Palette {
                             self.storage = storage;
                             return;
                         } else {
-
                             (new_len - 1) as u32
                         }
                     }
                     Some(value) => {
-
                         value as u32
                     }
                 }
@@ -310,16 +304,14 @@ pub enum ChunkColumn {
 }
 
 impl ChunkColumn {
-
-    pub fn modify(&mut self, column: ChunkColumn){
-        if let (ChunkColumn::HighMemory {data: left}, ChunkColumn::HighMemory {data: right}) = (self, column) {
+    pub fn modify(&mut self, column: ChunkColumn) {
+        if let (ChunkColumn::HighMemory { data: left }, ChunkColumn::HighMemory { data: right }) = (self, column) {
             for (idx, new_section) in IntoIterator::into_iter(right.sections).enumerate() {
                 if let Some(section) = new_section {
                     left.sections[idx] = Some(section);
                 }
             }
-        }
-        else {
+        } else {
             panic!("cannot modify low memory chunks");
         }
     }

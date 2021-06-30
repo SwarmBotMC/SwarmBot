@@ -1,14 +1,13 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
-
 
 #[derive(Debug, PartialEq)]
 pub struct Speed {
-    multiplier: f64
+    multiplier: f64,
 }
 
 // impl Eq for Speed {}
@@ -19,9 +18,8 @@ pub struct Speed {
 // }
 
 impl Speed {
-
     const fn new(multiplier: f64) -> Self {
-        Self {multiplier}
+        Self { multiplier }
     }
 
     pub const SPRINT: Speed = Speed::new(1.3);
@@ -32,5 +30,4 @@ impl Speed {
     pub fn multiplier(&self) -> f64 {
         self.multiplier * 0.98 // TODO: differnet at 45 degree angle
     }
-
 }

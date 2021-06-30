@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use crate::storage::blocks::WorldBlocks;
-use crate::storage::block::{BlockLocation, BlockState, BlockApprox};
-use crate::client::pathfind::incremental::Node;
-use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+
+use crate::client::pathfind::incremental::Node;
+use crate::storage::block::{BlockApprox, BlockLocation, BlockState};
+use crate::storage::blocks::WorldBlocks;
 
 #[derive(Clone)]
 pub struct Costs {
@@ -25,7 +26,7 @@ pub struct Costs {
 
 pub struct PathConfig {
     pub costs: Costs,
-    pub parkour: bool
+    pub parkour: bool,
 }
 
 impl Default for PathConfig {
@@ -39,9 +40,9 @@ impl Default for PathConfig {
                 fall: 1.0,
                 place_unrelated: 20.0,
                 mine_required: 1.0,
-                place_required: 1.0
+                place_required: 1.0,
             },
-            parkour: true
+            parkour: true,
         }
     }
 }
@@ -55,7 +56,6 @@ pub struct GlobalContext<'a> {
 
 #[derive(Debug)]
 pub struct MoveNode {
-
     /// # Building
     /// Suppose we are building a structure. We will take the number
     /// of blocks which need to be changed and make blocks_needed_change that
@@ -77,29 +77,27 @@ pub struct MoveNode {
     pub action_to_obtain: Option<Action>,
 
     /// The number of 'throwaway' blocks we have, i.e., for bridging
-    pub throwaway_block_count: usize
+    pub throwaway_block_count: usize,
 }
 
 impl MoveNode {
-
     pub fn simple(location: BlockLocation) -> MoveNode {
         MoveNode {
             blocks_needed_change: 0,
             location,
             action_to_obtain: None,
-            throwaway_block_count: 0
+            throwaway_block_count: 0,
         }
     }
 
     pub fn new(location: BlockLocation, blocks_to_change: &std::collections::HashMap<BlockLocation, BlockState>) -> MoveNode {
-
         let blocks_needed_change = blocks_to_change.len();
 
         MoveNode {
             blocks_needed_change,
             location,
             action_to_obtain: None,
-            throwaway_block_count: 0
+            throwaway_block_count: 0,
         }
     }
 
@@ -108,17 +106,15 @@ impl MoveNode {
         previous.action_to_obtain = None;
         previous
     }
-
 }
 
 impl Clone for MoveNode {
     fn clone(&self) -> Self {
-
         Self {
             blocks_needed_change: self.blocks_needed_change,
             location: self.location,
             action_to_obtain: None,
-            throwaway_block_count: self.throwaway_block_count
+            throwaway_block_count: self.throwaway_block_count,
         }
     }
 }
@@ -128,17 +124,16 @@ impl Node for MoveNode {
     type Record = MoveRecord;
 
     fn get_record(&self) -> Self::Record {
-
-        let &MoveNode  {location, throwaway_block_count, action_to_obtain, ..} = self;
+        let &MoveNode { location, throwaway_block_count, action_to_obtain, .. } = self;
 
         let state = MoveState {
             location,
-            throwaway_block_count
+            throwaway_block_count,
         };
 
         Self::Record {
             state,
-            action_to_obtain
+            action_to_obtain,
         }
     }
 }
@@ -151,13 +146,13 @@ pub enum Action {
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub struct MoveState {
     pub location: BlockLocation,
-    pub throwaway_block_count: usize
+    pub throwaway_block_count: usize,
 }
 
 #[derive(Clone)]
 pub struct MoveRecord {
     pub state: MoveState,
-    pub action_to_obtain: Option<Action>
+    pub action_to_obtain: Option<Action>,
 }
 
 impl PartialEq for MoveRecord {
@@ -166,7 +161,7 @@ impl PartialEq for MoveRecord {
     }
 }
 
-impl Eq for MoveRecord{}
+impl Eq for MoveRecord {}
 
 impl Hash for MoveRecord {
     fn hash<H: Hasher>(&self, state: &mut H) {

@@ -8,13 +8,13 @@ edition = "2018"
 [dependencies]
 
 # parsing arguments
-clap= "3.0.0-beta"
+clap = "3.0.0-beta"
 
 # reading from csv
 csv = "1.1"
 
 # serialization, deserialization
-serde = {version = "1.0", features =["derive"]}
+serde = { version = "1.0", features = ["derive"] }
 
 # socket5
 tokio-socks = "0.5"
@@ -74,7 +74,7 @@ bincode = "1.3"
 regex = "1.5"
 
 # efficient hashmap
-indexmap = {version = "1.6", features = ["std"]}
+indexmap = { version = "1.7", features = ["std"] }
 
 float-ord = "0.3"
 
@@ -86,7 +86,7 @@ ansi_term = "0.12"
 
 packets = { path = "packets" } # from a path in the local filesystem
 
-smallvec = {version="1.6", features = ["const_generics"]}
+smallvec = { version = "1.6", features = ["const_generics"] }
 
 
 [profile.release]

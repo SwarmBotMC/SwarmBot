@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use crate::storage::block::{BlockState, BlockKind};
 use crate::bootstrap::blocks::BlockData;
+use crate::storage::block::{BlockKind, BlockState};
 
 pub struct Material {
     strength: f64,
@@ -29,8 +29,8 @@ pub struct Tool {
 }
 
 impl Tool {
-    pub fn new(material: Material ) -> Self {
-        Self{material}
+    pub fn new(material: Material) -> Self {
+        Self { material }
     }
     fn strength_against_block(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> f64 {
         let hardness = kind.hardness(data).unwrap_or(f64::INFINITY);
@@ -45,7 +45,7 @@ impl Tool {
     }
 
     pub fn wait_time(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> usize {
-        let strength = self.strength_against_block(kind,underwater, on_ground, data);
+        let strength = self.strength_against_block(kind, underwater, on_ground, data);
         (1.0 / strength).round() as usize
     }
 }

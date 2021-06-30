@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use std::ops::{IndexMut};
+use std::i32::MAX;
+use std::ops::IndexMut;
 
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
@@ -13,7 +14,6 @@ use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::traits::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
-use std::i32::MAX;
 
 pub const MAX_FALL: i32 = 3;
 
@@ -261,7 +261,7 @@ impl Movements {
 
                     let has_floor = get_block!(x+dx, y - 1, z+dz).unwrap() == Solid;
 
-                    let rad2 = (dx*dx + dz*dz) as f64;
+                    let rad2 = (dx * dx + dz * dz) as f64;
 
                     const MIN_RAD: f64 = 2.5;
                     const MAX_RAD: f64 = 4.5;

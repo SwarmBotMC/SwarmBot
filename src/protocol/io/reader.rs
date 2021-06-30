@@ -1,21 +1,22 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
+use packets::read::{ByteReadable, ByteReader, LenRead};
+use packets::types::{Packet, RawVec, VarInt};
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
-use crate::protocol::io::{ZLib, AES};
-use packets::read::{ByteReader, LenRead, ByteReadable};
-use crate::types::PacketData;
-use packets::types::{VarInt, RawVec, Packet};
-use crate::error::Res;
+
 use crate::error::Error::WrongPacket;
+use crate::error::Res;
+use crate::protocol::io::{AES, ZLib};
+use crate::types::PacketData;
 
 pub struct PacketReader {
     reader: EncryptedReader,
@@ -48,19 +49,18 @@ impl From<OwnedReadHalf> for PacketReader {
 
         let reader = EncryptedReader {
             reader,
-            cipher: None
+            cipher: None,
         };
 
         PacketReader {
             reader,
-            compression: None
+            compression: None,
         }
     }
 }
 
 
 impl PacketReader {
-
     pub fn encryption(&mut self, key: &[u8]) {
         self.reader.cipher = Some(AES::new(key));
     }

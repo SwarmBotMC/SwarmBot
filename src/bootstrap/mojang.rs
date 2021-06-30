@@ -1,19 +1,18 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use num_bigint::BigInt;
 use packets::types::UUID;
-
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha1::Sha1;
 
-use crate::error::{MojangErr, Res};
 use crate::bootstrap::Proxy;
+use crate::error::{MojangErr, Res};
 
 #[derive(Debug)]
 pub struct Mojang {
@@ -22,7 +21,6 @@ pub struct Mojang {
 
 impl Mojang {
     pub fn socks5(proxy: &Proxy) -> Res<Mojang> {
-
         let address = proxy.address();
         let user = &proxy.user;
         let pass = &proxy.pass;
@@ -181,7 +179,7 @@ impl Mojang {
         let status = res.status();
         if status != 204 {
             println!("uuid invalid {}", uuid_str);
-            let err= Err(MojangErr::InvalidCredentials {
+            let err = Err(MojangErr::InvalidCredentials {
                 error_code: status,
                 info: res.text().await.ok(),
             }.into());

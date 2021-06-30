@@ -1,16 +1,16 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use crate::storage::block::{BlockLocation, BlockState};
 use std::collections::{HashMap, HashSet};
-use crate::client::pathfind::traits::{Heuristic, GoalCheck};
+
 use crate::client::pathfind::context::MoveNode;
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
-
+use crate::client::pathfind::traits::{GoalCheck, Heuristic};
+use crate::storage::block::{BlockLocation, BlockState};
 
 struct HeuristicImpl;
 
@@ -32,15 +32,14 @@ impl GoalCheck<MoveNode> for GoalCheckImpl {
 pub struct BuildNoVehicleProblem;
 
 impl BuildNoVehicleProblem {
-    pub fn change(start: BlockLocation, blocks_to_change: HashMap<BlockLocation, BlockState>) -> impl Problem<Node=MoveNode>{
-
+    pub fn change(start: BlockLocation, blocks_to_change: HashMap<BlockLocation, BlockState>) -> impl Problem<Node=MoveNode> {
         let start = MoveNode::new(start, &blocks_to_change);
 
-        return PlayerProblem::new(start, HeuristicImpl, GoalCheckImpl, blocks_to_change)
+        return PlayerProblem::new(start, HeuristicImpl, GoalCheckImpl, blocks_to_change);
     }
 
-    pub fn mine(start: BlockLocation, blocks: HashSet<BlockLocation>) -> impl Problem<Node=MoveNode>{
+    pub fn mine(start: BlockLocation, blocks: HashSet<BlockLocation>) -> impl Problem<Node=MoveNode> {
         let change = blocks.iter().map(|&loc| (loc, BlockState::AIR)).collect();
-        return BuildNoVehicleProblem::change(start, change)
+        return BuildNoVehicleProblem::change(start, change);
     }
 }

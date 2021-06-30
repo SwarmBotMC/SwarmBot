@@ -1,19 +1,19 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
+use crate::client::bot::{Bot, process_command};
+use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::{LocalState, MineTask};
 use crate::protocol::{InterfaceOut, Mine};
-use crate::storage::block::{BlockLocation, BlockState, BlockKind};
-use crate::storage::chunk::ChunkColumn;
+use crate::storage::block::{BlockKind, BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Chat, Location, LocationOrigin, Dimension};
-use crate::client::physics::tools::{Tool, Material};
-use crate::client::bot::{Bot, process_command};
+use crate::storage::chunk::ChunkColumn;
+use crate::types::{Chat, Dimension, Location, LocationOrigin};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -52,7 +52,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         if let Some(msg) = message.player_message() {
             if let Some(cmd) = msg.into_cmd() {
                 let name = cmd.command;
-                let args_str: Vec<&str> = cmd.args.iter().map(|x|x.as_str()).collect();
+                let args_str: Vec<&str> = cmd.args.iter().map(|x| x.as_str()).collect();
                 process_command(&name, &args_str, self.local, self.global, self.out);
             }
         }

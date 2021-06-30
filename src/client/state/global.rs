@@ -1,15 +1,14 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
+use crate::bootstrap::blocks::BlockData;
 use crate::client::pathfind::context::PathConfig;
 use crate::storage::blocks::WorldBlocks;
 use crate::storage::entities::WorldEntities;
-use crate::bootstrap::blocks::BlockData;
-
 
 pub struct GlobalState {
     pub world_blocks: WorldBlocks,
@@ -20,7 +19,6 @@ pub struct GlobalState {
 }
 
 impl GlobalState {
-
     pub fn init(block_data: BlockData) -> GlobalState {
         use std::default::default;
 
@@ -29,7 +27,7 @@ impl GlobalState {
             block_data,
             world_entities: default(),
             ticks: 0,
-            travel_config: default()
+            travel_config: default(),
         }
     }
     /// # Goal

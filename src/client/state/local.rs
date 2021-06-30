@@ -1,25 +1,25 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use crate::client::pathfind::context::{MoveNode};
-use crate::storage::block::BlockLocation;
+use crate::client::follow::Follower;
+use crate::client::pathfind::context::MoveNode;
+use crate::client::pathfind::implementations::novehicle::TravelProblem;
+use crate::client::pathfind::implementations::Problem;
 use crate::client::physics::Physics;
 use crate::client::state::inventory::Inventory;
 use crate::protocol::ClientInfo;
-use crate::client::follow::Follower;
+use crate::storage::block::BlockLocation;
 use crate::types::Dimension;
-use crate::client::pathfind::implementations::Problem;
-use crate::client::pathfind::implementations::novehicle::TravelProblem;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
 pub struct MineTask {
     pub ticks: usize,
-    pub location: BlockLocation
+    pub location: BlockLocation,
 }
 
 pub struct LocalState {
@@ -42,7 +42,6 @@ pub struct LocalState {
 }
 
 impl LocalState {
-
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.physics.location().into();
         println!("starting nav");

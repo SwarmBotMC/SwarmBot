@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 
@@ -12,15 +12,11 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-
-
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Receiver;
 
-
 use crate::bootstrap::{CSVUser, Proxy};
-use crate::bootstrap::mojang::{Mojang};
-
+use crate::bootstrap::mojang::Mojang;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Root {
@@ -94,7 +90,7 @@ impl UserCache {
             let file = File::open(&file_path).unwrap();
             let bytes: Result<Vec<_>, _> = file.bytes().collect();
             let bytes = bytes.unwrap();
-            let Root{users} = bincode::deserialize(&bytes).unwrap();
+            let Root { users } = bincode::deserialize(&bytes).unwrap();
 
             let cache: HashMap<_, _> = users.into_iter().map(|user| (user.email().clone(), user)).collect();
             UserCache {
@@ -240,7 +236,6 @@ impl UserCache {
             let data = bincode::serialize(&root).unwrap();
             file.write_all(&data).unwrap();
             file.flush().unwrap();
-
         });
 
         rx

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use proc_macro::TokenStream;
@@ -196,7 +196,7 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
 
     // let mut discriminants = input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
 
-    let idents: Vec<_> = input.variants.clone().iter().map(|x|x.ident.clone()).collect();
+    let idents: Vec<_> = input.variants.clone().iter().map(|x| x.ident.clone()).collect();
 
     let discriminants = input.variants.iter()
         .enumerate()

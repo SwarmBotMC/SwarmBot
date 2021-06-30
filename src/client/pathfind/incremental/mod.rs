@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use std::collections::{HashMap, BinaryHeap};
+use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash;
-use crate::client::pathfind::MinHeapNode;
-use crate::client::timing::{Increment};
-use crate::client::pathfind::traits::{Heuristic, Progressor, GoalCheck, Progression};
-use std::time::{Instant};
+use std::time::Instant;
 
+use crate::client::pathfind::MinHeapNode;
+use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
+use crate::client::timing::Increment;
 
 /// credit baritone
 const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
@@ -22,7 +22,6 @@ const MAX_DURATION_MS: u128 = 5000;
 
 /// An A-star Node
 pub trait Node: Clone {
-
     /// # Purpose
     /// Sometimes nodes are very memory expensive. To reduce this only open nodes need to contain
     /// full state. Records can instead store a hash to show equality. Records should contain all the information
@@ -51,12 +50,11 @@ pub trait Node: Clone {
 }
 
 pub struct AStar<T: Node> {
-    state: Option<AStarState<T>>
+    state: Option<AStarState<T>>,
 }
 
 /// The state of AStar. This is a separate object so that when the iteration is done the state can be moved
 struct AStarState<T: Node> {
-
     /// given an idx return a record
     idx_to_record: Vec<T::Record>,
 
@@ -65,7 +63,6 @@ struct AStarState<T: Node> {
 
     /// tracks ancestors of records to reconstruct the final path `Vec<T::Record>`
     parent_map: HashMap<usize, usize>,
-
 
     /// **map record_id -> g_score**.
     /// the g-scores of all open nodes. How long it took to travel to them
@@ -91,7 +88,6 @@ pub type Path<T> = Vec<T>;
 /// is no parent (i.e., the root node). This is the most efficient path, so there should
 /// be no circles assuming non-negative weights.
 fn reconstruct_path<T: Clone>(vec: Vec<T>, goal_idx: usize, parent_map: &HashMap<usize, usize>) -> Vec<T> {
-
     let init_value = vec[goal_idx].clone();
 
     let mut res = vec![init_value];
@@ -107,32 +103,29 @@ fn reconstruct_path<T: Clone>(vec: Vec<T>, goal_idx: usize, parent_map: &HashMap
     res
 }
 
-pub struct PathResult<T>{
+pub struct PathResult<T> {
     pub complete: bool,
-    pub value: Vec<T>
+    pub value: Vec<T>,
 }
 
-impl <T> PathResult<T> {
+impl<T> PathResult<T> {
     fn complete(value: Vec<T>) -> PathResult<T> {
         PathResult {
             complete: true,
-            value
+            value,
         }
     }
 
     fn incomplete(value: Vec<T>) -> PathResult<T> {
         PathResult {
             complete: false,
-            value
+            value,
         }
     }
 }
 
-impl <T: Node> AStar<T> {
-
+impl<T: Node> AStar<T> {
     pub fn new(init_node: T) -> AStar<T> {
-
-
         let init_record = init_node.get_record();
 
         let mut record_to_idx = HashMap::new();
@@ -145,7 +138,7 @@ impl <T: Node> AStar<T> {
 
         open_set.push(MinHeapNode {
             contents: init_node,
-            score: f64::MAX
+            score: f64::MAX,
         });
 
         let state = Some(AStarState {
@@ -157,7 +150,7 @@ impl <T: Node> AStar<T> {
             total_duration_ms: 0,
             parent_map: Default::default(),
             valid: false,
-            meta_heuristics_ids: [0; 7]
+            meta_heuristics_ids: [0; 7],
         });
 
         AStar {
@@ -186,7 +179,6 @@ impl <T: Node> AStar<T> {
     }
 
     pub fn iterate_until(&mut self, end_at: Instant, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T::Record>> {
-
         let iter_start = Instant::now();
 
         loop {
@@ -202,12 +194,12 @@ impl <T: Node> AStar<T> {
                     return self.select_best();
                 } else {
                     Increment::InProgress
-                }
+                };
             }
 
-            match self.iterate(heuristic, progressor, goal_check)  {
+            match self.iterate(heuristic, progressor, goal_check) {
                 Increment::Finished(res) => {
-                    return Increment::Finished(res)
+                    return Increment::Finished(res);
                 }
                 Increment::InProgress => {}
             }
@@ -222,7 +214,6 @@ impl <T: Node> AStar<T> {
         };
 
         if let Some(node) = state.open_set.pop() {
-
             let parent = node.contents;
 
             // we have found the goal. Let's stop and return the reconstructed path
@@ -278,7 +269,6 @@ impl <T: Node> AStar<T> {
                 let f_score = tentative_g_score + h_score;
 
                 for i in 0..state.meta_heuristics.len() {
-
                     let meta_heuristic = h_score + tentative_g_score / COEFFICIENTS[i];
                     let current = state.meta_heuristics[i];
                     if meta_heuristic < current {
@@ -288,7 +278,6 @@ impl <T: Node> AStar<T> {
                             state.valid = true;
                         }
                     }
-
                 }
 
                 let heap_node = MinHeapNode {
@@ -297,7 +286,6 @@ impl <T: Node> AStar<T> {
                 };
 
                 state.open_set.push(heap_node);
-
             }
         } else {
             println!("no more nodes iterated through {}", state.idx_to_record.len());

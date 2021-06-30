@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::cell::RefCell;
@@ -19,15 +19,15 @@ use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
-use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Minecraft, Mine};
+use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Mine, Minecraft};
 use crate::protocol::encrypt::{rand_bits, RSA};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
-use crate::protocol::v340::serverbound::{ClientStatusAction, HandshakeNextState, DigStatus, Hand};
-use crate::storage::block::{BlockState, BlockLocation};
+use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState};
+use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Direction, Location, PacketData, Dimension, Position};
+use crate::types::{Dimension, Direction, Location, PacketData, Position};
 
 mod clientbound;
 mod serverbound;
@@ -68,7 +68,7 @@ impl EventQueue340 {
         use clientbound::*;
         match data.id {
             JoinGame::ID => {
-                let JoinGame{dimension, ..} = data.read();
+                let JoinGame { dimension, .. } = data.read();
                 processor.on_dimension_change(dimension);
             }
 
@@ -127,7 +127,7 @@ impl EventQueue340 {
                 }
             }
             Respawn::ID => {
-                let Respawn{dimension, ..} = data.read();
+                let Respawn { dimension, .. } = data.read();
                 processor.on_dimension_change(dimension);
                 self.dimension = dimension;
             }
@@ -136,10 +136,10 @@ impl EventQueue340 {
             clientbound::CHUNK_PKT_ID => {
                 let overworld = self.dimension == Dimension::Overworld;
                 let ChunkColumnPacket { chunk_x, chunk_z, column, new_chunk } = data.reader.read_like(&overworld);
-                processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column, new_chunk );
+                processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column, new_chunk);
             }
             MultiBlock::ID => {
-                let MultiBlock{chunk_x, chunk_z, records} = data.read();
+                let MultiBlock { chunk_x, chunk_z, records } = data.read();
 
                 let base_x = chunk_x << 4;
                 let base_z = chunk_z << 4;
@@ -219,7 +219,7 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::PlayerDig {
             status,
             position,
-            face: 1
+            face: 1,
         });
     }
 
@@ -247,7 +247,7 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::PlayerPositionAndRotation {
             location,
             direction,
-            on_ground
+            on_ground,
         })
     }
 }
@@ -341,7 +341,6 @@ impl Minecraft for Protocol {
                     });
                 }
             };
-
         }
 
         let (tx, rx) = std::sync::mpsc::channel();

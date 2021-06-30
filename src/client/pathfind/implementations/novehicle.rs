@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::collections::HashMap;
 
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
-use crate::client::pathfind::implementations::{Problem, PlayerProblem};
+use crate::client::pathfind::implementations::{PlayerProblem, Problem};
 use crate::client::pathfind::incremental::Node;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
 use crate::storage::block::{BlockLocation, BlockState};

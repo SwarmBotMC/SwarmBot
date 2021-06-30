@@ -1,22 +1,20 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::hash::Hash;
 
-
 use tokio::task::JoinHandle;
-use std::fmt::Debug;
-
 
 #[derive(Debug)]
 pub enum Msg<T: Debug> {
     Node(T),
-    Finished {forward: bool},
+    Finished { forward: bool },
 }
 
 
@@ -44,7 +42,7 @@ impl<T: Eq + Hash + Copy + Clone + Send + 'static + Debug> Middleman<T> {
                             return;
                         }
                     }
-                    Msg::Finished{forward} => {
+                    Msg::Finished { forward } => {
                         if forward {
                             send_vec.send(None).expect("expected could send");
                             return;

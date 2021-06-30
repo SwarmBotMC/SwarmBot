@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
 use std::collections::HashMap;
+use std::fs::OpenOptions;
+
+use serde::{Deserialize, Serialize};
 
 /// Uses prismarine.js block data. We comment out the fields that we do not use
 #[derive(Serialize, Deserialize)]
@@ -29,11 +30,10 @@ pub struct Block {
 
 pub struct BlockData {
     // lookup by id
-    lookup: HashMap<u32, Block>
+    lookup: HashMap<u32, Block>,
 }
 
 impl BlockData {
-
     pub fn by_id(&self, id: u32) -> Option<&Block> {
         self.lookup.get(&id)
     }

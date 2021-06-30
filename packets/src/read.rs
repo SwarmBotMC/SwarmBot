@@ -1,26 +1,27 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::io::{Cursor, Read};
+
 use bytes::Buf;
-use crate::types::{VarUInt, BitField};
+
+use crate::types::{BitField, VarUInt};
 
 #[derive(Clone)]
 pub struct ByteReader {
     bytes: Cursor<Vec<u8>>,
 }
 
-pub struct LenRead<T>{
+pub struct LenRead<T> {
     pub value: T,
-    pub len: usize
+    pub len: usize,
 }
 
 impl ByteReader {
-
     pub fn read<T: ByteReadable>(&mut self) -> T {
         T::read_from_bytes(self)
     }
@@ -32,11 +33,11 @@ impl ByteReader {
 
         LenRead {
             value,
-            len: (pos_after - pos_before) as usize
+            len: (pos_after - pos_before) as usize,
         }
     }
 
-    pub fn read_like<T: ByteReadableLike<Param = P>, P>(&mut self, input: &P)-> T{
+    pub fn read_like<T: ByteReadableLike<Param=P>, P>(&mut self, input: &P) -> T {
         T::read_from_bytes(self, input)
     }
 
@@ -122,7 +123,7 @@ impl ByteReadable for u64 {
     }
 }
 
-impl <const T: usize> ByteReadable for [u8; T] {
+impl<const T: usize> ByteReadable for [u8; T] {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let mut bytes = [0; T];
         for i in 0..T {

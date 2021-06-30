@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use bytes::{BytesMut, BufMut};
+use bytes::{BufMut, BytesMut};
+
 use crate::types::VarInt;
 
 pub struct ByteWriter {
@@ -21,7 +22,7 @@ impl ByteWritable for u8 {
 
 impl ByteWritable for bool {
     fn write_to_bytes(self, writer: &mut ByteWriter) {
-        let val: u8 = if self {1} else {0};
+        let val: u8 = if self { 1 } else { 0 };
         writer.write(val);
     }
 }
@@ -77,7 +78,7 @@ impl ByteWriter {
         self
     }
 
-    pub fn write_like<T: ByteWritableLike<Param = P>, P>(&mut self, value: T, param: &P) -> &mut Self {
+    pub fn write_like<T: ByteWritableLike<Param=P>, P>(&mut self, value: T, param: &P) -> &mut Self {
         value.write_to_bytes_like(self, param);
         self
     }
@@ -91,7 +92,6 @@ impl ByteWriter {
     pub fn freeze(self) -> Vec<u8> {
         self.bytes.freeze().to_vec()
     }
-
 }
 
 

@@ -1,19 +1,21 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::mpsc::TryRecvError;
 use std::time::{Duration, Instant, SystemTime};
 
+use tokio::io::AsyncBufReadExt;
 use tokio::sync::Notify;
 
 use crate::bootstrap::blocks::BlockData;
 use crate::bootstrap::Connection;
-use crate::client::bot::{Bot, run_threaded, process_command};
+use crate::client::bot::{Bot, process_command, run_threaded};
 use crate::client::physics::Physics;
 use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
@@ -21,8 +23,6 @@ use crate::client::state::inventory::Inventory;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
 use crate::types::Dimension;
-use tokio::io::AsyncBufReadExt;
-use std::sync::mpsc::TryRecvError;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -223,11 +223,9 @@ impl<T: Minecraft + 'static> Runner<T> {
         }
     }
 
-    fn process_commands(&mut self){
+    fn process_commands(&mut self) {
         match self.stdin.try_recv() {
-
             Ok(command) => {
-
                 let parts: Vec<_> = command.split(' ').collect();
 
                 if parts.is_empty() {
@@ -239,13 +237,11 @@ impl<T: Minecraft + 'static> Runner<T> {
                 for bot in &mut self.bots {
                     process_command(name, args, &mut bot.state, &mut self.global_state, &mut bot.out);
                 }
-            },
-            Err(TryRecvError::Empty) => {},
+            }
+            Err(TryRecvError::Empty) => {}
             Err(e) => {
                 println!("receive err");
             }
         }
     }
-
-
 }

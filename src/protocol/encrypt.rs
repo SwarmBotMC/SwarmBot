@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use rsa::{RSAPublicKey, BigUint, PaddingScheme, PublicKey};
-use rand::rngs::OsRng;
 use rand::random;
+use rand::rngs::OsRng;
+use rsa::{BigUint, PaddingScheme, PublicKey, RSAPublicKey};
 
 pub struct RSA {
     key: RSAPublicKey,

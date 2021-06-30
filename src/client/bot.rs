@@ -1,27 +1,27 @@
 /*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+ * Copyright (c) 2021 Minecraft IGN RevolutionNow - All Rights Reserved.
  * Unauthorized copying of this file, via any medium is strictly prohibited.
  * Proprietary and confidential.
- * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/27/21, 3:15 PM
+ * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
 use std::time::{Duration, Instant};
 
+use float_ord::FloatOrd;
 use itertools::min;
 
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::implementations::Problem;
+use crate::client::physics::Line;
+use crate::client::physics::speed::Speed;
+use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::{LocalState, MineTask};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut, Mine};
-use float_ord::FloatOrd;
-use crate::types::Direction;
-use crate::client::physics::Line;
-use crate::client::physics::speed::Speed;
 use crate::storage::block::{BlockKind, BlockLocation};
-use crate::client::physics::tools::{Tool, Material};
+use crate::types::Direction;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
@@ -55,7 +55,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             let mut vel = self.state.physics.velocity();
             vel.dy = 0.;
             if vel.mag2() > 0.01 {
-                vel *=-1.;
+                vel *= -1.;
                 self.state.physics.look(Direction::from(vel));
                 self.state.physics.speed(Speed::SPRINT);
                 self.state.physics.line(Line::Forward);
@@ -108,11 +108,9 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             }
         }
     }
-
-
 }
 
-pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut){
+pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut) {
 
     // println! but bold
     macro_rules! msg {
@@ -140,28 +138,26 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             // if
         }
         "goto" => {
-
             if let [id] = args {
                 let id: u32 = id.parse().unwrap();
                 let kind = BlockKind::from(id);
 
                 let loc = BlockLocation::from(local.physics.location());
 
-                let closest = global.world_blocks.closest(loc,|state| state.kind() == kind);
+                let closest = global.world_blocks.closest(loc, |state| state.kind() == kind);
 
                 if let Some(closest) = closest {
                     local.travel_to_block(closest);
                 } else {
                     msg!("There is no block {} by me", id);
                 }
-
             }
 
             if let [a, b, c] = args {
                 let x = a.parse().unwrap();
                 let y = b.parse().unwrap();
                 let z = c.parse().unwrap();
-                let dest = BlockLocation::new(x,y,z);
+                let dest = BlockLocation::new(x, y, z);
                 local.travel_to_block(dest);
             }
         }
@@ -186,7 +182,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let x = a.parse().unwrap();
                 let y = b.parse().unwrap();
                 let z = c.parse().unwrap();
-                let location = BlockLocation::new(x,y,z);
+                let location = BlockLocation::new(x, y, z);
 
                 msg!("The block is {:?}", global.world_blocks.get_block(location));
             }
@@ -197,20 +193,20 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let kind = BlockKind::from(id);
 
                 let origin = BlockLocation::from(local.physics.location());
-                let closest = global.world_blocks.closest(origin,|state| state.kind() == kind);
+                let closest = global.world_blocks.closest(origin, |state| state.kind() == kind);
 
                 if let Some(closest) = closest {
                     let dir = closest.center_bottom() - origin.center_bottom();
                     local.physics.look(dir.into());
 
                     let tool = Tool::new(Material::DIAMOND);
-                    let ticks = tool.wait_time(kind, false, true , &global.block_data);
+                    let ticks = tool.wait_time(kind, false, true, &global.block_data);
 
                     msg!("started mining at {} .. ticks {}", closest, ticks);
 
                     let task = MineTask {
                         ticks,
-                        location: closest
+                        location: closest,
                     };
 
                     local.mining = Some(task);
