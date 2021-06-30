@@ -88,6 +88,10 @@ packets = { path = "packets" } # from a path in the local filesystem
 
 smallvec = { version = "1.6", features = ["const_generics"] }
 
+[dev-dependencies]
+more-asserts = "0.2"
+
+
 [profile.dev]
 opt-level = 2
 

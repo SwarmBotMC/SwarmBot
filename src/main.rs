@@ -33,6 +33,9 @@ use crate::bootstrap::storage::UserCache;
 use crate::client::runner::{Runner, RunnerOptions};
 use crate::error::{HasContext, ResContext};
 
+#[macro_use]
+extern crate more_asserts;
+
 mod error;
 mod bootstrap;
 mod protocol;

@@ -21,6 +21,19 @@ pub struct WorldBlocks {
 }
 
 impl WorldBlocks {
+
+    /// A world that is flat at y=0 in a 100 block radius from 0,0
+    pub fn flat() -> WorldBlocks {
+        let mut world = WorldBlocks::default();
+        for x in -100..=100 {
+            for z in -100..=100 {
+                let loc = BlockLocation::new(x,0,z);
+               world.set_block(loc, BlockState::STONE);
+            }
+        }
+        world
+    }
+
     pub fn add_column(&mut self, location: ChunkLocation, column: ChunkColumn) {
         self.storage.insert(location, column);
     }

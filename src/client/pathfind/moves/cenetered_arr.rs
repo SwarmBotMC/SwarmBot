@@ -57,7 +57,7 @@ mod test {
 
     #[test]
     fn test_values() {
-        let mut arr = CenteredArray::init::<(i32, i32), 3>();
+        let mut arr = CenteredArray::init::<(i32, i32), 4>();
         for x in -4..=4 {
             for y in -4..=4 {
                 arr[(x, y)] = (x, y);

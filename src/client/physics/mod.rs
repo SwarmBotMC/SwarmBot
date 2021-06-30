@@ -246,7 +246,7 @@ impl Physics {
 
     pub fn tick(&mut self, world: &WorldBlocks) {
         let below_loc = self.location - EPSILON_Y;
-        let falling = self.cross_section_empty(below_loc, world);
+        let mut falling = self.cross_section_empty(below_loc, world);
         let below_block_loc = BlockLocation::from(below_loc);
 
         let mut slip = match world.get_block(below_block_loc) {
@@ -312,6 +312,7 @@ impl Physics {
                     speeds[0] += move_displacement.dx * 0.2;
                     speeds[1] += move_displacement.dz * 0.2;
                 }
+                falling = true;
                 initial_ver(0)
             } else {
 
@@ -346,6 +347,7 @@ impl Physics {
             if !self.cross_section_empty(new_loc_first - EPSILON_Y, world) {
                 new_loc_first.y = new_loc_first.y.round();
                 y_vel = 0.0;
+                falling = false;
             }
         } else if y_vel >= 0.0 {// we are moving up
 
@@ -448,10 +450,77 @@ impl Physics {
 
 #[cfg(test)]
 mod tests {
-    use crate::client::physics::Physics;
-    use crate::types::Location;
+    use crate::client::physics::{Physics, Line};
+    use crate::types::{Location, Direction, Displacement};
     use crate::storage::blocks::WorldBlocks;
-    use crate::storage::block::{BlockLocation, BlockState};
+    use std::lazy::SyncLazy;
+    use crate::client::physics::speed::Speed;
+
+
+    static WORLD: SyncLazy<WorldBlocks> = SyncLazy::new(||{
+        WorldBlocks::flat()
+    });
+
+    #[test]
+    fn test_run(){
+        let mut physics = Physics::default();
+        physics.teleport(Location::new(0., 1., 0.));
+
+
+
+        let disp = Displacement::new(1.,0.,0.);
+        let dir = Direction::from(disp);
+
+        physics.look(dir);
+
+        let mut ticks = 0;
+        loop {
+            physics.line(Line::Forward);
+            physics.speed(Speed::SPRINT);
+            physics.tick(&WORLD);
+
+            ticks += 1;
+
+            if physics.location.x >= 100.0 {
+                break;
+            }
+        }
+
+        // I got 17.95 seconds when I did this in Minecraft = 359 ticks which is close enough to
+        // what I got which was 358
+        assert_eq!(358, ticks);
+    }
+
+    #[test]
+    fn test_sprint_jump(){
+        let mut physics = Physics::default();
+        physics.teleport(Location::new(0., 1., 0.));
+
+
+
+        let disp = Displacement::new(1.,0.,0.);
+        let dir = Direction::from(disp);
+
+        physics.look(dir);
+
+        let mut ticks = 0;
+        loop {
+            physics.line(Line::Forward);
+            physics.speed(Speed::SPRINT);
+            physics.jump();
+            physics.tick(&WORLD);
+
+            ticks += 1;
+
+            if physics.location.x >= 100.0 {
+                break;
+            }
+        }
+
+        // I got 14.11 seconds when I did this in Minecraft = 282.2 ticks which is close enough to
+        // what I got in the simulation which was 286
+        assert_eq!(286, ticks);
+    }
 
     #[test]
     fn test_jump(){
@@ -459,22 +528,28 @@ mod tests {
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
-        let mut world = WorldBlocks::default();
-        world.set_block(BlockLocation::new(0, 0, 0), BlockState::STONE);
-
         physics.jump();
 
         let mut ticks_in_air = 0;
+        let mut highest_y = 0_f64;
         loop {
-            physics.tick(&world);
+            physics.tick(&WORLD);
             ticks_in_air += 1;
             if physics.on_ground() {
                 break;
             }
 
+            highest_y = highest_y.max(physics.location.y);
+
+            // 1.25220 is what the Minecraft client gives me
+            assert_le!(physics.location.y, 1. + 1.25221);
             assert!(physics.location.y > 0.);
         }
 
-        assert_eq!(7,ticks_in_air);
+        assert!((highest_y - 2.25221_f64).abs() < 0.0001);
+
+
+        // 12 is the number of blocks a player should be in the air
+        assert_eq!(12 ,ticks_in_air);
     }
 }
