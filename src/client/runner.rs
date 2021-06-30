@@ -139,6 +139,8 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let client = Bot {
                     state: LocalState {
                         ticks: 0,
+                        health: 0.0,
+                        food: 0,
                         mining: None,
                         follow_closest: false,
                         bot_id: self.id_on,

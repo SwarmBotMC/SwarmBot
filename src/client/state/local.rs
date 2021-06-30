@@ -24,6 +24,8 @@ pub struct MineTask {
 
 pub struct LocalState {
     pub ticks: usize,
+    pub health: f32,
+    pub food: u8,
     pub mining: Option<MineTask>,
     pub follow_closest: bool,
     pub bot_id: u32,

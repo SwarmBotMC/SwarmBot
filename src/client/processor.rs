@@ -79,6 +79,8 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_update_health(&mut self, health: f32, food: u8) {
+        self.local.health = health;
+        self.local.food = food;
         self.term.output.send(format!("updated health {} food is {}", health, food)).unwrap();
     }
 

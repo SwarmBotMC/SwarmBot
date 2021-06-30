@@ -129,6 +129,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         "jump" => {
             local.physics.jump();
         }
+        "health" => {
+            out.send_chat(&format!("/msg RevolutionNow Health: {}, Food: {}", local.health, local.food));
+        }
         "follow" => {
             local.follow_closest = true;
         }
