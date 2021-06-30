@@ -13,7 +13,8 @@ use crate::protocol::{InterfaceOut};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
-use crate::types::{Chat, Dimension, Location, LocationOrigin};
+use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
+use crate::term::Term;
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -33,15 +34,17 @@ pub trait InterfaceIn {
 pub struct SimpleInterfaceIn<'a, I: InterfaceOut> {
     global: &'a mut GlobalState,
     local: &'a mut LocalState,
+    term: &'a Term,
     out: &'a mut I,
 }
 
 impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
-    pub fn new(local: &'a mut LocalState, global: &'a mut GlobalState, out: &'a mut I) -> SimpleInterfaceIn<'a, I> {
+    pub fn new(local: &'a mut LocalState, global: &'a mut GlobalState, out: &'a mut I, term: &'a Term) -> SimpleInterfaceIn<'a, I> {
         SimpleInterfaceIn {
             local,
             global,
             out,
+            term
         }
     }
 }
@@ -49,13 +52,21 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
 
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
-        println!("{}", message.clone().colorize());
-        if let Some(msg) = message.player_message() {
+        self.term.output.send(message.clone().colorize()).unwrap();
+
+        let mut process = |msg: PlayerMessage| {
             if let Some(cmd) = msg.into_cmd() {
                 let name = cmd.command;
                 let args_str: Vec<&str> = cmd.args.iter().map(|x| x.as_str()).collect();
-                process_command(&name, &args_str, self.local, self.global, self.out);
+                process_command(&name, &args_str, self.local, self.global, self.out, self.term);
             }
+        };
+
+        if let Some(msg) = message.player_message() {
+            process(msg);
+        }
+        else if let Some(msg) = message.player_dm() {
+            process(msg);
         }
     }
 
@@ -68,7 +79,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_update_health(&mut self, health: f32, food: u8) {
-        println!("updated health {} food is {}", health, food);
+        self.term.output.send(format!("updated health {} food is {}", health, food)).unwrap();
     }
 
     fn on_dimension_change(&mut self, dimension: Dimension) {
@@ -76,13 +87,11 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_move(&mut self, location: Location) {
-        println!("before loc {}", self.local.physics.location());
-        println!("received on move {}", location);
+        self.term.output.send(format!("moved {} -> {}", self.local.physics.location(), location)).unwrap();
         self.local.physics.teleport(location);
     }
 
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool) {
-        // println!("getting chunk at {}, {}", location.0 << 4, location.1 << 4);
         if new {
             self.global.world_blocks.add_column(location, column);
         } else {

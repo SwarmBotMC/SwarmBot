@@ -139,6 +139,24 @@ impl PlayerMessage {
 }
 
 impl Chat {
+
+    pub fn player_dm(&self) -> Option<PlayerMessage> {
+        static RE: SyncLazy<Regex> = SyncLazy::new(|| {
+            Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap()
+        });
+
+        let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
+
+        let captures: Captures = RE.captures(&text)?;
+
+        let player = captures.get(1)?.as_str().to_string();
+        let message = captures.get(2)?.as_str().to_string();
+        Some(PlayerMessage {
+            player,
+            message
+        })
+
+    }
     pub fn player_message(&self) -> Option<PlayerMessage> {
         static RE: SyncLazy<Regex> = SyncLazy::new(|| {
             Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap()

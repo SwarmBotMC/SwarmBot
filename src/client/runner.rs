@@ -9,8 +9,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::TryRecvError;
 use std::time::{Duration, Instant};
-
-use tokio::io::AsyncBufReadExt;
 use tokio::sync::Notify;
 
 use crate::bootstrap::blocks::BlockData;
@@ -23,6 +21,7 @@ use crate::client::state::inventory::Inventory;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
 use crate::types::Dimension;
+use crate::term::Term;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -43,10 +42,11 @@ pub type Logins<T> = Rc<RefCell<Vec<Login<<T as Minecraft>::Queue, <T as Minecra
 pub struct Runner<T: Minecraft> {
     /// logins that are about to be established
     pending_logins: Logins<T>,
-    stdin: std::sync::mpsc::Receiver<String>,
 
     /// the global state of the program containing chunks and global config
     global_state: GlobalState,
+
+    term: Term,
 
     /// the bots created by pending logins
     bots: Vec<Bot<T::Queue, T::Interface>>,
@@ -95,24 +95,10 @@ impl<T: Minecraft + 'static> Runner<T> {
             });
         }
 
-        let stdin = {
-            let (tx, rx) = std::sync::mpsc::channel();
-
-            tokio::task::spawn_local(async move {
-                let stdin = tokio::io::stdin();
-                let buf = tokio::io::BufReader::new(stdin);
-                let mut lines = buf.lines();
-                while let Some(line) = lines.next_line().await.unwrap() {
-                    tx.send(line).unwrap();
-                }
-            });
-            rx
-        };
-
         Runner {
-            stdin,
             pending_logins,
             global_state: GlobalState::init(blocks),
+            term: Term::init(),
             bots: Vec::new(),
             id_on: 0,
         }
@@ -188,7 +174,7 @@ impl<T: Minecraft + 'static> Runner<T> {
         for bot in &mut self.bots {
             // protocol-specific logic
 
-            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out);
+            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out, &self.term);
             bot.queue.flush(&mut processor);
 
             // fifth step: general sync logic that isn't dependent on protocol implementation
@@ -224,7 +210,7 @@ impl<T: Minecraft + 'static> Runner<T> {
     }
 
     fn process_commands(&mut self) {
-        match self.stdin.try_recv() {
+        match self.term.input.try_recv() {
             Ok(command) => {
                 let parts: Vec<_> = command.split(' ').collect();
 
@@ -235,7 +221,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let args = &parts[1..];
 
                 for bot in &mut self.bots {
-                    process_command(name, args, &mut bot.state, &mut self.global_state, &mut bot.out);
+                    process_command(name, args, &mut bot.state, &mut self.global_state, &mut bot.out, &self.term);
                 }
             }
             Err(TryRecvError::Empty) => {}

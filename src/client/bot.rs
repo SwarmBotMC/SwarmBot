@@ -22,6 +22,7 @@ use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::types::Direction;
+use crate::term::Term;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
@@ -110,7 +111,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 }
 
-pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut) {
+pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut, term: &Term) {
 
     // println! but bold
     macro_rules! msg {
@@ -119,8 +120,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             }};
             ($($msg: expr),*) => {{
                 let to_print_raw = format!($($msg),*);
-                let to_print = ansi_term::Color::Black.bold().paint(to_print_raw);
-                println!("{}", to_print);
+                let to_print = ansi_term::Color::Black.bold().paint(to_print_raw).to_string();
+                term.output.send(to_print).unwrap();
             }};
         }
 

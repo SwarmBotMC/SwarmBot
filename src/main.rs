@@ -36,6 +36,7 @@ use crate::error::{HasContext, ResContext};
 mod error;
 mod bootstrap;
 mod protocol;
+mod term;
 mod client;
 mod storage;
 mod types;

@@ -84,6 +84,9 @@ num = "0.4"
 # for coloring terminal
 ansi_term = "0.12"
 
+# for printing stuff out
+crossterm = "0.20"
+
 packets = { path = "packets" } # from a path in the local filesystem
 
 smallvec = { version = "1.6", features = ["const_generics"] }
