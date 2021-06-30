@@ -147,19 +147,19 @@ impl Movements {
 
         let above = get_block!(x, y + 2, z).unwrap();
         let floor = get_block!(x, y - 1, z).unwrap();
+        let feet = get_block!(x, y, z).unwrap();
 
-        if above == Water || head == Water {
+        if above == Water || head == Water && above == WalkThrough {
             res.push(Neighbor {
                 value: wrap!(BlockLocation::new(x,y+1,z)),
                 cost: ctx.path_config.costs.ascend * multiplier,
             });
         }
 
-        // if it is water the jump will be too high
-        let can_jump = above == WalkThrough && floor != Water;
 
-        if can_jump {
+        let can_micro_jump = above == WalkThrough && (floor == Solid || feet == Water);
 
+        if can_micro_jump {
             // ascending adjacent
             for (idx, direction) in CardinalDirection::ALL.iter().enumerate() {
                 let Change { dx, dz, .. } = direction.unit_change();
@@ -176,7 +176,11 @@ impl Movements {
                     }
                 }
             }
+        }
 
+        let can_jump = above == WalkThrough && floor != Water;
+
+        if can_jump {
             // we can jump in a 3 block radius
 
             const RADIUS: i32 = 4;
@@ -264,7 +268,6 @@ impl Movements {
                     let is_open = open[(dx, dz)] == State::Open;
 
                     let same_y = get_block!(x+dx, y - 1, z+dz).unwrap();
-                    let below_y = get_block!(x+dx, y - 2, z+dz).unwrap();
 
                     let same_y_possible = same_y  == Solid;
                     let below_y_possible = false;
