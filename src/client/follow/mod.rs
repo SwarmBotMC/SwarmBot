@@ -86,7 +86,14 @@ impl Follower {
         }
 
         local.physics.line(Line::Forward);
-        local.physics.speed(Speed::SPRINT);
+        let speed = if local.physics.on_ground() {
+            Speed::SPRINT
+        } else {
+            Speed::WALK
+        };
+
+        local.physics.speed(speed);
+
 
         self.ticks += 1;
 

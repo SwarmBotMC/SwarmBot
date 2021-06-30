@@ -43,7 +43,7 @@ impl Default for LowMemoryChunkSection {
 
 pub fn bits_needed(mut number: usize) -> u8 {
     let mut bits = 0_u8;
-    while number != 0 {
+    while number > 1 {
         number /= 2;
         bits += 1;
     }
@@ -85,6 +85,7 @@ impl LowMemoryChunkSection {
     }
 }
 
+#[derive(Default)]
 pub struct ChunkData<T> {
     pub sections: [Option<T>; 16],
 }
@@ -301,6 +302,12 @@ impl Palette {
 pub enum ChunkColumn {
     LowMemory { data: ChunkData<LowMemoryChunkSection> },
     HighMemory { data: ChunkData<HighMemoryChunkSection> },
+}
+
+impl Default for ChunkColumn {
+    fn default() -> Self {
+        Self::HighMemory {data: ChunkData::default() }
+    }
 }
 
 impl ChunkColumn {

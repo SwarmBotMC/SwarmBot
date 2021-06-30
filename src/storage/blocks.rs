@@ -11,7 +11,6 @@ use std::collections::{HashMap};
 
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
-use crate::storage::block::SimpleType::WalkThrough;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -100,13 +99,49 @@ impl WorldBlocks {
 
         let loc = ChunkLocation(chunk_x, chunk_z);
 
-        match self.storage.get_mut(&loc) {
-            None => {}
-            Some(column) => column.set_block(x, y, z, block)
-        };
+        let column = self.storage.entry(loc).or_default();
+        column.set_block(x, y, z, block);
     }
 
     pub fn get_block_simple(&self, location: BlockLocation) -> Option<SimpleType> {
         self.get_block(location).map(|x| x.s_type())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::storage::blocks::WorldBlocks;
+    use crate::storage::block::{BlockLocation, BlockState, BlockApprox};
+
+    #[test]
+    fn test_get_set(){
+        let mut world = WorldBlocks::default();
+
+        let loc = BlockLocation::new(0, 0, 0);
+
+
+        {
+            world.set_block(loc, BlockState::STONE);
+            let got = world.get_block(loc);
+            assert_matches!(got , Some(BlockApprox::Realized(BlockState::STONE)));
+        }
+
+        {
+            let up = loc + BlockLocation::new(0, 1, 0);
+            let given = BlockState(123);
+            world.set_block(up, given);
+
+            let got_up = world.get_block(up);
+            assert_matches!(got_up , Some(BlockApprox::Realized(given)));
+
+            let got = world.get_block(loc);
+            assert_matches!(got , Some(BlockApprox::Realized(BlockState::STONE)));
+        }
+
+        {
+            world.set_block(loc, BlockState::AIR);
+            let got = world.get_block(loc);
+            assert_matches!(got , Some(BlockApprox::Realized(BlockState::AIR)));
+        }
     }
 }

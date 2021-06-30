@@ -444,3 +444,37 @@ impl Physics {
         Displacement::new(self.prev.speeds[0], self.prev.y_vel, self.prev.speeds[1])
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use crate::client::physics::Physics;
+    use crate::types::Location;
+    use crate::storage::blocks::WorldBlocks;
+    use crate::storage::block::{BlockLocation, BlockState};
+
+    #[test]
+    fn test_jump(){
+
+        let mut physics = Physics::default();
+        physics.teleport(Location::new(0., 1., 0.));
+
+        let mut world = WorldBlocks::default();
+        world.set_block(BlockLocation::new(0, 0, 0), BlockState::STONE);
+
+        physics.jump();
+
+        let mut ticks_in_air = 0;
+        loop {
+            physics.tick(&world);
+            ticks_in_air += 1;
+            if physics.on_ground() {
+                break;
+            }
+
+            assert!(physics.location.y > 0.);
+        }
+
+        assert_eq!(7,ticks_in_air);
+    }
+}

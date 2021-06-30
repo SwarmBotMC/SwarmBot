@@ -43,6 +43,7 @@ pub struct BlockState(pub u32);
 
 impl BlockState {
     pub const AIR: BlockState = BlockState(0);
+    pub const STONE: BlockState = BlockState(16);
 
 
     pub fn id(&self) -> u32 {
