@@ -24,7 +24,7 @@ const MAX_JUMP_DIST: f64 = 4.0;
 
 const MAX_TICKS: usize = 29;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum FollowResult {
     Failed,
     InProgress,
@@ -157,5 +157,73 @@ impl Follower {
         }
 
         FollowResult::InProgress
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::fs::OpenOptions;
+    use std::time::{Duration, Instant};
+
+    use crate::client::follow::{Follower, FollowResult};
+    use crate::client::pathfind::implementations::novehicle::TravelProblem;
+    use crate::client::pathfind::implementations::Problem;
+    use crate::client::state::global::GlobalState;
+    use crate::client::state::local::LocalState;
+    use crate::client::timing::Increment;
+    use crate::schematic::Schematic;
+    use crate::storage::block::BlockLocation;
+    use more_asserts::*;
+
+    #[test]
+    fn test_parkour() {
+        let mut reader = OpenOptions::new()
+            .read(true)
+            .open("test-data/parkour.schematic")
+            .unwrap();
+
+        let course = Schematic::load(&mut reader);
+
+
+        let mut local_state = LocalState::mock();
+        let mut global_state = GlobalState::init();
+
+        global_state.world_blocks.load(&course);
+
+        let start = BlockLocation::new(-162, 82, -357);
+        let end = BlockLocation::new(-152, 80, -338);
+
+        let world = &global_state.world_blocks;
+        let start_below = world.get_block(start.below()).unwrap().as_real().id();
+        let end_below = world.get_block(end.below()).unwrap().as_real().id();
+
+        // the ids of stained glass
+        assert_eq!(95, start_below);
+        assert_eq!(95, end_below);
+
+        let mut problem = TravelProblem::new(start, end);
+
+        let increment = problem.iterate_until(Instant::now() + Duration::from_secs(10), &mut local_state, &global_state);
+
+        let result = match increment {
+            Increment::InProgress => panic!("not finished"),
+            Increment::Finished(res) => res
+        };
+
+
+        assert!(result.complete);
+
+        let mut follower = Follower::new(result).unwrap();
+
+        local_state.physics.teleport(start.center_bottom());
+
+        while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
+            local_state.physics.tick(&global_state.world_blocks);
+            assert!(local_state.physics.location().y > 79.0, "the player fell... location was {}", local_state.physics.location());
+        }
+
+        assert_eq!(follower.follow(&mut local_state, &mut global_state), FollowResult::Finished);
+        assert_lt!(local_state.physics.location().dist2(end.center_bottom()), 0.6 * 0.6);
     }
 }

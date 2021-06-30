@@ -39,6 +39,7 @@ mod protocol;
 mod term;
 mod client;
 mod storage;
+mod schematic;
 mod types;
 
 fn main() {
@@ -74,9 +75,7 @@ async fn run() -> ResContext<()> {
         println!("obtaining users from cache");
         cache.obtain_users(count, csv_users, proxies)
     };
-
-    let blocks = BlockData::read().context_str("error reading blocks file")?;
-
+    
     if load {
         while proxy_users.recv().await.is_some() {
             // empty
@@ -86,7 +85,7 @@ async fn run() -> ResContext<()> {
         // taking the users and generating connections to the Minecraft server
         let connections = Connection::stream(address, proxy_users);
 
-        let opts = RunnerOptions { delay_millis: delay, blocks };
+        let opts = RunnerOptions { delay_millis: delay };
 
         match version {
             340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await, // 1.12

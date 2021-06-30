@@ -6,7 +6,7 @@
  */
 
 use std::fmt::{Display, Formatter};
-use std::ops::Add;
+use std::ops::{Add, Index};
 
 use crate::bootstrap::blocks::BlockData;
 use crate::types::Location;
@@ -45,6 +45,9 @@ impl BlockState {
     pub const AIR: BlockState = BlockState(0);
     pub const STONE: BlockState = BlockState(16);
 
+    pub fn from(id: u32, data: u32) -> BlockState {
+        BlockState((id << 4) + data)
+    }
 
     pub fn id(&self) -> u32 {
         self.0 >> 4
@@ -146,11 +149,38 @@ impl Add for BlockLocation {
     }
 }
 
-
 impl BlockLocation {
+
     pub fn new(x: i32, y: i16, z: i32) -> BlockLocation {
         BlockLocation { x, y, z }
     }
+
+    pub fn below(&self) -> BlockLocation {
+        Self {
+            x: self.x,
+            y: self.y - 1,
+            z: self.z
+        }
+    }
+
+    pub fn get(&self, idx: usize) -> i32 {
+        match idx {
+            0 => self.x,
+            1 => self.y as i32,
+            2 => self.z,
+            _ => panic!("invalid index for block location")
+        }
+    }
+
+    pub fn set(&mut self, idx: usize, value: i32) {
+        match idx {
+            0 => self.x = value,
+            1 => self.y = value as i16,
+            2 => self.z = value,
+            _ => panic!("invalid index for block location")
+        }
+    }
+
 
     pub fn from_flts(x: impl num::Float, y: impl num::Float, z: impl num::Float) -> BlockLocation {
         let x = num::cast(x.floor()).unwrap();
@@ -215,6 +245,13 @@ impl BlockApprox {
                 x.simple_type()
             }
             BlockApprox::Estimate(x) => *x
+        }
+    }
+
+    pub fn as_real(&self) -> BlockState {
+        match self {
+            BlockApprox::Realized(inner) => *inner,
+            _ => panic!("was not relized")
         }
     }
 

@@ -11,6 +11,7 @@ use std::collections::{HashMap};
 
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
+use crate::schematic::Schematic;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -32,6 +33,12 @@ impl WorldBlocks {
             }
         }
         world
+    }
+    
+    pub fn load(&mut self, schematic: &Schematic){
+        for (location, state) in schematic.blocks() {
+            self.set_block(location, state)
+        }
     }
 
     pub fn add_column(&mut self, location: ChunkLocation, column: ChunkColumn) {

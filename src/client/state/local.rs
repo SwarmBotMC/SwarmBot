@@ -44,6 +44,34 @@ pub struct LocalState {
 }
 
 impl LocalState {
+    
+    pub fn mock() -> LocalState {
+        Self::new(0, ClientInfo {
+            username: "abc".to_string(),
+            uuid: Default::default(),
+            entity_id: 0
+        })
+    }
+    
+    pub fn new(bot_id: u32, info: ClientInfo) -> LocalState {
+        LocalState {
+            ticks: 0,
+            health: 0.0,
+            food: 0,
+            mining: None,
+            follow_closest: false,
+            bot_id,
+            physics: Physics::default(),
+            disconnected: false,
+            inventory: Inventory {},
+            alive: true,
+            dimension: Dimension::Overworld,
+            follower: None,
+            info,
+            travel_problem: None,
+            last_problem: None,
+        }
+    }
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.physics.location().into();
         println!("starting nav");

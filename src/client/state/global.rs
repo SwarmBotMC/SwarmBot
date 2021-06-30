@@ -19,8 +19,10 @@ pub struct GlobalState {
 }
 
 impl GlobalState {
-    pub fn init(block_data: BlockData) -> GlobalState {
+    pub fn init() -> GlobalState {
         use std::default::default;
+
+        let block_data = BlockData::read().unwrap();
 
         GlobalState {
             world_blocks: default(),

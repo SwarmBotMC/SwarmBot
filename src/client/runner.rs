@@ -57,7 +57,6 @@ pub struct Runner<T: Minecraft> {
 /// Runner launch options
 pub struct RunnerOptions {
     pub delay_millis: u64,
-    pub blocks: BlockData,
 }
 
 impl<T: Minecraft + 'static> Runner<T> {
@@ -69,7 +68,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
 
     fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
-        let RunnerOptions { blocks, delay_millis } = opts;
+        let RunnerOptions { delay_millis } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
         // let handles = Rc::new(RefCell::new(Vec::new()));
 
@@ -97,7 +96,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         Runner {
             pending_logins,
-            global_state: GlobalState::init(blocks),
+            global_state: GlobalState::init(),
             term: Term::init(),
             bots: Vec::new(),
             id_on: 0,
@@ -137,23 +136,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let Login { queue, out, info } = login;
 
                 let client = Bot {
-                    state: LocalState {
-                        ticks: 0,
-                        health: 0.0,
-                        food: 0,
-                        mining: None,
-                        follow_closest: false,
-                        bot_id: self.id_on,
-                        physics: Physics::default(),
-                        disconnected: false,
-                        inventory: Inventory {},
-                        alive: true,
-                        dimension: Dimension::Overworld,
-                        follower: None,
-                        info,
-                        travel_problem: None,
-                        last_problem: None,
-                    },
+                    state: LocalState::new(self.id_on, info),
                     queue,
                     out,
                 };
