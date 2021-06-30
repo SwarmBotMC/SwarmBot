@@ -27,15 +27,6 @@ pub struct Schematic {
     w_e_offset_x: Option<i32>,
     w_e_offset_y: Option<i32>,
     w_e_offset_z: Option<i32>,
-
-    // #[serde(rename = "x")]
-    // x: i32,
-    //
-    // #[serde(rename = "y")]
-    // y: i32,
-    //
-    // #[serde(rename = "z")]
-    // z: i32
 }
 
 impl Schematic {

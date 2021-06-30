@@ -8,7 +8,7 @@
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::lazy::SyncLazy;
-use std::ops::{Add, AddAssign, Index, MulAssign, Sub};
+use std::ops::{Add, AddAssign, Index, MulAssign, Sub, Mul, Neg};
 
 use ansi_term::Style;
 use itertools::Itertools;
@@ -286,23 +286,78 @@ pub struct Displacement {
     pub dz: f64,
 }
 
+impl Display for Displacement {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("[{:.2} {:.2} {:.2}]", self.dx, self.dy, self.dz))
+    }
+}
+
+impl Neg for Displacement {
+    type Output = Displacement;
+
+    fn neg(self) -> Self::Output {
+        self * (-1.0)
+    }
+}
+
+impl Sub for Displacement {
+    type Output = Displacement;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let rhs = rhs * (-1.0);
+        self + rhs
+    }
+}
+
+impl Add for Displacement {
+    type Output = Displacement;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            dx: self.dx + rhs.dx,
+            dy: self.dy + rhs.dy,
+            dz: self.dz + rhs.dz
+        }
+    }
+}
+
 impl Displacement {
+
     pub const fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement { dx, dy, dz }
+    }
+
+
+    pub fn make_dy(&self, dy: f64) -> Displacement {
+        Self {
+            dx: self.dx,
+            dy,
+            dz: self.dz,
+        }
     }
 
     pub fn mag(&self) -> f64 {
         self.mag2().sqrt()
     }
 
-    pub fn normalize(&mut self) {
+    pub fn dot(&self, other: Displacement) -> f64 {
+        self.dx * other.dx + self.dy * other.dy + self.dz * other.dz
+    }
+
+    pub fn reflect(&self, normal: Displacement) -> Displacement {
+        let rhs  = normal * 2.0 * (self.dot(normal));
+        *self - rhs
+    }
+
+    pub fn normalize(self) -> Displacement {
         let mag = self.mag();
         if mag == 0. {
             // we can't normalize 0-length
-            return;
+            self
+        } else {
+            let mult = 1.0 / mag;
+            self * mult
         }
-        let mult = 1.0 / mag;
-        *self *= mult;
     }
 
     pub fn mag2(&self) -> f64 {
@@ -326,6 +381,18 @@ impl MulAssign<f64> for Displacement {
         self.dx *= rhs;
         self.dy *= rhs;
         self.dz *= rhs;
+    }
+}
+
+impl Mul<f64> for Displacement {
+    type Output = Displacement;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self {
+            dx: self.dx * rhs,
+            dy: self.dy * rhs,
+            dz: self.dz * rhs
+        }
     }
 }
 

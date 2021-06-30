@@ -6,6 +6,9 @@
  */
 
 use std::collections::VecDeque;
+use std::fs::{File, OpenOptions};
+use std::io::Read;
+use std::path::PathBuf;
 
 use crate::client::pathfind::context::MoveRecord;
 use crate::client::pathfind::incremental::PathResult;
@@ -13,14 +16,14 @@ use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::types::{Direction, Location};
+use crate::types::{Direction, Displacement, Location};
 
 const PROGRESS_THRESHOLD: f64 = 0.6;
 const PROGRESS_THRESHOLD_Y: f64 = 0.48;
 
 const MIN_JUMP_DIST: f64 = 1.2;
-const MIN_SPRINT_DIST: f64 = 3.2;
-const MAX_JUMP_DIST: f64 = 3.95;
+const MIN_SPRINT_DIST: f64 = 3.0;
+const MAX_JUMP_DIST: f64 = 3.9;
 
 const MAX_TICKS: usize = 29;
 
@@ -61,7 +64,6 @@ impl Follower {
     }
 
     pub fn merge(&mut self, result: PathResult<MoveRecord>) {
-
         let other = match Follower::new(result) {
             Some(res) => res,
             None => return
@@ -73,7 +75,7 @@ impl Follower {
             None => {
                 *self = other;
                 return;
-            },
+            }
             Some(val) => *val
         };
 
@@ -118,23 +120,42 @@ impl Follower {
 
     pub fn follow(&mut self, local: &mut LocalState, _global: &mut GlobalState) -> FollowResult {
 
+        // We only want to recalc if we are on the ground to prevent issues with the pathfinder thinking
+        // we are one block higher. We do this if the path is incomplete and we have gone through at least
+        // half of the nodes
         if !self.complete && !self.should_recalc && local.physics.on_ground() {
             let recalc = self.xs.len() * 2 < self.initial;
             if recalc {
-                println!("recalc");
                 self.should_recalc = true;
             }
         }
 
-        if self.xs.is_empty() {
-            return FollowResult::Finished;
+        let mut mag2_horizontal;
+        let mut displacement;
+
+        let current = local.physics.location();
+        loop {
+
+            let on = match self.xs.front() {
+                None => return if self.complete { FollowResult::Finished } else { FollowResult::Failed },
+                Some(on) => *on
+            };
+
+            displacement = on - current;
+            mag2_horizontal = displacement.make_dy(0.).mag2();
+
+            if mag2_horizontal < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && 0.0 <= displacement.dy && displacement.dy <= PROGRESS_THRESHOLD_Y {
+                self.next();
+            } else {
+                break;
+            }
         }
 
+        // by default move forward and sprint. Strafing is not needed; we can just change the direction we look
         local.physics.line(Line::Forward);
-
         local.physics.speed(Speed::SPRINT);
 
-
+        // We include a tick counter so we can determine if we have been stuck on a movement for too long
         self.ticks += 1;
 
         // more than 1.5 seconds on same block => failed
@@ -143,53 +164,32 @@ impl Follower {
             return FollowResult::Failed;
         }
 
-        let mag2_horizontal;
-        let displacement;
+        let disp_horizontal = displacement.make_dy(0.);
+        let velocity_norm = local.physics.velocity().make_dy(0.);
 
-        let current = local.physics.location();
-        loop {
-            let on = match self.xs.front() {
-                None => return if self.complete { FollowResult::Finished } else { FollowResult::Failed },
-                Some(on) => *on
-            };
-            let disp = on - current;
-            let mut displacement_horiz = disp;
-            displacement_horiz.dy = 0.;
-            let a = displacement_horiz.mag2();
-            if a < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && 0.0 <= disp.dy && disp.dy <= PROGRESS_THRESHOLD_Y {
-                self.next();
-            } else {
-                mag2_horizontal = a;
-                displacement = disp;
-                break;
-            }
-        }
+        const VELOCITY_IMPORTANCE: f64 = 1.5;
 
+
+
+        let look_displacement = disp_horizontal - velocity_norm * VELOCITY_IMPORTANCE;
+
+        let corr = velocity_norm.normalize().dot(disp_horizontal.normalize());
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
         if local.physics.on_ground() && mag2_horizontal > MIN_JUMP_DIST * MIN_JUMP_DIST {
             // it is far away... we probably have to jump to it
 
-            if mag2_horizontal < MAX_JUMP_DIST * MAX_JUMP_DIST {
+            if mag2_horizontal < MAX_JUMP_DIST * MAX_JUMP_DIST && corr > 0.95 {
                 local.physics.jump();
             }
 
             if mag2_horizontal < MIN_SPRINT_DIST * MIN_SPRINT_DIST {
                 local.physics.speed(Speed::WALK);
             }
-
-            // so we can run before we jump
-
-            // if mag2_horizontal > JUMP_EDGE_DIST * JUMP_EDGE_DIST {
-            //     // if local.physics.on_edge() {
-            //         local.physics.jump();
-            //     // }
-            // } else {
-            //     local.physics.jump();
-            // }
         }
 
-        let mut dir = Direction::from(displacement);
+
+        let mut dir = Direction::from(look_displacement);
         dir.pitch = 0.;
         local.physics.look(dir);
 
@@ -211,6 +211,8 @@ mod tests {
     use std::fs::OpenOptions;
     use std::time::{Duration, Instant};
 
+    use more_asserts::*;
+
     use crate::client::follow::{Follower, FollowResult};
     use crate::client::pathfind::implementations::novehicle::TravelProblem;
     use crate::client::pathfind::implementations::Problem;
@@ -219,7 +221,6 @@ mod tests {
     use crate::client::timing::Increment;
     use crate::schematic::Schematic;
     use crate::storage::block::BlockLocation;
-    use more_asserts::*;
 
     #[test]
     fn test_parkour_course() {
@@ -275,11 +276,10 @@ mod tests {
 
     #[test]
     fn test_bedrock() {
-
         let mut local_state = LocalState::mock();
         let mut global_state = GlobalState::init();
 
-        let start = BlockLocation::new(0,1,0);
+        let start = BlockLocation::new(0, 1, 0);
         let end = BlockLocation::new(950, 1, 950);
 
         let world = &mut global_state.world_blocks;

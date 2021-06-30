@@ -311,8 +311,7 @@ impl Physics {
                     speeds[i] = ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
                 }
                 if self.pending.speed == Speed::SPRINT {
-                    let mut move_displacement = Displacement::new(move_mults[0], 0., move_mults[1]);
-                    move_displacement.normalize();
+                    let move_displacement = Displacement::new(move_mults[0], 0., move_mults[1]).normalize();
                     speeds[0] += move_displacement.dx * 0.2;
                     speeds[1] += move_displacement.dz * 0.2;
                 }
@@ -451,6 +450,9 @@ impl Physics {
     pub fn velocity(&self) -> Displacement {
         Displacement::new(self.prev.speeds[0], self.prev.y_vel, self.prev.speeds[1])
     }
+    
+    
+    
 }
 
 
