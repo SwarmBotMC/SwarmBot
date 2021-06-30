@@ -18,7 +18,7 @@ use crate::types::{Direction, Location};
 const PROGRESS_THRESHOLD: f64 = 0.6;
 const PROGRESS_THRESHOLD_Y: f64 = 0.48;
 
-const MIN_JUMP_DIST: f64 = 1.5;
+const MIN_JUMP_DIST: f64 = 1.2;
 const MIN_SPRINT_DIST: f64 = 3.0;
 const MAX_JUMP_DIST: f64 = 4.0;
 
@@ -60,6 +60,47 @@ impl Follower {
         })
     }
 
+    pub fn merge(&mut self, result: PathResult<MoveRecord>) {
+
+        let other = match Follower::new(result) {
+            Some(res) => res,
+            None => return
+        };
+
+        let on = self.xs.front();
+
+        let location_on = match on {
+            None => {
+                *self = other;
+                return;
+            },
+            Some(val) => *val
+        };
+
+
+        let mut temp_xs = other.xs.clone();
+
+        let mut idx = 0;
+
+        const ITERS_UNTIL_FAIL: usize = 100;
+
+        while let Some(&loc) = temp_xs.front() {
+            idx += 1;
+            if loc == location_on {
+                *self = other;
+                self.xs = temp_xs;
+                return;
+            }
+            temp_xs.pop_front();
+
+            if idx > ITERS_UNTIL_FAIL {
+                break;
+            }
+        }
+
+        *self = other;
+    }
+
     fn next(&mut self) {
         self.xs.pop_front();
         self.ticks = 0;
@@ -72,15 +113,19 @@ impl Follower {
             return false;
         }
         // we should only return once
-        if self.should_recalc {
-            return false;
-        }
-        let recalc = self.xs.len() * 2 < self.initial;
-        self.should_recalc = recalc;
-        recalc
+        self.should_recalc
     }
 
     pub fn follow(&mut self, local: &mut LocalState, _global: &mut GlobalState) -> FollowResult {
+
+        if !self.complete && !self.should_recalc && local.physics.on_ground() {
+            let recalc = self.xs.len() * 2 < self.initial;
+            if recalc {
+                println!("recalc");
+                self.should_recalc = true;
+            }
+        }
+
         if self.xs.is_empty() {
             return FollowResult::Finished;
         }

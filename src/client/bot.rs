@@ -83,9 +83,10 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
                 if follow_result == FollowResult::Failed {
                     self.state.follower = None;
+                } else {
+                    self.state.follower = Some(follower);
                 }
             } else if follow_result == FollowResult::Finished {
-                println!("follower finished");
                 self.state.follower = None;
                 self.state.last_problem = None;
                 self.state.travel_problem = None;
@@ -231,10 +232,21 @@ pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, global: &Glob
         let res = traverse.iterate_until(end_by, local, global);
 
         if let Increment::Finished(res) = res {
+
             if !res.complete {
                 println!("incomplete goal of size {}", res.value.len());
             }
-            local.follower = Follower::new(res);
+
+            match local.follower.as_mut() {
+                None => local.follower = {
+                    println!("no merge");
+                    Follower::new(res)
+                },
+                Some(follow) => {
+                    println!("merging");
+                    follow.merge(res)
+                }
+            }
 
             // we are done finding the path
             local.last_problem = Some(traverse);
