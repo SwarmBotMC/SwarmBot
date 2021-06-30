@@ -15,12 +15,14 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::types::{Direction, Location};
 
-const PROGRESS_THRESHOLD: f64 = 0.8;
+const PROGRESS_THRESHOLD: f64 = 0.6;
 const PROGRESS_THRESHOLD_Y: f64 = 0.48;
 
-const JUMP_DIST: f64 = 2.0;
-const JUMP_CAN_REACH: f64 = 4.0;
-const MAX_TICKS: usize = 30;
+const MIN_JUMP_DIST: f64 = 1.5;
+const MIN_SPRINT_DIST: f64 = 3.0;
+const MAX_JUMP_DIST: f64 = 4.0;
+
+const MAX_TICKS: usize = 29;
 
 #[derive(Eq, PartialEq)]
 pub enum FollowResult {
@@ -107,14 +109,8 @@ impl Follower {
             let mut displacement_horiz = disp;
             displacement_horiz.dy = 0.;
             let a = displacement_horiz.mag2();
-            if a < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && disp.dy.abs() < PROGRESS_THRESHOLD_Y {
-                if true || self.xs.len() == 1 {
-                    self.next();
-                } else {
-                    local.physics.line(Line::Forward);
-                    local.physics.speed(Speed::SPRINT);
-                    return FollowResult::InProgress;
-                }
+            if a < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && 0.0 <= disp.dy && disp.dy <= PROGRESS_THRESHOLD_Y {
+                self.next();
             } else {
                 mag2_horizontal = a;
                 displacement = disp;
@@ -124,11 +120,15 @@ impl Follower {
 
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
-        if mag2_horizontal > JUMP_DIST * JUMP_DIST {
+        if local.physics.on_ground() && mag2_horizontal > MIN_JUMP_DIST * MIN_JUMP_DIST {
             // it is far away... we probably have to jump to it
 
-            if mag2_horizontal < JUMP_CAN_REACH * JUMP_CAN_REACH {
+            if mag2_horizontal < MAX_JUMP_DIST * MAX_JUMP_DIST {
                 local.physics.jump();
+            }
+
+            if mag2_horizontal < MIN_SPRINT_DIST * MIN_SPRINT_DIST {
+                local.physics.speed(Speed::WALK);
             }
 
             // so we can run before we jump

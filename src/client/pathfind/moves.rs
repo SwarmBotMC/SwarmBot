@@ -243,11 +243,13 @@ impl Movements {
                 if block_dx == 0 {
                     // special case: we need to update blocks in both directions
                     update(-1, sign_z);
+                    update(0, sign_z);
                     update(1, sign_z);
                 }
                 else if block_dz == 0 {
                     // special case: we need to update blocks in both directions
                     update(sign_x, -1);
+                    update(sign_x, 0);
                     update(sign_x, 1);
                 }
                 else {
@@ -265,7 +267,7 @@ impl Movements {
 
                     let rad2 = (dx * dx + dz * dz) as f64;
 
-                    const MIN_RAD: f64 = 2.5;
+                    const MIN_RAD: f64 = 2.0;
                     const MAX_RAD: f64 = 4.5;
 
                     if rad2 <= MAX_RAD * MAX_RAD && rad2 > MIN_RAD * MIN_RAD && is_open && has_floor {
