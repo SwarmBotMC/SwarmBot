@@ -106,6 +106,7 @@ fn air_speed(prev_speed: f64, prev_slip: f64, move_mult: f64) -> f64 {
 struct MovementState {
     speeds: [f64; 2],
     y_vel: f64,
+    just_hit_ground: bool,
     slip: f64,
     falling: bool,
 }
@@ -114,6 +115,7 @@ impl Default for MovementState {
     fn default() -> Self {
         MovementState {
             speeds: default(),
+            just_hit_ground: false,
             y_vel: 0.0,
             slip: BlockKind::DEFAULT_SLIP,
             falling: false,
@@ -249,6 +251,8 @@ impl Physics {
         let mut falling = self.cross_section_empty(below_loc, world);
         let below_block_loc = BlockLocation::from(below_loc);
 
+        let mut just_hit_ground = false;
+
         let mut slip = match world.get_block(below_block_loc) {
             Some(BlockApprox::Realized(block)) => {
                 block.kind().slip()
@@ -348,6 +352,7 @@ impl Physics {
                 new_loc_first.y = new_loc_first.y.round();
                 y_vel = 0.0;
                 falling = false;
+                just_hit_ground = true;
             }
         } else if y_vel >= 0.0 {// we are moving up
 
@@ -427,6 +432,7 @@ impl Physics {
         self.pending = PendingMovement::default();
 
         self.prev = MovementState {
+            just_hit_ground,
             speeds,
             y_vel,
             slip,
@@ -450,6 +456,9 @@ impl Physics {
 
 #[cfg(test)]
 mod tests {
+
+    use more_asserts::*;
+
     use crate::client::physics::{Physics, Line};
     use crate::types::{Location, Direction, Displacement};
     use crate::storage::blocks::WorldBlocks;
@@ -520,6 +529,23 @@ mod tests {
         // I got 14.11 seconds when I did this in Minecraft = 282.2 ticks which is close enough to
         // what I got in the simulation which was 286
         assert_eq!(286, ticks);
+    }
+
+    fn test_multiple_jumps(){
+        let mut physics = Physics::default();
+        physics.teleport(Location::new(0., 1., 0.));
+
+        let mut zero_count = 0;
+        for _ in 0..12*10 {
+            physics.jump();
+            physics.tick(&WORLD);
+            if physics.location.y == 0.0 {
+                zero_count += 1;
+            }
+        }
+
+        assert_eq!(10, zero_count);
+
     }
 
     #[test]

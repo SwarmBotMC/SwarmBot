@@ -118,8 +118,9 @@ impl EventQueue340 {
                 processor.on_entity_spawn(entity_id.into(), location);
             }
             UpdateHealth::ID => {
-                let UpdateHealth { health, .. } = data.read();
+                let UpdateHealth { health, food, .. } = data.read();
                 if health > 0.0 {
+                    processor.on_update_health(health, food.0 as u8);
                     self.alive = true;
                 } else if self.alive {
                     processor.on_death();

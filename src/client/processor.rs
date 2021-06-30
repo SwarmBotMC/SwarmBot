@@ -18,6 +18,7 @@ use crate::types::{Chat, Dimension, Location, LocationOrigin};
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
     fn on_death(&mut self);
+    fn on_update_health(&mut self, health: f32, food: u8);
     fn on_dimension_change(&mut self, dimension: Dimension);
     fn on_move(&mut self, location: Location);
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool);
@@ -64,6 +65,10 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         self.local.last_problem = None;
         self.out.respawn();
         self.out.send_chat("I died... oof... well I guess I should respawn");
+    }
+
+    fn on_update_health(&mut self, health: f32, food: u8) {
+        println!("updated health {} food is {}", health, food);
     }
 
     fn on_dimension_change(&mut self, dimension: Dimension) {
