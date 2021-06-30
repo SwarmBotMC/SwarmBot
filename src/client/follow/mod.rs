@@ -15,11 +15,11 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::types::{Direction, Location};
 
-const PROGRESS_THRESHOLD: f64 = 0.6;
-const PROGRESS_THRESHOLD_Y: f64 = 0.2;
+const PROGRESS_THRESHOLD: f64 = 0.8;
+const PROGRESS_THRESHOLD_Y: f64 = 0.48;
 
 const JUMP_DIST: f64 = 2.0;
-const JUMP_CAN_REACH: f64 = 3.7;
+const JUMP_CAN_REACH: f64 = 3.82;
 const MAX_TICKS: usize = 30;
 
 #[derive(Eq, PartialEq)]
