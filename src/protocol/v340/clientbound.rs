@@ -8,9 +8,9 @@
 use std::cmp::max;
 
 use itertools::Itertools;
-use packets::{EnumReadable, Packet, Readable, Writable};
+use packets::{Packet, Readable, Writable};
 use packets::read::{ByteReadable, ByteReadableLike, ByteReader};
-use packets::types::{BitField, Identifier, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
+use packets::types::{BitField, Identifier, RawVec, UUIDHyphenated, VarInt, VarUInt};
 
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};

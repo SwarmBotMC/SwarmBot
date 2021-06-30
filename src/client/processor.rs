@@ -5,12 +5,12 @@
  * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use crate::client::bot::{Bot, process_command};
-use crate::client::physics::tools::{Material, Tool};
+use crate::client::bot::{process_command};
+
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::{LocalState, MineTask};
-use crate::protocol::{InterfaceOut, Mine};
-use crate::storage::block::{BlockKind, BlockLocation, BlockState};
+use crate::client::state::local::{LocalState};
+use crate::protocol::{InterfaceOut};
+use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
 use crate::types::{Chat, Dimension, Location, LocationOrigin};

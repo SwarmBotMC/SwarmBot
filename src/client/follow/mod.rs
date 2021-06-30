@@ -78,7 +78,7 @@ impl Follower {
         recalc
     }
 
-    pub fn follow(&mut self, local: &mut LocalState, global: &mut GlobalState) -> FollowResult {
+    pub fn follow(&mut self, local: &mut LocalState, _global: &mut GlobalState) -> FollowResult {
         if self.xs.is_empty() {
             return FollowResult::Finished;
         }

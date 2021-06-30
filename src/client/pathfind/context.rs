@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use crate::client::pathfind::incremental::Node;
-use crate::storage::block::{BlockApprox, BlockLocation, BlockState};
+use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::WorldBlocks;
 
 #[derive(Clone)]

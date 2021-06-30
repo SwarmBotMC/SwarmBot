@@ -7,11 +7,11 @@
 
 use std::collections::HashMap;
 
-use crate::client::pathfind::context::{GlobalContext, MoveNode};
+use crate::client::pathfind::context::{MoveNode};
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
-use crate::client::pathfind::incremental::Node;
-use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
-use crate::storage::block::{BlockLocation, BlockState};
+
+use crate::client::pathfind::traits::{GoalCheck, Heuristic};
+use crate::storage::block::{BlockLocation};
 
 struct NoVehicleGoalCheck {
     goal: BlockLocation,

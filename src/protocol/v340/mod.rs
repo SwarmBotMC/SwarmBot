@@ -27,7 +27,7 @@ use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Dimension, Direction, Location, PacketData, Position};
+use crate::types::{Dimension, Direction, Location, PacketData};
 
 mod clientbound;
 mod serverbound;

@@ -6,6 +6,7 @@
  */
 
 #![allow(dead_code)]
+#![allow(incomplete_features)]
 #![deny(unused_must_use)]
 #![feature(in_band_lifetimes)]
 #![feature(path_try_exists)]

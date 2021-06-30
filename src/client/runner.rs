@@ -8,7 +8,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::TryRecvError;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::Notify;
@@ -239,7 +239,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 }
             }
             Err(TryRecvError::Empty) => {}
-            Err(e) => {
+            Err(_e) => {
                 println!("receive err");
             }
         }

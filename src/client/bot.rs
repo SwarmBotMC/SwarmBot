@@ -5,13 +5,13 @@
  * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 
 use float_ord::FloatOrd;
-use itertools::min;
+
 
 use crate::client::follow::{Follower, FollowResult};
-use crate::client::pathfind::context::{GlobalContext, MoveNode};
+use crate::client::pathfind::context::{MoveNode};
 use crate::client::pathfind::implementations::Problem;
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
@@ -93,11 +93,11 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             }
         } else if self.state.follow_closest {
             let current_loc = self.state.physics.location();
-            let closest = global.world_entities.iter().min_by_key(|(id, data)| {
+            let closest = global.world_entities.iter().min_by_key(|(_id, data)| {
                 FloatOrd(data.location.dist2(current_loc))
             });
 
-            if let Some((id, data)) = closest {
+            if let Some((_id, data)) = closest {
                 let displacement = data.location - current_loc;
                 if displacement.has_length() {
                     let dir = Direction::from(displacement);
@@ -220,7 +220,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
     }
 }
 
-pub fn run_threaded(scope: &rayon::Scope, local: &mut LocalState, global: &GlobalState, end_by: Instant) {
+pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, global: &GlobalState, end_by: Instant) {
 
     // TODO: this is pretty jank
     if let Some(mut traverse) = local.travel_problem.take() {

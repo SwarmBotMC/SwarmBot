@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
+use crate::storage::block::{BlockApprox, BlockState, SimpleType};
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;

@@ -6,7 +6,7 @@
  */
 
 use crate::bootstrap::blocks::BlockData;
-use crate::storage::block::{BlockKind, BlockState};
+use crate::storage::block::{BlockKind};
 
 pub struct Material {
     strength: f64,

@@ -244,7 +244,7 @@ impl<T: Node> AStar<T> {
                 let value = neighbor.value.clone();
                 let record = value.get_record();
 
-                let (record_idx, g_score) = match state.record_to_idx.get(&record) {
+                let (record_idx, _g_score) = match state.record_to_idx.get(&record) {
                     Some(idx) => {
                         let prev_g_score = state.g_scores.get_mut(idx).unwrap();
                         if tentative_g_score < *prev_g_score {

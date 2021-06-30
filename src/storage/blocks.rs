@@ -5,10 +5,10 @@
  * Written by RevolutionNow <Xy8I7.Kn1RzH0@gmail.com>, 6/29/21, 8:16 PM
  */
 
-use std::collections::{BinaryHeap, HashMap};
-use std::iter::FromIterator;
+use std::collections::{HashMap};
 
-use crate::client::pathfind::MinHeapNode;
+
+
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
 
@@ -59,7 +59,7 @@ impl WorldBlocks {
             .min_by_key(|loc| loc.dist2(origin))
     }
 
-    pub fn select(&'a self, around: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
+    pub fn select(&'a self, _around: BlockLocation, _max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
         self.storage.iter()
             .filter_map(|(loc, column)| {
                 match column {
