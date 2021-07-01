@@ -18,7 +18,7 @@ use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait};
+use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
@@ -168,6 +168,10 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let number: u8 = number.parse().unwrap();
                 out.change_slot(number);
             }
+        }
+        "fall" => {
+            let task = FallBucketTask::default();
+            actions.task = Some(task.into())
         }
         "goto" => {
             if let [id] = args {
