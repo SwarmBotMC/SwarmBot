@@ -13,6 +13,7 @@ pub struct Material {
 }
 
 impl Material {
+    pub const HAND: Self = Self::new(1.0);
     pub const WOOD: Self = Self::new(2.0);
     pub const STONE: Self = Self::new(4.0);
     pub const IRON: Self = Self::new(6.0);

@@ -18,7 +18,7 @@ use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask};
+use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask, CompoundTask};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
@@ -170,8 +170,22 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             }
         }
         "fall" => {
-            let task = FallBucketTask::default();
-            actions.task = Some(task.into())
+
+
+            let below = BlockLocation::from(local.physics.location()).below();
+            let kind = global.world_blocks.get_block_kind(below).unwrap();
+            let tool = Tool::new(Material::HAND);
+            let ticks = tool.wait_time(kind, false, true, &global.block_data) + 1;
+            println!("mine ticks {}", ticks);
+
+            out.mine(below, Mine::Start, Face::PosY);
+            out.left_click();
+
+            local.physics.look_at(below.center_bottom());
+            let mine = MineTask { ticks, location: below, face: Face::PosY };
+            let fall = FallBucketTask::default();
+            let compound = CompoundTask::new([mine.into(), fall.into()]);
+            actions.task = Some(compound.into())
         }
         "goto" => {
             if let [id] = args {

@@ -7,7 +7,8 @@
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::{Face, InterfaceOut, Mine};
-use crate::storage::block::BlockLocation;
+use crate::storage::block::{BlockLocation, BlockState};
+use std::collections::VecDeque;
 
 #[enum_dispatch]
 pub trait TaskTrait {
@@ -15,13 +16,44 @@ pub trait TaskTrait {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool;
 }
 
+#[allow(clippy::enum_variant_names)]
 #[enum_dispatch(TaskTrait)]
 pub enum Task {
     EatTask,
     MineTask,
     FallBucketTask,
+    CompoundTask
 }
 
+pub struct CompoundTask {
+    tasks: VecDeque<Task>,
+}
+
+impl CompoundTask {
+    pub fn new<const T: usize>(tasks: [Task; T]) -> CompoundTask {
+        CompoundTask {
+            tasks: IntoIterator::into_iter(tasks).collect()
+        }
+    }
+}
+
+impl TaskTrait for CompoundTask {
+    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+        let front = match self.tasks.front_mut() {
+            None => return true,
+            Some(inner) => inner
+        };
+
+        let finished = front.tick(out, local, global);
+
+        if finished {
+            println!("next");
+            self.tasks.pop_front();
+        }
+
+        self.tasks.is_empty()
+    }
+}
 
 pub struct EatTask {
     pub ticks: usize,
@@ -46,10 +78,11 @@ pub struct MineTask {
 }
 
 impl TaskTrait for MineTask {
-    fn tick(&mut self, out: &mut impl InterfaceOut, _: &mut LocalState, _: &mut GlobalState) -> bool {
+    fn tick(&mut self, out: &mut impl InterfaceOut, _: &mut LocalState, global: &mut GlobalState) -> bool {
         out.left_click();
         if self.ticks == 0 {
             out.mine(self.location, Mine::Finished, self.face);
+            global.world_blocks.set_block(self.location, BlockState::AIR);
             true
         } else {
             self.ticks -= 1;
@@ -69,7 +102,7 @@ impl TaskTrait for FallBucketTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
         if self.placed {
             self.ticks_since_place += 1;
-            if self.ticks_since_place > 40 {
+            if self.ticks_since_place > 10 {
                 out.right_click();
                 out.place_block(self.location.unwrap(), Face::PosY);
                 return true;
@@ -84,7 +117,7 @@ impl TaskTrait for FallBucketTask {
             Some((location, _)) => {
                 local.physics.look_at(location.center_bottom());
                 let dy = current_loc.y - (location.y as f64 + 1.0);
-                if dy < 4.0 {
+                if dy < 3.4 {
                     out.right_click();
                     out.place_block(location, Face::PosY);
                     self.location = Some(location);
