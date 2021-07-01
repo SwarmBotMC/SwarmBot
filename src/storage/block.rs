@@ -9,7 +9,7 @@ use std::fmt::{Display, Formatter};
 use std::ops::Add;
 
 use crate::bootstrap::blocks::BlockData;
-use crate::types::Location;
+use crate::types::{Displacement, Location};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -159,6 +159,28 @@ impl BlockLocation {
         BlockLocation { x, y, z }
     }
 
+    pub fn faces(self) -> [Location; 6] {
+        const DISPLACEMENTS: [Displacement; 6] = {
+            let a = Displacement::new(0.5, 0.0, 0.5);
+            let b = Displacement::new(0.5, 1.0, 0.5);
+
+            let c = Displacement::new(0.5, 0.5, 0.0);
+            let d = Displacement::new(0.5, 0.5, 1.0);
+
+            let e = Displacement::new(0.0, 0.5, 0.5);
+            let f = Displacement::new(1.0, 0.5, 0.5);
+
+            [a, b, c, d, e, f]
+        };
+
+        let lowest = Location::new(self.x as f64, self.y as f64, self.z as f64);
+        let mut res = [Location::default(); 6];
+        for i in 0..6 {
+            res[i] = lowest + DISPLACEMENTS[i]
+        }
+        res
+    }
+
     pub fn below(&self) -> BlockLocation {
         Self {
             x: self.x,
@@ -202,6 +224,14 @@ impl BlockLocation {
         Location {
             x: self.x as f64 + 0.5,
             y: self.y as f64,
+            z: self.z as f64 + 0.5,
+        }
+    }
+
+    pub fn true_center(&self) -> Location {
+        Location {
+            x: self.x as f64 + 0.5,
+            y: self.y as f64 + 0.5,
             z: self.z as f64 + 0.5,
         }
     }

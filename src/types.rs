@@ -247,7 +247,7 @@ impl Add<Displacement> for Location {
 }
 
 impl Location {
-    pub fn new(x: f64, y: f64, z: f64) -> Location {
+    pub const fn new(x: f64, y: f64, z: f64) -> Location {
         Location { x, y, z }
     }
 }
@@ -320,6 +320,10 @@ impl Add for Displacement {
 }
 
 impl Displacement {
+
+    pub const EYE_HEIGHT: Displacement = Displacement::new(0., 1.6, 0.);
+    pub const EPSILON_Y: Displacement = Displacement::new(0., 0.01, 0.);
+
     pub const fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement { dx, dy, dz }
     }

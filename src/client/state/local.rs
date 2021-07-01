@@ -11,13 +11,13 @@ use crate::client::pathfind::implementations::novehicle::TravelProblem;
 use crate::client::pathfind::implementations::Problem;
 use crate::client::physics::Physics;
 use crate::client::state::inventory::Inventory;
-use crate::protocol::ClientInfo;
+use crate::protocol::{ClientInfo, Face};
 use crate::storage::block::BlockLocation;
 use crate::types::Dimension;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
-pub enum TaskKind { Mine(BlockLocation), Eat }
+pub enum TaskKind { Mine(BlockLocation, Face), Eat }
 
 pub struct Task {
     pub ticks: usize,

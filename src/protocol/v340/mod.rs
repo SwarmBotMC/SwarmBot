@@ -19,7 +19,7 @@ use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
 use crate::error::{err, Res};
 use crate::error::Error::WrongPacket;
-use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Mine, Minecraft};
+use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Mine, Minecraft, Face};
 use crate::protocol::encrypt::{rand_bits, Rsa};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
@@ -222,7 +222,7 @@ impl InterfaceOut for Interface340 {
         })
     }
 
-    fn mine(&mut self, position: BlockLocation, mine: Mine) {
+    fn mine(&mut self, position: BlockLocation, mine: Mine, face: Face) {
         let status = match mine {
             Mine::Start => DigStatus::Started,
             Mine::Cancel => DigStatus::Cancelled,
@@ -236,7 +236,7 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::PlayerDig {
             status,
             position,
-            face: 1,
+            face: face as u8,
         });
     }
 

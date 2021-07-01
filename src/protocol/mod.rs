@@ -27,13 +27,39 @@ pub enum Mine {
     Finished,
 }
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum Face {
+    NegY,
+    PosY,
+    NegZ,
+    PosZ,
+    NegX,
+    PosX
+}
+
+impl From<u8> for Face {
+    fn from(elem: u8) -> Self {
+        use Face::*;
+        match elem {
+            0 => NegY,
+            1 => PosY,
+            2 => NegZ,
+            3 => PosZ,
+            4 => NegX,
+            5 => PosX,
+            _ => panic!("invalid")
+        }
+    }
+}
+
 pub trait InterfaceOut {
     fn send_chat(&mut self, message: &str);
     fn left_click(&mut self);
     fn finish_eating(&mut self);
     fn right_click(&mut self);
     fn change_slot(&mut self, number: u8);
-    fn mine(&mut self, location: BlockLocation, mine: Mine);
+    fn mine(&mut self, location: BlockLocation, mine: Mine, face: Face);
     fn respawn(&mut self);
     fn teleport(&mut self, location: Location);
     fn look(&mut self, direction: Direction);

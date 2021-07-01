@@ -47,5 +47,6 @@ impl Tool {
     pub fn wait_time(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> usize {
         let strength = self.strength_against_block(kind, underwater, on_ground, data);
         (1.0 / strength).round() as usize
+
     }
 }
