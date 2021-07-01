@@ -273,7 +273,7 @@ impl Sub<Location> for Location {
 
 impl Display for Location {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("[{:.2}, {:.2}, {:.2}]", self.x, self.y, self.z))
+        f.write_fmt(format_args!("[{:.2} {:.2} {:.2}]", self.x, self.y, self.z))
     }
 }
 

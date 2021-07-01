@@ -22,7 +22,7 @@ const EPSILON: f64 = 0.0001;
 
 const MIN_JUMP_DIST: f64 = 1.2;
 const MIN_SPRINT_DIST: f64 = 3.0;
-const MAX_JUMP_DIST: f64 = 3.9;
+const MAX_JUMP_DIST: f64 = 4.0;
 
 const MAX_TICKS: usize = 29;
 
@@ -54,6 +54,10 @@ pub struct Follower {
 }
 
 impl Follower {
+
+    pub fn points(&self) -> &VecDeque<Location> {
+        &self.xs
+    }
     pub fn new(path_result: PathResult<MoveRecord>) -> Option<Follower> {
         let path = path_result.value;
         if path.len() <= 1 { return None; }

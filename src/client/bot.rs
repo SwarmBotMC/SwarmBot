@@ -201,9 +201,12 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         "state" => {
             if let [name] = args {
                 if name == &local.info.username {
-                    msg!("follower {:?}", local.follower);
                     msg!("location {}", local.physics.location());
-                    msg!();
+                    if let Some(follower) = local.follower.as_ref() {
+                        for point in follower.points() {
+                            msg!("{}", point);
+                        }
+                    }
                 }
             }
         }

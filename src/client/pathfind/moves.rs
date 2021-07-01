@@ -176,6 +176,7 @@ impl Movements {
             }
         }
 
+        // can full multi-block jump (i.e., jumping on bedrock)
         let can_jump = above == WalkThrough && floor != Water;
 
         if can_jump {
@@ -219,6 +220,9 @@ impl Movements {
 
             // we iterate through every single block which is not jumpable and set blocks behind it as not jumpable as well
             for (block_dx, block_dz) in not_jumpable {
+
+
+
 
                 // we will set blocks to closed in the direction of the block
 
