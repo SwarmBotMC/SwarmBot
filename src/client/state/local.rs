@@ -14,6 +14,7 @@ use crate::client::state::inventory::Inventory;
 use crate::protocol::{ClientInfo, Face};
 use crate::storage::block::BlockLocation;
 use crate::types::Dimension;
+use std::time::Instant;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
@@ -22,6 +23,7 @@ pub enum TaskKind { Mine(BlockLocation, Face), Eat }
 pub struct Task {
     pub ticks: usize,
     pub kind: TaskKind,
+    pub start: Instant,
 }
 
 pub struct LocalState {

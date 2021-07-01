@@ -19,6 +19,14 @@ pub struct MinHeapNode<T, C: PartialOrd + PartialEq> {
     pub score: C,
 }
 
+impl <T, C: PartialOrd + PartialEq> MinHeapNode<T, C> {
+    pub fn new(contents: T, score: C) -> MinHeapNode<T, C> {
+        Self {
+            contents, score
+        }
+    }
+}
+
 impl<T: Clone, C: Clone + PartialOrd + PartialEq> Clone for MinHeapNode<T, C> {
     fn clone(&self) -> Self {
         MinHeapNode {

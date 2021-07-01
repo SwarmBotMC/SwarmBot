@@ -12,6 +12,7 @@ use crate::storage::entities::WorldEntities;
 
 pub struct GlobalState {
     pub world_blocks: WorldBlocks,
+
     pub block_data: BlockData,
     pub world_entities: WorldEntities,
     pub ticks: usize,

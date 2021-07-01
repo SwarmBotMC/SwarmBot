@@ -13,7 +13,7 @@ use crate::types::{Displacement, Location};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
-pub struct BlockKind(u32);
+pub struct BlockKind(pub u32);
 
 impl From<u32> for BlockKind {
     fn from(id: u32) -> Self {
@@ -28,6 +28,19 @@ impl BlockKind {
 
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
         blocks.by_id(self.0).unwrap().hardness
+    }
+
+    pub fn mineable(&self, blocks: &BlockData) -> bool {
+
+        // we can't mine air
+        if self.0 == 0 {
+            return false;
+        }
+
+        match self.hardness(blocks) {
+            None =>  false,
+            Some(val) => val < 100.0,
+        }
     }
 
     pub fn slip(&self) -> f64 {

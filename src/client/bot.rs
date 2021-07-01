@@ -5,7 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 use float_ord::FloatOrd;
 use itertools::Itertools;
@@ -18,9 +18,10 @@ use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::{LocalState, Task, TaskKind};
 use crate::client::timing::Increment;
-use crate::protocol::{EventQueue, InterfaceOut, Mine, Face};
+use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::types::{Direction, Displacement};
+use crate::storage::chunk::{ChunkData};
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
@@ -160,6 +161,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             local.task = Some(Task {
                 ticks: 40,
                 kind: TaskKind::Eat,
+                start: Instant::now()
             })
         }
         "slot" => {
@@ -175,7 +177,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
                 let loc = BlockLocation::from(local.physics.location());
 
-                let closest = global.world_blocks.closest(loc, |state| state.kind() == kind);
+                let closest = global.world_blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
 
                 if let Some(closest) = closest {
                     local.travel_to_block(closest);
@@ -203,6 +205,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             if let [name] = args {
                 if name == &local.info.username {
                     msg!("location {}", local.physics.location());
+                    msg!("on ground {}", local.physics.on_ground());
                     if let Some(follower) = local.follower.as_ref() {
                         for point in follower.points() {
                             msg!("{}", point);
@@ -222,36 +225,40 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             }
         }
         "mine" => {
-            if let [id] = args {
-                let id: u32 = id.parse().unwrap();
-                let kind = BlockKind::from(id);
 
-                let origin = local.physics.location() + Displacement::EYE_HEIGHT;
-                let closest = global.world_blocks.closest(origin.into(), |state| state.kind() == kind);
+            let origin = local.physics.location() + Displacement::EYE_HEIGHT;
 
-                if let Some(closest) = closest {
-                    let faces = closest.faces();
-                    let best_loc_idx = IntoIterator::into_iter(faces).position_min_by_key(|loc| FloatOrd(loc.dist2(origin))).unwrap();
+            let closest = global.world_blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
 
-                    let best_loc = faces[best_loc_idx];
-                    let face = Face::from(best_loc_idx as u8);
+            if let Some(closest) = closest {
 
-                    let displacement = best_loc - origin;
-                    local.physics.look(displacement.into());
+                let kind = global.world_blocks.get_block_kind(closest).unwrap();
+                let faces = closest.faces();
 
-                    let tool = Tool::new(Material::DIAMOND);
-                    let ticks = tool.wait_time(kind, false, true, &global.block_data).max(5);
+                println!("faces {:?}", faces);
+                let best_loc_idx = IntoIterator::into_iter(faces).position_min_by_key(|loc| FloatOrd(loc.dist2(origin))).unwrap();
 
-                    msg!("started mining at {} .. ticks {}.. face {:?}", closest, ticks, face);
+                let best_loc = faces[best_loc_idx];
+                let face = Face::from(best_loc_idx as u8);
 
-                    let task = Task {
-                        ticks,
-                        kind: TaskKind::Mine(closest, face),
-                    };
+                let displacement = best_loc - origin;
+                local.physics.look(displacement.into());
 
-                    local.task = Some(task);
-                    out.mine(closest, Mine::Start, face);
-                }
+                let tool = Tool::new(Material::DIAMOND);
+                let ticks = tool.wait_time(kind, false, true, &global.block_data) + 1;
+
+                msg!("started mining at {} .. ticks {}.. face {:?}", closest, ticks, face);
+
+                out.mine(closest, Mine::Start, face);
+                out.left_click();
+
+                let task = Task {
+                    ticks,
+                    kind: TaskKind::Mine(closest, face),
+                    start: Instant::now()
+                };
+
+                local.task = Some(task);
             }
         }
         _ => {
