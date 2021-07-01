@@ -25,7 +25,6 @@ use std::fs::File;
 use tokio::runtime::Runtime;
 use tokio::task;
 
-
 use crate::bootstrap::Connection;
 use crate::bootstrap::dns::normalize_address;
 use crate::bootstrap::opts::Opts;
@@ -60,8 +59,7 @@ fn main() {
 
 
 async fn run() -> ResContext<()> {
-
-    let Opts { users_file, proxies_file, host, count, version, port, delay, load} = Opts::get();
+    let Opts { users_file, proxies_file, host, count, version, port, delay, load } = Opts::get();
 
     let address = normalize_address(&host, port).await;
 

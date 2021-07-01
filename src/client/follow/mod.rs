@@ -7,9 +7,6 @@
 
 use std::collections::VecDeque;
 
-
-
-
 use crate::client::pathfind::context::MoveRecord;
 use crate::client::pathfind::incremental::PathResult;
 use crate::client::physics::Line;
@@ -47,7 +44,6 @@ pub enum FollowResult {
 /// This is because the bot's heading only focused on the next block---it
 /// did not have a factor to counter the velocity going _away_ from the
 /// current target.
-
 #[derive(Debug)]
 pub struct Follower {
     xs: VecDeque<Location>,
@@ -150,7 +146,6 @@ impl Follower {
 
         let current = local.physics.location();
         loop {
-
             let on = match self.xs.front() {
                 None => return if self.complete { FollowResult::Finished } else { FollowResult::Failed },
                 Some(on) => *on
@@ -184,8 +179,6 @@ impl Follower {
 
         const VELOCITY_IMPORTANCE: f64 = 1.5;
         const DISPLACEMENT_CONSIDER_THRESH: f64 = 0.05;
-
-
 
         let look_displacement = disp_horizontal - velocity * VELOCITY_IMPORTANCE;
         let corr = velocity.normalize().dot(disp_horizontal.normalize());

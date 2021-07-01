@@ -5,16 +5,15 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use crate::client::bot::{process_command};
-
+use crate::client::bot::process_command;
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::{LocalState};
-use crate::protocol::{InterfaceOut};
+use crate::client::state::local::LocalState;
+use crate::protocol::InterfaceOut;
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
-use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
 use crate::term::Term;
+use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -44,7 +43,7 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
             local,
             global,
             out,
-            term
+            term,
         }
     }
 }
@@ -64,8 +63,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
         if let Some(msg) = message.player_message() {
             process(msg);
-        }
-        else if let Some(msg) = message.player_dm() {
+        } else if let Some(msg) = message.player_dm() {
             process(msg);
         }
     }

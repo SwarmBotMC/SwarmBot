@@ -6,7 +6,7 @@
  */
 
 use std::fmt::{Display, Formatter};
-use std::ops::{Add};
+use std::ops::Add;
 
 use crate::bootstrap::blocks::BlockData;
 use crate::types::Location;
@@ -155,7 +155,6 @@ impl Add for BlockLocation {
 }
 
 impl BlockLocation {
-
     pub fn new(x: i32, y: i16, z: i32) -> BlockLocation {
         BlockLocation { x, y, z }
     }
@@ -164,7 +163,7 @@ impl BlockLocation {
         Self {
             x: self.x,
             y: self.y - 1,
-            z: self.z
+            z: self.z,
         }
     }
 

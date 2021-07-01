@@ -7,6 +7,7 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::sync::mpsc::TryRecvError;
 use std::time::{Duration, Instant};
 
@@ -19,7 +20,6 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
 use crate::term::Term;
-use std::sync::Arc;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -106,7 +106,6 @@ impl<T: Minecraft + 'static> Runner<T> {
 
 
     pub async fn game_loop(&mut self) {
-
         let mut previous_goal = Instant::now();
 
         // a game loop repeating every 50 ms
@@ -128,7 +127,6 @@ impl<T: Minecraft + 'static> Runner<T> {
     }
 
     async fn game_iter(&mut self, end_by: Instant) {
-
         let old_count = self.bots.len();
         // first step: removing disconnected clients
         {
@@ -166,7 +164,6 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // fourth step: process packets from game loop
         for bot in &mut self.bots {
-
             let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out, &self.term);
 
             // protocol-specific logic. Translates input packets and sends to processor
@@ -180,7 +177,6 @@ impl<T: Minecraft + 'static> Runner<T> {
         let thread_loop_end = Arc::new(Notify::new());
 
         {
-
             let thread_loop_end = thread_loop_end.clone();
 
             // We have to do unsafe stuff here because Rust requires a 'static lifetime for threads.

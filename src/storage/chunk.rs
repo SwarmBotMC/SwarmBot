@@ -306,7 +306,7 @@ pub enum ChunkColumn {
 
 impl Default for ChunkColumn {
     fn default() -> Self {
-        Self::HighMemory {data: ChunkData::default() }
+        Self::HighMemory { data: ChunkData::default() }
     }
 }
 

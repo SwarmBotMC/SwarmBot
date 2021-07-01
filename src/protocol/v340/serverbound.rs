@@ -76,7 +76,7 @@ pub struct PlayerPositionAndRotation {
 #[derive(Packet, Writable)]
 #[packet(0x20, Login)]
 pub struct UseItem {
-    pub(crate) hand: Hand
+    pub(crate) hand: Hand,
 }
 
 #[derive(Writable, Packet)]
@@ -151,16 +151,17 @@ impl PlayerDig {
         Self {
             status,
             position: Position::default(),
-            face: 0
+            face: 0,
         }
     }
 }
 
 pub type ChangeSlot = HeldItemChange;
+
 #[derive(Writable, Packet)]
 #[packet(0x1a, Play)]
 pub struct HeldItemChange {
-    pub slot: u16
+    pub slot: u16,
 }
 
 

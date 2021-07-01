@@ -13,15 +13,15 @@ use crate::client::physics::Physics;
 use crate::client::state::inventory::Inventory;
 use crate::protocol::ClientInfo;
 use crate::storage::block::BlockLocation;
-use crate::types::{Dimension};
+use crate::types::Dimension;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
-pub enum TaskKind {Mine(BlockLocation), Eat}
+pub enum TaskKind { Mine(BlockLocation), Eat }
 
 pub struct Task {
-   pub ticks: usize,
-   pub kind: TaskKind
+    pub ticks: usize,
+    pub kind: TaskKind,
 }
 
 pub struct LocalState {
@@ -46,12 +46,11 @@ pub struct LocalState {
 }
 
 impl LocalState {
-
     pub fn mock() -> LocalState {
         Self::new(0, ClientInfo {
             username: "abc".to_string(),
             uuid: Default::default(),
-            entity_id: 0
+            entity_id: 0,
         })
     }
 

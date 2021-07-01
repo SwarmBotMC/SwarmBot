@@ -8,7 +8,7 @@
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::lazy::SyncLazy;
-use std::ops::{Add, AddAssign, Index, MulAssign, Sub, Mul, Neg};
+use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub};
 
 use ansi_term::Style;
 use itertools::Itertools;
@@ -139,7 +139,6 @@ impl PlayerMessage {
 }
 
 impl Chat {
-
     pub fn player_dm(&self) -> Option<PlayerMessage> {
         static RE: SyncLazy<Regex> = SyncLazy::new(|| {
             Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap()
@@ -153,9 +152,8 @@ impl Chat {
         let message = captures.get(2)?.as_str().to_string();
         Some(PlayerMessage {
             player,
-            message
+            message,
         })
-
     }
     pub fn player_message(&self) -> Option<PlayerMessage> {
         static RE: SyncLazy<Regex> = SyncLazy::new(|| {
@@ -316,13 +314,12 @@ impl Add for Displacement {
         Self {
             dx: self.dx + rhs.dx,
             dy: self.dy + rhs.dy,
-            dz: self.dz + rhs.dz
+            dz: self.dz + rhs.dz,
         }
     }
 }
 
 impl Displacement {
-
     pub const fn new(dx: f64, dy: f64, dz: f64) -> Displacement {
         Displacement { dx, dy, dz }
     }
@@ -345,7 +342,7 @@ impl Displacement {
     }
 
     pub fn reflect(&self, normal: Displacement) -> Displacement {
-        let rhs  = normal * 2.0 * (self.dot(normal));
+        let rhs = normal * 2.0 * (self.dot(normal));
         *self - rhs
     }
 
@@ -391,7 +388,7 @@ impl Mul<f64> for Displacement {
         Self {
             dx: self.dx * rhs,
             dy: self.dy * rhs,
-            dz: self.dz * rhs
+            dz: self.dz * rhs,
         }
     }
 }

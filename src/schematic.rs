@@ -5,10 +5,11 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/30/21, 1:15 PM
  */
 
+use std::io::Read;
+
 use serde::{Deserialize, Serialize};
 
 use crate::storage::block::{BlockLocation, BlockState};
-use std::io::{Read};
 
 /// https://minecraft.fandom.com/wiki/Schematic_file_format
 #[derive(Serialize, Deserialize, Debug)]
@@ -47,7 +48,7 @@ impl Schematic {
         match (self.w_e_origin_x, self.w_e_origin_y, self.w_e_origin_z) {
             (Some(x), Some(y), Some(z)) => {
                 Some(BlockLocation::new(x, y as i16, z))
-            },
+            }
             _ => None
         }
     }
@@ -56,13 +57,12 @@ impl Schematic {
         match (self.w_e_offset_x, self.w_e_offset_y, self.w_e_offset_z) {
             (Some(x), Some(y), Some(z)) => {
                 Some(BlockLocation::new(x, y as i16, z))
-            },
+            }
             _ => None
         }
     }
 
     pub fn blocks(&self) -> impl Iterator<Item=(BlockLocation, BlockState)> + '_ {
-
         let d_loc = self.origin().unwrap_or_default();
 
         (0..self.volume())
@@ -142,16 +142,16 @@ impl Schematic {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::fs::OpenOptions;
+
+    use more_asserts::*;
 
     use crate::schematic::Schematic;
     use crate::storage::block::BlockLocation;
-    use std::collections::HashMap;
-    use more_asserts::*;
 
     #[test]
     fn test_load() {
-
         let mut reader = OpenOptions::new()
             .read(true)
             .open("test-data/parkour.schematic")

@@ -296,7 +296,6 @@ impl Physics {
         let MovementState { speeds: prev_speeds, slip: prev_slip, .. } = self.prev;
 
 
-
         let mut y_vel = if !self.in_water {
             if falling {
                 // when falling the slip of air is 1.0
@@ -458,36 +457,31 @@ impl Physics {
     pub fn velocity(&self) -> Displacement {
         Displacement::new(self.prev.speeds[0], self.prev.y_vel, self.prev.speeds[1])
     }
-
-
-
 }
 
 
 #[cfg(test)]
 mod tests {
+    use std::lazy::SyncLazy;
 
     use more_asserts::*;
 
-    use crate::client::physics::{Physics, Line};
-    use crate::types::{Location, Direction, Displacement};
-    use crate::storage::blocks::WorldBlocks;
-    use std::lazy::SyncLazy;
+    use crate::client::physics::{Line, Physics};
     use crate::client::physics::speed::Speed;
+    use crate::storage::blocks::WorldBlocks;
+    use crate::types::{Direction, Displacement, Location};
 
-
-    static WORLD: SyncLazy<WorldBlocks> = SyncLazy::new(||{
+    static WORLD: SyncLazy<WorldBlocks> = SyncLazy::new(|| {
         WorldBlocks::flat()
     });
 
     #[test]
-    fn test_run(){
+    fn test_run() {
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
 
-
-        let disp = Displacement::new(1.,0.,0.);
+        let disp = Displacement::new(1., 0., 0.);
         let dir = Direction::from(disp);
 
         physics.look(dir);
@@ -511,13 +505,12 @@ mod tests {
     }
 
     #[test]
-    fn test_sprint_jump(){
+    fn test_sprint_jump() {
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
 
-
-        let disp = Displacement::new(1.,0.,0.);
+        let disp = Displacement::new(1., 0., 0.);
         let dir = Direction::from(disp);
 
         physics.look(dir);
@@ -541,12 +534,12 @@ mod tests {
         assert_eq!(286, ticks);
     }
 
-    fn test_multiple_jumps(){
+    fn test_multiple_jumps() {
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
         let mut zero_count = 0;
-        for _ in 0..12*10 {
+        for _ in 0..12 * 10 {
             physics.jump();
             physics.tick(&WORLD);
             if physics.location.y == 0.0 {
@@ -555,12 +548,10 @@ mod tests {
         }
 
         assert_eq!(10, zero_count);
-
     }
 
     #[test]
-    fn test_jump(){
-
+    fn test_jump() {
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
@@ -586,6 +577,6 @@ mod tests {
 
 
         // 12 is the number of blocks a player should be in the air
-        assert_eq!(12 ,ticks_in_air);
+        assert_eq!(12, ticks_in_air);
     }
 }

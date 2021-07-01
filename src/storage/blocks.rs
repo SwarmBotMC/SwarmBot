@@ -8,10 +8,10 @@
 use std::collections::HashMap;
 
 use rand::{Rng, SeedableRng};
-use rand::rngs::{StdRng};
+use rand::rngs::StdRng;
 
 use crate::schematic::Schematic;
-use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType, BlockKind};
+use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::ChunkColumn;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
@@ -155,7 +155,7 @@ impl WorldBlocks {
     }
 
     pub fn get_block_kind(&self, location: BlockLocation) -> Option<BlockKind> {
-        let block =self.get_block_exact(location)?;
+        let block = self.get_block_exact(location)?;
         Some(block.kind())
     }
 }

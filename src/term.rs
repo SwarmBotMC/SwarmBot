@@ -30,7 +30,7 @@ impl Term {
 
         {
             let state = state.clone();
-            rayon::spawn(move ||{
+            rayon::spawn(move || {
                 while let Ok(msg) = out_rx.recv() {
                     let mut out = stdout();
                     out.queue(crossterm::terminal::Clear(ClearType::CurrentLine)).unwrap();
