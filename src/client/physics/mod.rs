@@ -296,6 +296,7 @@ impl Physics {
         let MovementState { speeds: prev_speeds, slip: prev_slip, .. } = self.prev;
 
 
+
         let mut y_vel = if !self.in_water {
             if falling {
                 // when falling the slip of air is 1.0
@@ -421,7 +422,14 @@ impl Physics {
             } else {
                 self.in_water = leg_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
             }
+
+            // let leg_kind = world.get_block_kind(legs);
+            // if leg_kind == Some(BlockKind::LADDER) {
+            //     // yea this is jank
+            //     self.in_water = true;
+            // }
         }
+
 
         new_loc_first.x += speeds[0];
         new_loc_first.z += speeds[1];
@@ -450,9 +458,9 @@ impl Physics {
     pub fn velocity(&self) -> Displacement {
         Displacement::new(self.prev.speeds[0], self.prev.y_vel, self.prev.speeds[1])
     }
-    
-    
-    
+
+
+
 }
 
 

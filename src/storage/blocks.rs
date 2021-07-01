@@ -5,15 +5,14 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
+use rand::{Rng, SeedableRng};
+use rand::rngs::{StdRng, ThreadRng};
 
-
-use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
-use crate::storage::chunk::ChunkColumn;
 use crate::schematic::Schematic;
-use rand::rngs::{ThreadRng, StdRng};
-use rand::{SeedableRng, Rng};
+use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType, BlockKind};
+use crate::storage::chunk::ChunkColumn;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
@@ -24,14 +23,13 @@ pub struct WorldBlocks {
 }
 
 impl WorldBlocks {
-
     /// A world that is flat at y=0 in a 100 block radius from 0,0
     pub fn flat() -> WorldBlocks {
         let mut world = WorldBlocks::default();
         for x in -100..=100 {
             for z in -100..=100 {
-                let loc = BlockLocation::new(x,0,z);
-               world.set_block(loc, BlockState::STONE);
+                let loc = BlockLocation::new(x, 0, z);
+                world.set_block(loc, BlockState::STONE);
             }
         }
         world
@@ -44,7 +42,7 @@ impl WorldBlocks {
         for x in -RADIUS..=RADIUS {
             for z in -RADIUS..=RADIUS {
                 let res = rdm.gen_range(0..5);
-                let loc = BlockLocation::new(x,0,z);
+                let loc = BlockLocation::new(x, 0, z);
                 if res == 0 {
                     self.set_block(loc, BlockState::STONE);
                 }
@@ -55,7 +53,7 @@ impl WorldBlocks {
         self.set_block(BlockLocation::new(950, 0, 950), BlockState::STONE);
     }
 
-    pub fn load(&mut self, schematic: &Schematic){
+    pub fn load(&mut self, schematic: &Schematic) {
         for (location, state) in schematic.blocks() {
             self.set_block(location, state)
         }
@@ -144,17 +142,31 @@ impl WorldBlocks {
     }
 
     pub fn get_block_simple(&self, location: BlockLocation) -> Option<SimpleType> {
-        self.get_block(location).map(|x| x.s_type())
+        let block = self.get_block(location)?;
+        Some(block.s_type())
+    }
+
+    pub fn get_block_exact(&self, location: BlockLocation) -> Option<BlockState> {
+        let block = self.get_block(location)?;
+        match block {
+            BlockApprox::Realized(state) => Some(state),
+            _ => None
+        }
+    }
+
+    pub fn get_block_kind(&self, location: BlockLocation) -> Option<BlockKind> {
+        let block =self.get_block_exact(location)?;
+        Some(block.kind())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::storage::block::{BlockApprox, BlockLocation, BlockState};
     use crate::storage::blocks::WorldBlocks;
-    use crate::storage::block::{BlockLocation, BlockState, BlockApprox};
 
     #[test]
-    fn test_get_set(){
+    fn test_get_set() {
         let mut world = WorldBlocks::default();
 
         let loc = BlockLocation::new(0, 0, 0);

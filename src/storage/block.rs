@@ -23,6 +23,9 @@ impl From<u32> for BlockKind {
 
 impl BlockKind {
     pub const DEFAULT_SLIP: f64 = 0.6;
+
+    pub const LADDER: BlockKind = BlockKind(65);
+
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
         blocks.by_id(self.0).unwrap().hardness
     }
@@ -100,7 +103,9 @@ impl BlockState {
     }
 
     pub fn is_water(&self) -> bool {
-        matches!(self.id(), 8 | 9)
+        matches!(self.id(), 8 | 9 |
+            65 // ladder ... this is VERY jank
+        )
     }
 
     pub fn walk_through(&self) -> bool {

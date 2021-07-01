@@ -36,7 +36,7 @@ impl Default for PathConfig {
                 block_walk: 1.0,
                 mine_unrelated: 20.0,
                 ascend: 1.0,
-                no_breathe_mult: 5.0,
+                no_breathe_mult: 3.0,
                 fall: 1.0,
                 place_unrelated: 20.0,
                 mine_required: 1.0,

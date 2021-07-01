@@ -21,6 +21,8 @@ use crate::types::{Direction, Displacement, Location};
 const PROGRESS_THRESHOLD: f64 = 0.6;
 const PROGRESS_THRESHOLD_Y: f64 = 0.48;
 
+const EPSILON: f64 = 0.0001;
+
 const MIN_JUMP_DIST: f64 = 1.2;
 const MIN_SPRINT_DIST: f64 = 3.0;
 const MAX_JUMP_DIST: f64 = 3.9;
@@ -33,6 +35,18 @@ pub enum FollowResult {
     InProgress,
     Finished,
 }
+
+/// Given a path the follower decides which moves (analagous to keys a real player would press) the
+/// bot should take. Currently the follower is totally legit---it interfaces with the [Physics] struct
+/// which only allows for moves a real player could do* * = probably not as precisely.
+///
+/// # Jumping
+/// Jumping considers the velocity as well as the current displacement
+/// which fixes many edge cases. Before the bot would likely fail if jumping
+/// in a three block pattern where the path between them has a 90 degree edge.
+/// This is because the bot's heading only focused on the next block---it
+/// did not have a factor to counter the velocity going _away_ from the
+/// current target.
 
 #[derive(Debug)]
 pub struct Follower {
@@ -120,6 +134,7 @@ impl Follower {
 
     pub fn follow(&mut self, local: &mut LocalState, _global: &mut GlobalState) -> FollowResult {
 
+
         // We only want to recalc if we are on the ground to prevent issues with the pathfinder thinking
         // we are one block higher. We do this if the path is incomplete and we have gone through at least
         // half of the nodes
@@ -144,7 +159,7 @@ impl Follower {
             displacement = on - current;
             mag2_horizontal = displacement.make_dy(0.).mag2();
 
-            if mag2_horizontal < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && 0.0 <= displacement.dy && displacement.dy <= PROGRESS_THRESHOLD_Y {
+            if mag2_horizontal < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD && -EPSILON <= displacement.dy && displacement.dy <= PROGRESS_THRESHOLD_Y {
                 self.next();
             } else {
                 break;
@@ -165,15 +180,20 @@ impl Follower {
         }
 
         let disp_horizontal = displacement.make_dy(0.);
-        let velocity_norm = local.physics.velocity().make_dy(0.);
+        let velocity = local.physics.velocity().make_dy(0.);
 
         const VELOCITY_IMPORTANCE: f64 = 1.5;
+        const DISPLACEMENT_CONSIDER_THRESH: f64 = 0.05;
 
 
 
-        let look_displacement = disp_horizontal - velocity_norm * VELOCITY_IMPORTANCE;
+        let mut look_displacement = disp_horizontal - velocity * VELOCITY_IMPORTANCE;
+        let mut corr = velocity.normalize().dot(disp_horizontal.normalize());
 
-        let corr = velocity_norm.normalize().dot(disp_horizontal.normalize());
+        // if displacement.mag2() < DISPLACEMENT_CONSIDER_THRESH * DISPLACEMENT_CONSIDER_THRESH {
+        //     look_displacement = disp_horizontal;
+        //     corr = 1.0;
+        // }
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
         if local.physics.on_ground() && mag2_horizontal > MIN_JUMP_DIST * MIN_JUMP_DIST {

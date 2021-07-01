@@ -12,7 +12,7 @@ use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::traits::{Neighbor, Progression};
-use crate::storage::block::{BlockLocation, SimpleType};
+use crate::storage::block::{BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 
 pub const MAX_FALL: i32 = 3;
@@ -62,6 +62,14 @@ impl Movements {
             }};
         }
 
+
+        macro_rules! get_kind {
+            ($x: expr, $y: expr, $z:expr) => {{
+                let res: Option<BlockKind> = w.get_block_kind(BlockLocation::new($x,$y,$z));
+                res
+            }};
+        }
+
         macro_rules! wrap {
             ($block_loc: expr) => {{
                 let mut node = MoveNode::from(&on);
@@ -105,7 +113,7 @@ impl Movements {
             };
         }
 
-        // what we are going to turn for progressoins
+        // what we are going to turn for progressions
         let mut res = vec![];
 
         let mut traverse_possible_no_place = [false; 4];
@@ -149,9 +157,29 @@ impl Movements {
         let floor = get_block!(x, y - 1, z).unwrap();
         let feet = get_block!(x, y, z).unwrap();
 
+        // if get_kind!(x, y, z) == Some(BlockKind::LADDER) {
+        //     if matches!(above, WalkThrough | Water) {
+        //         res.push(Neighbor {
+        //             value: wrap!(BlockLocation::new(x,y+1,z)),
+        //             cost: ctx.path_config.costs.ascend * multiplier,
+        //         });
+        //     }
+        //     if matches!(floor, WalkThrough | Water) {
+        //         res.push(Neighbor {
+        //             value: wrap!(BlockLocation::new(x,y-1,z)),
+        //             cost: ctx.path_config.costs.ascend * multiplier,
+        //         });
+        //     }
         if above == Water || head == Water && above == WalkThrough {
             res.push(Neighbor {
                 value: wrap!(BlockLocation::new(x,y+1,z)),
+                cost: ctx.path_config.costs.ascend * multiplier,
+            });
+        }
+
+        if floor == Water || (floor == WalkThrough && head == Water) {
+            res.push(Neighbor {
+                value: wrap!(BlockLocation::new(x,y-1,z)),
                 cost: ctx.path_config.costs.ascend * multiplier,
             });
         }
@@ -249,18 +277,15 @@ impl Movements {
                     update(-1, sign_z);
                     update(0, sign_z);
                     update(1, sign_z);
-                }
-                else if block_dz == 0 {
+                } else if block_dz == 0 {
                     // special case: we need to update blocks in both directions
                     update(sign_x, -1);
                     update(sign_x, 0);
                     update(sign_x, 1);
-                }
-                else {
+                } else {
                     // we only update blocks in the direction it is in
                     update(sign_x, sign_z);
                 }
-
             }
 
             for dx in -RADIUS..=RADIUS {
@@ -269,7 +294,7 @@ impl Movements {
 
                     let same_y = get_block!(x+dx, y - 1, z+dz).unwrap();
 
-                    let same_y_possible = same_y  == Solid;
+                    let same_y_possible = same_y == Solid;
                     let below_y_possible = false;
                     // let below_y_possible = same_y == WalkThrough && below_y == Solid;
 
@@ -279,7 +304,6 @@ impl Movements {
                     const MAX_RAD: f64 = 4.5;
 
                     if rad2 <= MAX_RAD * MAX_RAD && rad2 > MIN_RAD * MIN_RAD && is_open {
-
                         if same_y_possible {
                             res.push(Neighbor {
                                 value: wrap!(BlockLocation::new(x+dx,y,z+dz)),
@@ -288,7 +312,7 @@ impl Movements {
                         } else if below_y_possible {
                             res.push(Neighbor {
                                 value: wrap!(BlockLocation::new(x+dx,y-1,z+dz)),
-                                cost: (3.0*ctx.path_config.costs.block_walk) * multiplier,
+                                cost: (3.0 * ctx.path_config.costs.block_walk) * multiplier,
                             });
                         }
                     }
