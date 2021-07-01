@@ -642,27 +642,6 @@ impl ByteReadable for Dimension {
     }
 }
 
-
-pub struct MathVec<const S: usize> {
-    inner: [f64; S],
-}
-
-impl<const S: usize> MathVec<S> {
-    pub fn new(inner: [f64; S]) -> MathVec<S> {
-        Self {
-            inner
-        }
-    }
-}
-
-impl<const S: usize> MulAssign<f64> for MathVec<S> {
-    fn mul_assign(&mut self, rhs: f64) {
-        for x in &mut self.inner {
-            *x *= rhs;
-        }
-    }
-}
-
 pub type Position = BlockLocation;
 
 

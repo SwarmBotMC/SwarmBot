@@ -11,7 +11,6 @@ use float_ord::FloatOrd;
 
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::MoveNode;
-use crate::client::pathfind::implementations::Problem;
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
@@ -20,19 +19,12 @@ use crate::client::state::local::{LocalState, Task, TaskKind};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
-use crate::term::Term;
 use crate::types::Direction;
-
-type Prob = Box<dyn Problem<Node=MoveNode>>;
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
     pub queue: Queue,
     pub out: Out,
-}
-
-const fn ticks_from_secs(seconds: usize) -> usize {
-    seconds * 20
 }
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
@@ -126,7 +118,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 }
 
-pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut, term: &Term) {
+pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut) {
 
     // println! but bold
     macro_rules! msg {
@@ -136,7 +128,14 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             ($($msg: expr),*) => {{
                 let to_print_raw = format!($($msg),*);
                 let to_print = ansi_term::Color::Black.bold().paint(to_print_raw).to_string();
-                term.output.send(to_print).unwrap();
+                println!("{}", to_print);
+            }};
+        }
+
+    macro_rules! chat {
+            ($($msg: expr),*) => {{
+                let to_print_raw = format!($($msg),*);
+                out.send_chat(&to_print_raw);
             }};
         }
 
@@ -145,16 +144,13 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             local.physics.jump();
         }
         "health" => {
-            out.send_chat(&format!("/msg RevolutionNow Health: {}, Food: {}", local.health, local.food));
+            chat!("/msg RevolutionNow Health: {}, Food: {}", local.health, local.food);
         }
         "follow" => {
             local.follow_closest = true;
         }
         "kys" => {
-
-            // self.
-            // let closest = self.global.world_blocks.closest(loc,|state| state.kind() == kind);
-            // if
+            // TODO: try to kill themself by fall damage/lava/etc
         }
         "eat" => {
             out.right_click();

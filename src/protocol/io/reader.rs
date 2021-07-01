@@ -69,7 +69,7 @@ impl PacketReader {
         self.compression = Some(ZLib::new(threshold))
     }
 
-    pub async fn read(&mut self) -> PacketData {
+    pub async fn read(&mut self) -> Res<PacketData> {
         let pkt_len;
 
         // ignore 0-sized packets
@@ -96,14 +96,14 @@ impl PacketReader {
         let mut reader = ByteReader::new(data);
         let VarInt(id) = reader.read();
 
-        PacketData {
+        Ok(PacketData {
             id: id as u32,
             reader,
-        }
+        })
     }
 
     pub async fn read_exact_packet<T>(&mut self) -> Res<T> where T: Packet, T: ByteReadable {
-        let PacketData { id, mut reader } = self.read().await;
+        let PacketData { id, mut reader } = self.read().await?;
 
         // if id == 0 && T::STATE == PacketState::Login {
         //     let Disconnect {reason} = reader.read();

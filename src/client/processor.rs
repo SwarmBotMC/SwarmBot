@@ -12,7 +12,6 @@ use crate::protocol::InterfaceOut;
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
-use crate::term::Term;
 use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
 
 pub trait InterfaceIn {
@@ -33,17 +32,15 @@ pub trait InterfaceIn {
 pub struct SimpleInterfaceIn<'a, I: InterfaceOut> {
     global: &'a mut GlobalState,
     local: &'a mut LocalState,
-    term: &'a Term,
     out: &'a mut I,
 }
 
 impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
-    pub fn new(local: &'a mut LocalState, global: &'a mut GlobalState, out: &'a mut I, term: &'a Term) -> SimpleInterfaceIn<'a, I> {
+    pub fn new(local: &'a mut LocalState, global: &'a mut GlobalState, out: &'a mut I) -> SimpleInterfaceIn<'a, I> {
         SimpleInterfaceIn {
             local,
             global,
             out,
-            term,
         }
     }
 }
@@ -51,13 +48,14 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
 
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
-        self.term.output.send(message.clone().colorize()).unwrap();
+
+        println!("{}", message.clone().colorize());
 
         let mut process = |msg: PlayerMessage| {
             if let Some(cmd) = msg.into_cmd() {
                 let name = cmd.command;
                 let args_str: Vec<&str> = cmd.args.iter().map(|x| x.as_str()).collect();
-                process_command(&name, &args_str, self.local, self.global, self.out, self.term);
+                process_command(&name, &args_str, self.local, self.global, self.out);
             }
         };
 
@@ -79,7 +77,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_update_health(&mut self, health: f32, food: u8) {
         self.local.health = health;
         self.local.food = food;
-        self.term.output.send(format!("updated health {} food is {}", health, food)).unwrap();
+        println!("updated health {} food is {}", health, food);
     }
 
     fn on_dimension_change(&mut self, dimension: Dimension) {
@@ -87,7 +85,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_move(&mut self, location: Location) {
-        self.term.output.send(format!("moved {} -> {}", self.local.physics.location(), location)).unwrap();
+        println!("moved {} -> {}", self.local.physics.location(), location);
         self.local.physics.teleport(location);
     }
 

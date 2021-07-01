@@ -10,7 +10,6 @@
 
 use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
-use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::traits::{Neighbor, Progression};
 use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
@@ -18,16 +17,6 @@ use crate::storage::blocks::WorldBlocks;
 pub const MAX_FALL: i32 = 3;
 
 mod cenetered_arr;
-
-enum MoveResult {
-    Edge,
-    Invalid,
-    Realized(Neighbor<BlockLocation>),
-}
-
-pub enum Movements {
-    TraverseCardinal(CardinalDirection),
-}
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum State {
@@ -41,15 +30,9 @@ impl Default for State {
     }
 }
 
+pub struct Movements;
+
 impl Movements {
-    const ALL: [Movements; 4] = {
-        [
-            TraverseCardinal(CardinalDirection::North),
-            TraverseCardinal(CardinalDirection::West),
-            TraverseCardinal(CardinalDirection::South),
-            TraverseCardinal(CardinalDirection::East),
-        ]
-    };
 
     pub fn obtain_all(on: &MoveNode, ctx: &GlobalContext) -> Progression<MoveNode> {
         let BlockLocation { x, y, z } = on.location;
@@ -351,33 +334,6 @@ pub enum CardinalDirection {
     East,
 }
 
-pub enum CardinalDirection3D {
-    Plane(CardinalDirection),
-    Up,
-    Down,
-}
-
-impl CardinalDirection3D {
-    pub const ALL: [CardinalDirection3D; 6] = {
-        use CardinalDirection::*;
-        use CardinalDirection3D::*;
-        [
-            Plane(North),
-            Plane(South),
-            Plane(East),
-            Plane(West),
-            Down,
-            Up,
-        ]
-    };
-
-    pub const ALL_BUT_UP: [CardinalDirection3D; 5] = {
-        use CardinalDirection::*;
-        use CardinalDirection3D::*;
-        [Plane(North), Plane(South), Plane(East), Plane(West), Down]
-    };
-}
-
 impl CardinalDirection {
     pub const ALL: [CardinalDirection; 4] = {
         use CardinalDirection::*;
@@ -394,12 +350,6 @@ pub struct Change {
 impl Change {
     fn new(dx: i32, dy: i16, dz: i32) -> Change {
         Change { dx, dy, dz }
-    }
-}
-
-impl CardinalDirection3D {
-    pub fn unit_change(&self) -> Change {
-        todo!()
     }
 }
 

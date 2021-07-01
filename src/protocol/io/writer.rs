@@ -85,9 +85,9 @@ impl PacketWriter {
     }
 
 
-    pub async fn write<T: Packet + ByteWritable>(&mut self, packet: T) {
+    pub async fn write<T: Packet + ByteWritable>(&mut self, packet: T) -> Res {
         let mut data = data(packet, &self.compression);
-        self.writer.write_all(&mut data).await.unwrap();
+        self.writer.write_all(&mut data).await
     }
 
     pub fn into_channel(self) -> PacketWriteChannel {

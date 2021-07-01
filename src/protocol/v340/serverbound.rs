@@ -26,6 +26,7 @@ pub struct Handshake {
 
 #[derive(Copy, Clone, EnumWritable)]
 #[repr(i32)]
+#[allow(dead_code)]
 pub enum HandshakeNextState {
     #[deprecated]
     Invalid,
@@ -128,6 +129,7 @@ pub struct VehicleMove {
 }
 
 #[derive(EnumWritable, Eq, PartialEq, Copy, Clone)]
+#[allow(dead_code)]
 pub enum DigStatus {
     Started,
     Cancelled,
@@ -167,6 +169,7 @@ pub struct HeldItemChange {
 
 #[repr(i32)]
 #[derive(EnumWritable)]
+#[allow(dead_code)]
 pub enum ClientStatusAction {
     Respawn = 0,
     Stats = 1,
@@ -187,12 +190,14 @@ pub struct KeepAlive {
 
 
 #[derive(EnumWritable, Debug)]
+#[allow(dead_code)]
 pub enum Hand {
     Main,
     Off,
 }
 
 #[derive(EnumWritable, Debug)]
+#[allow(dead_code)]
 pub enum Action {
     SneakStart,
     SneakStop,
@@ -207,6 +212,7 @@ pub enum Action {
 
 #[derive(Debug, AdtWritable)]
 #[repr(i32)]
+#[allow(dead_code)]
 pub enum InteractEntityKind {
     Interact {
         target_x: f32,

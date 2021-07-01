@@ -20,6 +20,7 @@ mod transform;
 mod encrypt;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[allow(dead_code)]
 pub enum Mine {
     Start,
     Cancel,

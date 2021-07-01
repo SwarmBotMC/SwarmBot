@@ -8,7 +8,7 @@
 use std::cmp::Ordering;
 
 pub mod traits;
-pub mod bidirectional;
+// pub mod bidirectional; unused
 pub mod moves;
 pub mod implementations;
 pub mod context;

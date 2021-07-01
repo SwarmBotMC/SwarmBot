@@ -8,18 +8,16 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
-use std::sync::mpsc::TryRecvError;
 use std::time::{Duration, Instant};
 
 use tokio::sync::Notify;
 
 use crate::bootstrap::Connection;
-use crate::client::bot::{Bot, process_command, run_threaded};
+use crate::client::bot::{Bot, run_threaded};
 use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
-use crate::term::Term;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -43,9 +41,6 @@ pub struct Runner<T: Minecraft> {
 
     /// the global state of the program containing chunks and global config
     global_state: GlobalState,
-
-    /// A terminal which has options for stdin/out
-    term: Term,
 
     /// the bots created by pending logins
     bots: Vec<Bot<T::Queue, T::Interface>>,
@@ -75,21 +70,30 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         {
             let pending_logins = pending_logins.clone();
+
+            // login task for all users
             tokio::task::spawn_local(async move {
                 while let Some(connection) = connections.recv().await {
                     let logins = pending_logins.clone();
+
+                    // login task for an individual user
                     tokio::task::spawn_local(async move {
-                        println!("starting login of {}", connection.user.username);
+                        println!("Starting login of {}", connection.user.username);
+                        let username = connection.user.username.clone();
                         let login = match T::login(connection).await {
-                            Ok(res) => res,
+                            Ok(res) => {
+                                println!("Finished logging in {}", username);
+                                res
+                            },
                             Err(err) => {
-                                println!("Error logging in {}", err);
+                                println!("Error logging in {} -- {}", username, err);
                                 return;
                             }
                         };
                         logins.borrow_mut().push(login);
                     });
 
+                    // if we want a delay between logging in
                     tokio::time::sleep(Duration::from_millis(delay_millis)).await;
                 }
             });
@@ -98,7 +102,6 @@ impl<T: Minecraft + 'static> Runner<T> {
         Runner {
             pending_logins,
             global_state: GlobalState::init(),
-            term: Term::init(),
             bots: Vec::new(),
             id_on: 0,
         }
@@ -137,7 +140,6 @@ impl<T: Minecraft + 'static> Runner<T> {
         {
             let mut logins = self.pending_logins.borrow_mut();
 
-            // TODO: why couldnt use iter
             for login in logins.drain(..) {
                 let Login { queue, out, info } = login;
 
@@ -159,12 +161,9 @@ impl<T: Minecraft + 'static> Runner<T> {
             println!("{} clients", new_count);
         }
 
-        // third step: process commands
-        self.process_commands();
-
         // fourth step: process packets from game loop
         for bot in &mut self.bots {
-            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out, &self.term);
+            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out);
 
             // protocol-specific logic. Translates input packets and sends to processor
             bot.queue.flush(&mut processor);
@@ -211,25 +210,4 @@ impl<T: Minecraft + 'static> Runner<T> {
         thread_loop_end.notified().await;
     }
 
-    fn process_commands(&mut self) {
-        match self.term.input.try_recv() {
-            Ok(command) => {
-                let parts: Vec<_> = command.split(' ').collect();
-
-                if parts.is_empty() {
-                    return;
-                }
-                let name = parts[0];
-                let args = &parts[1..];
-
-                for bot in &mut self.bots {
-                    process_command(name, args, &mut bot.state, &mut self.global_state, &mut bot.out, &self.term);
-                }
-            }
-            Err(TryRecvError::Empty) => {}
-            Err(e) => {
-                println!("receive err {}", e);
-            }
-        }
-    }
 }

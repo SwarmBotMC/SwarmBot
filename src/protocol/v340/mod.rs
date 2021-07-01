@@ -17,8 +17,8 @@ use crate::bootstrap::{Address, Connection};
 use crate::bootstrap::mojang::calc_hash;
 use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
+use crate::error::{err, Res};
 use crate::error::Error::WrongPacket;
-use crate::error::Res;
 use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Mine, Minecraft};
 use crate::protocol::encrypt::{rand_bits, Rsa};
 use crate::protocol::io::reader::PacketReader;
@@ -286,7 +286,6 @@ impl Minecraft for Protocol {
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
 
-        let _online = true;
 
         // START: handshake
         writer.write(serverbound::Handshake {
@@ -294,13 +293,13 @@ impl Minecraft for Protocol {
             host,
             port,
             next_state: HandshakeNextState::Login,
-        }).await;
+        }).await?;
 
 
         // START: login
         writer.write(serverbound::LoginStart {
             username: username.clone()
-        }).await;
+        }).await?;
 
         // writer.flush().await;
 
@@ -321,7 +320,7 @@ impl Minecraft for Protocol {
         writer.write(serverbound::EncryptionResponse {
             shared_secret: encrypted_ss,
             verify_token: encrypted_verify,
-        }).await;
+        }).await?;
 
         // writer.flush().await;
 
@@ -332,7 +331,7 @@ impl Minecraft for Protocol {
 
         // set compression or login success
         {
-            let mut data = reader.read().await;
+            let mut data = reader.read().await?;
 
             let LoginSuccess { username: _, uuid: _ } = match data.id {
                 clientbound::SetCompression::ID => {
@@ -366,7 +365,7 @@ impl Minecraft for Protocol {
         tokio::task::spawn_local(async move {
             let mut oneshot = Some(os_tx);
             loop {
-                let packet = reader.read().await;
+                let packet = reader.read().await.unwrap();
                 if packet.id == clientbound::JoinGame::ID {
                     if let Some(os_tx) = oneshot.take() {
                         let mut packet = packet.clone();
@@ -386,12 +385,7 @@ impl Minecraft for Protocol {
 
         let tx = writer.into_channel();
 
-        let (entity_id, dimension) = match os_rx.await {
-            Ok(inner) => inner,
-            Err(_err) => {
-                return Err(crate::error::err("disconnected before join game packet"));
-            }
-        };
+        let (entity_id, dimension) = os_rx.await.map_err(|_| err("disconnected before join game packet"))?;
 
         let out = Interface340::new(tx);
 

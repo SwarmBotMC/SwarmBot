@@ -4,10 +4,10 @@
  * Proprietary and confidential.
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
-
 #![allow(dead_code)]
 #![allow(incomplete_features)]
 #![deny(unused_must_use)]
+#![feature(impl_trait_in_bindings)]
 #![feature(in_band_lifetimes)]
 #![feature(path_try_exists)]
 #![feature(const_evaluatable_checked)]

@@ -15,7 +15,6 @@ use crossterm::terminal::ClearType;
 pub struct Term {
     pub input: std::sync::mpsc::Receiver<String>,
     pub output: std::sync::mpsc::Sender<String>,
-    state: Arc<Mutex<String>>,
 }
 
 impl Term {
@@ -45,7 +44,6 @@ impl Term {
         }
 
         {
-            let state = state.clone();
             rayon::spawn(move || {
                 while let Ok(event) = crossterm::event::read() {
                     match event {
@@ -90,7 +88,6 @@ impl Term {
         Self {
             input: in_rx,
             output: out_tx,
-            state,
         }
     }
 }

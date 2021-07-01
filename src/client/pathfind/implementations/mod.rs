@@ -10,12 +10,12 @@ use std::time::Instant;
 
 use crate::client::pathfind::context::{GlobalContext, MoveNode, MoveRecord};
 use crate::client::pathfind::incremental::{AStar, Node, PathResult};
-use crate::client::pathfind::moves::Movements;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::timing::Increment;
 use crate::storage::block::{BlockLocation, BlockState};
+use crate::client::pathfind::moves::Movements;
 
 pub mod novehicle;
 pub mod build;
