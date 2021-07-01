@@ -41,7 +41,8 @@ const WATER_DECEL: f64 = 0.2;
 const DRAG_MULT: f64 = 0.98; // 00000190734863;
 
 // player width divided by 2
-const PLAYER_WIDTH_2: f64 = (0.6 / 2.0) + 0.001;
+const PLAYER_WIDTH_2: f64 = (0.6 / 2.0);// + 0.001;
+// const PLAYER_WIDTH_2_REG: f64 = 0.6 / 2.0;
 
 // remove 0.1
 const PLAYER_HEIGHT: f64 = 1.79999;
