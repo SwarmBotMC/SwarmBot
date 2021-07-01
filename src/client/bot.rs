@@ -5,24 +5,23 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::time::{Instant};
+use std::time::Instant;
 
 use float_ord::FloatOrd;
 
-
 use crate::client::follow::{Follower, FollowResult};
-use crate::client::pathfind::context::{MoveNode};
+use crate::client::pathfind::context::MoveNode;
 use crate::client::pathfind::implementations::Problem;
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::{LocalState, TaskKind, Task};
+use crate::client::state::local::{LocalState, Task, TaskKind};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
-use crate::types::Direction;
 use crate::term::Term;
+use crate::types::Direction;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
@@ -41,7 +40,6 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
         match self.state.task.as_mut() {
             None => {}
             Some(task) => {
-
                 match task.kind {
                     TaskKind::Mine(loc) => {
                         self.out.left_click();
@@ -64,7 +62,6 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
                 } else {
                     task.ticks -= 1;
                 }
-
             }
         }
         self.move_around(global);
@@ -160,10 +157,12 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             // if
         }
         "eat" => {
-                out.right_click();
-                local.task = Some(Task {
-                ticks: 32,
-                kind: TaskKind::Eat
+            out.right_click();
+
+            // shouldn't need to be 40 (32... but because of lag I guess it sometimes does)
+            local.task = Some(Task {
+                ticks: 40,
+                kind: TaskKind::Eat,
             })
         }
         "slot" => {
@@ -241,7 +240,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
                     let task = Task {
                         ticks,
-                        kind: TaskKind::Mine(closest)
+                        kind: TaskKind::Mine(closest),
                     };
 
                     local.task = Some(task);
@@ -262,7 +261,6 @@ pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, global: &Glob
         let res = traverse.iterate_until(end_by, local, global);
 
         if let Increment::Finished(res) = res {
-
             if !res.complete {
                 println!("incomplete goal of size {}", res.value.len());
             }
