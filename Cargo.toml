@@ -89,10 +89,14 @@ crossterm = "0.20"
 
 packets = { path = "packets" } # from a path in the local filesystem
 
+# for small stack-allocated arrays
 smallvec = { version = "1.6", features = ["const_generics"] }
 
 # for parsing nbt
 hematite-nbt = "0.5"
+
+# so we don't have to use v-tables
+enum_dispatch = "0.3"
 
 [dev-dependencies]
 more-asserts = "0.2"

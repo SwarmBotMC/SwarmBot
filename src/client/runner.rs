@@ -6,6 +6,7 @@
  */
 
 use std::cell::RefCell;
+use std::default::default;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -13,7 +14,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::Notify;
 
 use crate::bootstrap::Connection;
-use crate::client::bot::{Bot, run_threaded};
+use crate::client::bot::{Bot, run_threaded, ActionState};
 use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
@@ -21,7 +22,7 @@ use crate::protocol::{EventQueue, Login, Minecraft};
 
 struct SyncGlobal(*const GlobalState);
 
-struct SyncLocal(*mut LocalState);
+struct SyncLocal((*mut LocalState, *mut ActionState));
 
 unsafe impl Sync for SyncGlobal {}
 
@@ -84,7 +85,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                             Ok(res) => {
                                 println!("Finished logging in {}", username);
                                 res
-                            },
+                            }
                             Err(err) => {
                                 println!("Error logging in {} -- {}", username, err);
                                 return;
@@ -145,6 +146,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
                 let client = Bot {
                     state: LocalState::new(self.id_on, info),
+                    actions: default(),
                     queue,
                     out,
                 };
@@ -163,7 +165,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // fourth step: process packets from game loop
         for bot in &mut self.bots {
-            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out);
+            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut bot.actions, &mut self.global_state, &mut bot.out);
 
             // protocol-specific logic. Translates input packets and sends to processor
             bot.queue.flush(&mut processor);
@@ -184,8 +186,8 @@ impl<T: Minecraft + 'static> Runner<T> {
             // safe as it still requires the states to be Send+Sync, so it is hard to make errors.
             let global_state_sync = SyncGlobal(&self.global_state);
             let states_sync: Vec<_> = self.bots.iter_mut()
-                .map(|bot| &mut bot.state)
-                .map(|state| state as *mut LocalState)
+                .map(|bot| (&mut bot.state, &mut bot.actions))
+                .map(|(state, actions)| (state as *mut LocalState, actions as *mut ActionState))
                 .map(SyncLocal)
                 .collect();
 
@@ -194,9 +196,11 @@ impl<T: Minecraft + 'static> Runner<T> {
                 let states_sync = states_sync;
                 rayon::scope(|s| {
                     for state_sync in states_sync {
-                        let state = unsafe { &mut *state_sync.0 };
+                        let (state, actions) = state_sync.0;
+                        let (state, actions) = unsafe { (&mut *state, &mut *actions) };
+
                         s.spawn(move |inner_scope| {
-                            run_threaded(inner_scope, state, global_state, end_by);
+                            run_threaded(inner_scope, state, actions, global_state, end_by);
                         });
                     }
                 });
@@ -209,5 +213,4 @@ impl<T: Minecraft + 'static> Runner<T> {
         // wait until all threaded activities have finished
         thread_loop_end.notified().await;
     }
-
 }

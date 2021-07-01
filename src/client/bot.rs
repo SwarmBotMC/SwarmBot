@@ -5,62 +5,68 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::time::{Instant, SystemTime};
+use std::time::Instant;
 
 use float_ord::FloatOrd;
 use itertools::Itertools;
 
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::MoveNode;
+use crate::client::pathfind::implementations::Problem;
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::{LocalState, Task, TaskKind};
+use crate::client::state::local::LocalState;
+use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::types::{Direction, Displacement};
-use crate::storage::chunk::{ChunkData};
+use crate::client::pathfind::implementations::novehicle::TravelProblem;
+
+type Prob = Box<dyn Problem<Node=MoveNode>>;
+
+#[derive(Default)]
+pub struct ActionState {
+    pub task: Option<Task>,
+    pub follower: Option<Follower>,
+    pub travel_problem: Option<Prob>,
+    pub last_problem: Option<Prob>,
+}
+
+impl ActionState {
+    pub fn travel_to_block(&mut self, goal: BlockLocation, local: &LocalState) {
+        let from = local.physics.location().into();
+        println!("starting nav");
+        let problem = box TravelProblem::create(from, goal);
+
+        self.travel_problem = Some(problem);
+    }
+}
+
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
+    pub actions: ActionState,
     pub queue: Queue,
     pub out: Out,
 }
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
-        match self.state.task.as_mut() {
+        match self.actions.task.as_mut() {
             None => {}
             Some(task) => {
-                match task.kind {
-                    TaskKind::Mine(loc, face) => {
-                        self.out.left_click();
-                        if task.ticks == 0 {
-                            self.out.mine(loc, Mine::Finished, face);
-                        }
-                    }
-                    TaskKind::Eat => {
-                        // self.out.right_click();
-                        if task.ticks == 0 {
-                            println!("finish eating");
-                            self.out.finish_eating();
-                        }
-                    }
-                }
-
-
-                if task.ticks == 0 {
-                    self.state.task = None;
-                } else {
-                    task.ticks -= 1;
+                if task.tick(&mut self.out, &mut self.state, global) {
+                    self.actions.task = None;
                 }
             }
         }
+
         self.move_around(global);
 
-        if self.state.follower.is_none() {
+        if self.actions.follower.is_none() {
             let mut vel = self.state.physics.velocity();
             vel.dy = 0.;
             if vel.mag2() > 0.01 {
@@ -80,26 +86,22 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 
     fn move_around(&mut self, global: &mut GlobalState) {
-        if let Some(mut follower) = self.state.follower.take() {
+        if let Some(follower) = self.actions.follower.as_mut() {
             let follow_result = follower.follow(&mut self.state, global);
             if follow_result == FollowResult::Failed || follower.should_recalc() {
-                if let Some(mut problem) = self.state.last_problem.take() {
+                if let Some(mut problem) = self.actions.last_problem.take() {
                     let block_loc = self.state.physics.location().into();
                     problem.recalc(MoveNode::simple(block_loc));
-                    self.state.travel_problem = Some(problem);
+                    self.actions.travel_problem = Some(problem);
                 }
 
                 if follow_result == FollowResult::Failed {
-                    self.state.follower = None;
-                } else {
-                    self.state.follower = Some(follower);
+                    self.actions.follower = None;
                 }
             } else if follow_result == FollowResult::Finished {
-                self.state.follower = None;
-                self.state.last_problem = None;
-                self.state.travel_problem = None;
-            } else {
-                self.state.follower = Some(follower);
+                self.actions.follower = None;
+                self.actions.last_problem = None;
+                self.actions.travel_problem = None;
             }
         } else if self.state.follow_closest {
             let current_loc = self.state.physics.location();
@@ -120,7 +122,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 }
 
-pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, out: &mut impl InterfaceOut) {
+pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, actions: &mut ActionState, out: &mut impl InterfaceOut) {
 
     // println! but bold
     macro_rules! msg {
@@ -158,11 +160,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             out.right_click();
 
             // shouldn't need to be 40 (32... but because of lag I guess it sometimes does)
-            local.task = Some(Task {
-                ticks: 40,
-                kind: TaskKind::Eat,
-                start: Instant::now()
-            })
+            let eat_task = EatTask { ticks: 40 };
+            actions.task = Some(eat_task.into());
         }
         "slot" => {
             if let [number] = args {
@@ -180,7 +179,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let closest = global.world_blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
 
                 if let Some(closest) = closest {
-                    local.travel_to_block(closest);
+                    actions.travel_to_block(closest, local);
                 } else {
                     msg!("There is no block {} by me", id);
                 }
@@ -191,12 +190,13 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let y = b.parse().unwrap();
                 let z = c.parse().unwrap();
                 let dest = BlockLocation::new(x, y, z);
-                local.travel_to_block(dest);
+                actions.travel_to_block(dest, local);
             }
         }
         "stop" => {
-            local.travel_problem = None;
-            local.last_problem = None;
+            actions.follower = None;
+            actions.travel_problem = None;
+            actions.last_problem = None;
         }
         "loc" => {
             msg!("My location is {} in {}", local.physics.location(), local.dimension);
@@ -206,7 +206,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 if name == &local.info.username {
                     msg!("location {}", local.physics.location());
                     msg!("on ground {}", local.physics.on_ground());
-                    if let Some(follower) = local.follower.as_ref() {
+                    if let Some(follower) = actions.follower.as_ref() {
                         for point in follower.points() {
                             msg!("{}", point);
                         }
@@ -224,14 +224,29 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 msg!("The block is {:?}", global.world_blocks.get_block(location));
             }
         }
-        "mine" => {
+        "place" => {
+            if let [a, b, c] = args {
+                let x = a.parse().unwrap();
+                let y = b.parse().unwrap();
+                let z = c.parse().unwrap();
 
+                let origin = local.physics.location() + Displacement::EYE_HEIGHT;
+
+                let location = BlockLocation::new(x, y, z);
+                let faces = location.faces();
+                let best_loc_idx = IntoIterator::into_iter(faces).position_min_by_key(|loc| FloatOrd(loc.dist2(origin))).unwrap();
+
+                local.physics.look_at(faces[best_loc_idx]);
+                out.right_click();
+                out.place_block(location, Face::from(best_loc_idx as u8));
+            }
+        }
+        "mine" => {
             let origin = local.physics.location() + Displacement::EYE_HEIGHT;
 
             let closest = global.world_blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
 
             if let Some(closest) = closest {
-
                 let kind = global.world_blocks.get_block_kind(closest).unwrap();
                 let faces = closest.faces();
 
@@ -252,13 +267,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 out.mine(closest, Mine::Start, face);
                 out.left_click();
 
-                let task = Task {
-                    ticks,
-                    kind: TaskKind::Mine(closest, face),
-                    start: Instant::now()
-                };
-
-                local.task = Some(task);
+                let mine_task = MineTask { ticks, location: closest, face };
+                actions.task = Some(mine_task.into());
             }
         }
         _ => {
@@ -267,10 +277,10 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
     }
 }
 
-pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, global: &GlobalState, end_by: Instant) {
+pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, actions: &mut ActionState, global: &GlobalState, end_by: Instant) {
 
     // TODO: this is pretty jank
-    if let Some(mut traverse) = local.travel_problem.take() {
+    if let Some(traverse) = actions.travel_problem.as_mut() {
         let res = traverse.iterate_until(end_by, local, global);
 
         if let Increment::Finished(res) = res {
@@ -278,8 +288,8 @@ pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, global: &Glob
                 println!("incomplete goal of size {}", res.value.len());
             }
 
-            match local.follower.as_mut() {
-                None => local.follower = {
+            match actions.follower.as_mut() {
+                None => actions.follower = {
                     println!("no merge");
                     Follower::new(res)
                 },
@@ -289,10 +299,7 @@ pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, global: &Glob
                 }
             }
 
-            // we are done finding the path
-            local.last_problem = Some(traverse);
-        } else {
-            local.travel_problem = Some(traverse)
+            actions.last_problem = actions.travel_problem.take();
         }
     }
 }

@@ -68,6 +68,20 @@ impl WorldBlocks {
         world
     }
 
+    pub fn first_below(&self, location: BlockLocation) -> Option<(BlockLocation, BlockState)> {
+        (0..location.y).rev()
+            .map(|y| BlockLocation::new(location.x, y, location.z))
+            .find_map(|loc| {
+                let exact = self.get_block_exact(loc)?;
+                if exact.simple_type() != SimpleType::Solid {
+                    None
+                } else {
+                    Some((loc, exact))
+                }
+            })
+
+    }
+
     /// similar to a bedrock floor. (0,0) is guaranteed to be a solid as well as (950, 950)
     pub fn set_random_floor(&mut self) {
         const RADIUS: i32 = 1000;
@@ -152,7 +166,7 @@ impl WorldBlocks {
         iterator.map(|node| node.contents)
     }
 
-    fn real_chunks(&'a self) -> impl Iterator<Item=(&'a ChunkLocation, &'a ChunkData<HighMemoryChunkSection>)> + 'a {
+    fn real_chunks(&self) -> impl Iterator<Item=(&ChunkLocation, &ChunkData<HighMemoryChunkSection>)> + '_ {
         self.storage.iter()
             .filter_map(|(loc, column)| {
                 match column {

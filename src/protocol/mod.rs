@@ -54,6 +54,7 @@ impl From<u8> for Face {
 }
 
 pub trait InterfaceOut {
+    fn place_block(&mut self, against: BlockLocation, face: Face);
     fn send_chat(&mut self, message: &str);
     fn left_click(&mut self);
     fn finish_eating(&mut self);

@@ -32,6 +32,9 @@ use crate::bootstrap::storage::UserCache;
 use crate::client::runner::{Runner, RunnerOptions};
 use crate::error::{HasContext, ResContext};
 
+#[macro_use]
+extern crate enum_dispatch;
+
 mod error;
 mod bootstrap;
 mod protocol;

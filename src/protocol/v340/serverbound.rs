@@ -86,6 +86,23 @@ pub struct ChatMessage {
     pub message: String,
 }
 
+
+#[derive(Writable, Default)]
+pub struct Cursor {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+#[derive(Writable, Packet)]
+#[packet(0x1f, Play)]
+pub struct PlaceBlock {
+    pub location: Position,
+    pub face: VarInt,
+    pub hand: Hand,
+    pub cursor: Cursor
+}
+
 #[derive(Writable, Packet)]
 #[packet(0x25, Play)]
 pub struct HeldItemChangeSb {

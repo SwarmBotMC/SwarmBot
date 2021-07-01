@@ -5,7 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use crate::client::bot::process_command;
+use crate::client::bot::{process_command, ActionState};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::InterfaceOut;
@@ -32,15 +32,17 @@ pub trait InterfaceIn {
 pub struct SimpleInterfaceIn<'a, I: InterfaceOut> {
     global: &'a mut GlobalState,
     local: &'a mut LocalState,
+    actions: &'a mut ActionState,
     out: &'a mut I,
 }
 
 impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
-    pub fn new(local: &'a mut LocalState, global: &'a mut GlobalState, out: &'a mut I) -> SimpleInterfaceIn<'a, I> {
+    pub fn new(local: &'a mut LocalState, actions: &'a mut ActionState, global: &'a mut GlobalState, out: &'a mut I) -> SimpleInterfaceIn<'a, I> {
         SimpleInterfaceIn {
             local,
             global,
             out,
+            actions
         }
     }
 }
@@ -55,7 +57,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
             if let Some(cmd) = msg.into_cmd() {
                 let name = cmd.command;
                 let args_str: Vec<&str> = cmd.args.iter().map(|x| x.as_str()).collect();
-                process_command(&name, &args_str, self.local, self.global, self.out);
+                process_command(&name, &args_str, self.local, self.global, self.actions, self.out);
             }
         };
 
@@ -67,9 +69,9 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_death(&mut self) {
-        self.local.follower = None;
-        self.local.travel_problem = None;
-        self.local.last_problem = None;
+        self.actions.follower = None;
+        self.actions.travel_problem = None;
+        self.actions.last_problem = None;
         self.out.respawn();
         self.out.send_chat("I died... oof... well I guess I should respawn");
     }

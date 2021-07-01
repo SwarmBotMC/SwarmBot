@@ -194,6 +194,19 @@ impl Interface340 {
 }
 
 impl InterfaceOut for Interface340 {
+
+    fn place_block(&mut self, against: BlockLocation, face: Face) {
+
+        let face = VarInt(face as i32);
+
+        self.write(serverbound::PlaceBlock {
+            location: against,
+            face,
+            hand: Hand::Main,
+            cursor: Default::default()
+        });
+    }
+
     fn send_chat(&mut self, message: &str) {
         self.write(serverbound::ChatMessage {
             message: message.to_string()
