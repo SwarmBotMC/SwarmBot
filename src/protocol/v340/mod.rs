@@ -278,7 +278,7 @@ impl Minecraft for Protocol {
 
     async fn login(conn: Connection) -> Res<Login<EventQueue340, Interface340>> {
         let Connection { user, address, mojang, read, write } = conn;
-        let ValidUser { email: _, username, password: _, last_checked: _, uuid, access_id, client_id: _ } = user;
+        let ValidUser { username, uuid, access_id, .. } = user;
 
         let Address { host, port } = address;
         let uuid = UUID::from(&uuid);
@@ -300,8 +300,6 @@ impl Minecraft for Protocol {
         writer.write(serverbound::LoginStart {
             username: username.clone()
         }).await?;
-
-        // writer.flush().await;
 
         let clientbound::EncryptionRequest { public_key_der, verify_token, server_id } = reader.read_exact_packet().await?;
 
@@ -330,34 +328,28 @@ impl Minecraft for Protocol {
 
 
         // set compression or login success
-        {
-            let mut data = reader.read().await?;
+        let mut data = reader.read().await?;
 
-            let LoginSuccess { username: _, uuid: _ } = match data.id {
-                clientbound::SetCompression::ID => {
-                    let clientbound::SetCompression { threshold } = data.read();
+        let LoginSuccess {..} = match data.id {
+            clientbound::SetCompression::ID => {
+                let clientbound::SetCompression { threshold } = data.read();
 
-                    reader.compression(threshold.into());
-                    writer.compression(threshold.into());
+                reader.compression(threshold.into());
+                writer.compression(threshold.into());
 
-                    reader.read_exact_packet().await?
-                }
-                clientbound::LoginSuccess::ID => {
-                    data.reader.read()
-                }
-                // clientbound::Disconnect::ID => {
-                //     let clientbound::Disconnect { reason } = data.reader.read();
-                //     return Err(Disconnect(reason));
-                // }
-                actual => {
-                    return Err(WrongPacket {
-                        state: PacketState::Login,
-                        expected: LoginSuccess::ID,
-                        actual,
-                    });
-                }
-            };
-        }
+                reader.read_exact_packet().await?
+            }
+            clientbound::LoginSuccess::ID => {
+                data.reader.read()
+            }
+            actual => {
+                return Err(WrongPacket {
+                    state: PacketState::Login,
+                    expected: LoginSuccess::ID,
+                    actual,
+                });
+            }
+        };
 
         let (tx, rx) = std::sync::mpsc::channel();
         let (os_tx, os_rx) = tokio::sync::oneshot::channel();
@@ -374,8 +366,8 @@ impl Minecraft for Protocol {
                     }
                 }
                 match tx.send(packet) {
-                    Ok(_ok) => {}
-                    Err(_err) => {
+                    Ok(..) => {}
+                    Err(..) => {
                         // the other end is stopped and should have printed the error
                         return;
                     }

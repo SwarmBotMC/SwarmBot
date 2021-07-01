@@ -26,7 +26,8 @@ impl NoVehicleGoalCheck {
 
 impl GoalCheck<MoveNode> for NoVehicleGoalCheck {
     fn is_goal(&self, input: &MoveNode) -> bool {
-        input.location == self.goal
+        let close_y = (input.location.y - self.goal.y).abs() <= 1;
+        close_y && input.location.x == self.goal.x && input.location.z == self.goal.z
     }
 }
 
@@ -47,7 +48,7 @@ impl Heuristic<MoveNode> for NoVehicleHeuristic {
 pub struct TravelProblem;
 
 impl TravelProblem {
-    pub fn new(start: BlockLocation, goal: BlockLocation) -> impl Problem<Node=MoveNode> {
+    pub fn create(start: BlockLocation, goal: BlockLocation) -> impl Problem<Node=MoveNode> {
         let heuristic = NoVehicleHeuristic { move_cost: 1.0, goal };
         let start_node = MoveNode::simple(start);
         let goal_checker = NoVehicleGoalCheck::new(goal);

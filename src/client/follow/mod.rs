@@ -261,7 +261,7 @@ mod tests {
         assert_eq!(95, start_below);
         assert_eq!(95, end_below);
 
-        let mut problem = TravelProblem::new(start, end);
+        let mut problem = TravelProblem::create(start, end);
 
         let increment = problem.iterate_until(Instant::now() + Duration::from_secs(10), &mut local_state, &global_state);
 
@@ -298,7 +298,7 @@ mod tests {
         let world = &mut global_state.world_blocks;
         world.set_random_floor();
 
-        let mut problem = TravelProblem::new(start, end);
+        let mut problem = TravelProblem::create(start, end);
 
         let increment = problem.iterate_until(Instant::now() + Duration::from_secs(20), &mut local_state, &global_state);
 

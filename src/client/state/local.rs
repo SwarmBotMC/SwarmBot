@@ -76,7 +76,7 @@ impl LocalState {
     pub fn travel_to_block(&mut self, goal: BlockLocation) {
         let from = self.physics.location().into();
         println!("starting nav");
-        let problem = box TravelProblem::new(from, goal);
+        let problem = box TravelProblem::create(from, goal);
 
         self.travel_problem = Some(problem);
     }
