@@ -25,20 +25,11 @@ pub struct Opts {
     #[clap(short, long, default_value = "500")]
     pub delay: u64,
 
-    #[clap(short, long)]
-    pub online: bool,
-
     #[clap(long, default_value = "users.csv")]
     pub users_file: String,
 
     #[clap(long, default_value = "proxies.csv")]
     pub proxies_file: String,
-
-    #[clap(long, default_value = "mcbot")]
-    pub db: String,
-
-    #[clap(short, long)]
-    pub proxy: bool,
 
     #[clap(short, long, default_value = "340")]
     pub version: usize,

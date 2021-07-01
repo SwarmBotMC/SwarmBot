@@ -16,11 +16,11 @@ pub type ResContext<T = ()> = Result<T, ErrorContext<Error>>;
 #[derive(Debug)]
 pub enum Error {
     IO(std::io::Error),
-    CSV(csv::Error),
+    Csv(csv::Error),
     Socks5(tokio_socks::Error),
     Serde(serde_json::Error),
     Reqwest(reqwest::Error),
-    Resolve(trust_dns_resolver::error::ResolveError),
+    Resolve(Box<trust_dns_resolver::error::ResolveError>),
     WrongPacket {
         state: PacketState,
         expected: u32,
@@ -48,7 +48,7 @@ impl Display for MojangErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             MojangErr::InvalidCredentials { error_code, info } => {
-                f.write_fmt(format_args!("mojang err #{} info {}", error_code, info.clone().unwrap_or(String::new())))
+                f.write_fmt(format_args!("mojang err #{} info {}", error_code, info.clone().unwrap_or_default()))
             }
         }
     }
@@ -59,7 +59,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::IO(io) => std::fmt::Display::fmt(io, f),
-            Error::CSV(csv) => std::fmt::Display::fmt(csv, f),
+            Error::Csv(csv) => std::fmt::Display::fmt(csv, f),
             Error::Simple(str) => f.write_str(str),
             Error::Reqwest(inner) => std::fmt::Display::fmt(inner, f),
             Error::Socks5(socks) => std::fmt::Display::fmt(socks, f),
@@ -77,13 +77,13 @@ pub fn err(str: &str) -> Error {
 
 impl From<csv::Error> for Error {
     fn from(err: csv::Error) -> Self {
-        Self::CSV(err)
+        Self::Csv(err)
     }
 }
 
 impl From<trust_dns_resolver::error::ResolveError> for Error {
     fn from(err: trust_dns_resolver::error::ResolveError) -> Self {
-        Self::Resolve(err)
+        Self::Resolve(box err)
     }
 }
 

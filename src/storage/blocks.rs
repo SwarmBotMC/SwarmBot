@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 
 use rand::{Rng, SeedableRng};
-use rand::rngs::{StdRng, ThreadRng};
+use rand::rngs::{StdRng};
 
 use crate::schematic::Schematic;
 use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType, BlockKind};
@@ -184,7 +184,7 @@ mod tests {
             world.set_block(up, given);
 
             let got_up = world.get_block(up);
-            assert_matches!(got_up , Some(BlockApprox::Realized(given)));
+            assert_matches!(got_up , Some(BlockApprox::Realized(_given)));
 
             let got = world.get_block(loc);
             assert_matches!(got , Some(BlockApprox::Realized(BlockState::STONE)));

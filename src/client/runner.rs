@@ -9,19 +9,17 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::TryRecvError;
 use std::time::{Duration, Instant};
+
 use tokio::sync::Notify;
 
-use crate::bootstrap::blocks::BlockData;
 use crate::bootstrap::Connection;
 use crate::client::bot::{Bot, process_command, run_threaded};
-use crate::client::physics::Physics;
 use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
-use crate::client::state::inventory::Inventory;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
-use crate::types::Dimension;
 use crate::term::Term;
+use std::sync::Arc;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -46,16 +44,19 @@ pub struct Runner<T: Minecraft> {
     /// the global state of the program containing chunks and global config
     global_state: GlobalState,
 
+    /// A terminal which has options for stdin/out
     term: Term,
 
     /// the bots created by pending logins
     bots: Vec<Bot<T::Queue, T::Interface>>,
 
+    /// An id counter that increases for each bot. Used as a unique identifier.
     id_on: u32,
 }
 
 /// Runner launch options
 pub struct RunnerOptions {
+    /// The amount of milliseconds to wait between logging in successive users
     pub delay_millis: u64,
 }
 
@@ -67,10 +68,10 @@ impl<T: Minecraft + 'static> Runner<T> {
     }
 
 
+    /// Initialize the runner. Go through the handshake process for each [`Connection`]
     fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
         let RunnerOptions { delay_millis } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
-        // let handles = Rc::new(RefCell::new(Vec::new()));
 
         {
             let pending_logins = pending_logins.clone();
@@ -105,7 +106,10 @@ impl<T: Minecraft + 'static> Runner<T> {
 
 
     pub async fn game_loop(&mut self) {
+
         let mut previous_goal = Instant::now();
+
+        // a game loop repeating every 50 ms
         loop {
             let end_by = previous_goal + Duration::from_millis(50);
             self.game_iter(end_by).await;
@@ -113,14 +117,18 @@ impl<T: Minecraft + 'static> Runner<T> {
             let now = Instant::now();
             let difference = now - end_by;
             let millis_off = difference.as_millis();
+
+            // log if we are wayyyy off
             if millis_off > 100 {
                 println!("off by {}ms", millis_off);
             }
+
             previous_goal = end_by;
         }
     }
 
     async fn game_iter(&mut self, end_by: Instant) {
+
         let old_count = self.bots.len();
         // first step: removing disconnected clients
         {
@@ -148,6 +156,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         let new_count = self.bots.len();
 
+        // log clients if they have changed
         if new_count != old_count {
             println!("{} clients", new_count);
         }
@@ -157,19 +166,27 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // fourth step: process packets from game loop
         for bot in &mut self.bots {
-            // protocol-specific logic
 
             let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut self.global_state, &mut bot.out, &self.term);
+
+            // protocol-specific logic. Translates input packets and sends to processor
             bot.queue.flush(&mut processor);
 
             // fifth step: general sync logic that isn't dependent on protocol implementation
             bot.run_sync(&mut self.global_state);
         }
 
-        // sixth step: run threaded
-        let thread_loop_end = Notify::new();
+        // sixth step: run multi-threaded environment for the rest of the game loop. GlobalState will be read-only and LocalState will be mutable
+        let thread_loop_end = Arc::new(Notify::new());
 
         {
+
+            let thread_loop_end = thread_loop_end.clone();
+
+            // We have to do unsafe stuff here because Rust requires a 'static lifetime for threads.
+            // However, in this case we know that the thread (task) will stop by the end of this function, so we
+            // can coerce the lifetimes of &GlobalState and &mut LocalState to be 'static. This is overall pretty
+            // safe as it still requires the states to be Send+Sync, so it is hard to make errors.
             let global_state_sync = SyncGlobal(&self.global_state);
             let states_sync: Vec<_> = self.bots.iter_mut()
                 .map(|bot| &mut bot.state)
@@ -189,9 +206,13 @@ impl<T: Minecraft + 'static> Runner<T> {
                     }
                 });
 
+                // when all tasks are finished allow us to go to the beginning of the loop and mutate GlobalState again
                 thread_loop_end.notify_one();
             });
         }
+
+        // wait until all threaded activities have finished
+        thread_loop_end.notified().await;
     }
 
     fn process_commands(&mut self) {
@@ -210,8 +231,8 @@ impl<T: Minecraft + 'static> Runner<T> {
                 }
             }
             Err(TryRecvError::Empty) => {}
-            Err(_e) => {
-                println!("receive err");
+            Err(e) => {
+                println!("receive err {}", e);
             }
         }
     }

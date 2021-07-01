@@ -25,7 +25,7 @@ use std::fs::File;
 use tokio::runtime::Runtime;
 use tokio::task;
 
-use crate::bootstrap::blocks::BlockData;
+
 use crate::bootstrap::Connection;
 use crate::bootstrap::dns::normalize_address;
 use crate::bootstrap::opts::Opts;
@@ -43,11 +43,16 @@ mod schematic;
 mod types;
 
 fn main() {
+
+    // create the single-threaded async runtime
     let rt = Runtime::new().unwrap();
     let local = task::LocalSet::new();
     local.block_on(&rt, async move {
         match run().await {
+            // this should never happen as this should be an infinite loop
             Ok(_) => println!("Program exited without errors somehow"),
+
+            // print the error in non-debug fashion
             Err(err) => println!("{}", err)
         }
     });
@@ -55,7 +60,8 @@ fn main() {
 
 
 async fn run() -> ResContext<()> {
-    let Opts { users_file, proxy: _, proxies_file, host, count, version, port, db: _, delay, load, .. } = Opts::get();
+
+    let Opts { users_file, proxies_file, host, count, version, port, delay, load} = Opts::get();
 
     let address = normalize_address(&host, port).await;
 
@@ -75,7 +81,7 @@ async fn run() -> ResContext<()> {
         println!("obtaining users from cache");
         cache.obtain_users(count, csv_users, proxies)
     };
-    
+
     if load {
         while proxy_users.recv().await.is_some() {
             // empty

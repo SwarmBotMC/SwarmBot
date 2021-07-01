@@ -9,13 +9,13 @@ use rand::random;
 use rand::rngs::OsRng;
 use rsa::{BigUint, PaddingScheme, PublicKey, RSAPublicKey};
 
-pub struct RSA {
+pub struct Rsa {
     key: RSAPublicKey,
 }
 
 
-impl RSA {
-    pub fn from_der(der: &[u8]) -> RSA {
+impl Rsa {
+    pub fn from_der(der: &[u8]) -> Rsa {
 
         // https://wiki.vg/Protocol_Encryption
         let (n, e) = rsa_der::public_key_from_der(der).unwrap();
@@ -23,7 +23,7 @@ impl RSA {
         // might be wrong endian
         let (n, e) = (BigUint::from_bytes_be(&n), BigUint::from_bytes_be(&e));
 
-        RSA {
+        Rsa {
             key: RSAPublicKey::new(n, e).unwrap()
         }
     }
@@ -39,8 +39,8 @@ pub fn rand_bits() -> [u8; 16] {
     // TODO: "insecure" use OsRng ... I just couldn't figure out how to get a byte from it
 
     let mut arr = [0_u8; 16];
-    for i in 0..16 {
-        arr[i] = random();
+    for item in &mut arr {
+        *item = random();
     }
 
     arr

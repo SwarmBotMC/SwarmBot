@@ -14,7 +14,7 @@ use tokio::net::tcp::OwnedWriteHalf;
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::error::Res;
-use crate::protocol::io::{AES, ZLib};
+use crate::protocol::io::{Aes, ZLib};
 
 pub struct PacketWriter {
     writer: EncryptedWriter,
@@ -23,7 +23,7 @@ pub struct PacketWriter {
 
 struct EncryptedWriter {
     writer: OwnedWriteHalf,
-    cipher: Option<AES>,
+    cipher: Option<Aes>,
 }
 
 impl EncryptedWriter {
@@ -77,7 +77,7 @@ impl PacketWriteChannel {
 
 impl PacketWriter {
     pub fn encryption(&mut self, key: &[u8]) {
-        self.writer.cipher = Some(AES::new(key));
+        self.writer.cipher = Some(Aes::new(key));
     }
 
     pub fn compression(&mut self, threshold: u32) {

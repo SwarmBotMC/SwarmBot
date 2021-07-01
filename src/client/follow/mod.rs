@@ -6,9 +6,9 @@
  */
 
 use std::collections::VecDeque;
-use std::fs::{File, OpenOptions};
-use std::io::Read;
-use std::path::PathBuf;
+
+
+
 
 use crate::client::pathfind::context::MoveRecord;
 use crate::client::pathfind::incremental::PathResult;
@@ -16,7 +16,7 @@ use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::types::{Direction, Displacement, Location};
+use crate::types::{Direction, Location};
 
 const PROGRESS_THRESHOLD: f64 = 0.6;
 const PROGRESS_THRESHOLD_Y: f64 = 0.48;
@@ -187,8 +187,8 @@ impl Follower {
 
 
 
-        let mut look_displacement = disp_horizontal - velocity * VELOCITY_IMPORTANCE;
-        let mut corr = velocity.normalize().dot(disp_horizontal.normalize());
+        let look_displacement = disp_horizontal - velocity * VELOCITY_IMPORTANCE;
+        let corr = velocity.normalize().dot(disp_horizontal.normalize());
 
         // if displacement.mag2() < DISPLACEMENT_CONSIDER_THRESH * DISPLACEMENT_CONSIDER_THRESH {
         //     look_displacement = disp_horizontal;

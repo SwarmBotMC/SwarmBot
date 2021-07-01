@@ -22,13 +22,13 @@ type AesCfb8 = Cfb8<Aes128>;
 /// https://github.com/RustCrypto/block-ciphers/issues/28
 /// https://docs.rs/cfb-mode/0.7.1/cfb_mode/
 /// as per https://wiki.vg/Protocol_Encryption#Symmetric_Encryption the key and iv are the same
-struct AES {
+struct Aes {
     cipher: AesCfb8,
 }
 
-impl AES {
-    pub fn new(key: &[u8]) -> AES {
-        AES {
+impl Aes {
+    pub fn new(key: &[u8]) -> Aes {
+        Aes {
             cipher: AesCfb8::new_from_slices(key, key).unwrap(),
         }
     }

@@ -35,11 +35,11 @@ impl BuildNoVehicleProblem {
     pub fn change(start: BlockLocation, blocks_to_change: HashMap<BlockLocation, BlockState>) -> impl Problem<Node=MoveNode> {
         let start = MoveNode::new(start, &blocks_to_change);
 
-        return PlayerProblem::new(start, HeuristicImpl, GoalCheckImpl, blocks_to_change);
+        PlayerProblem::new(start, HeuristicImpl, GoalCheckImpl, blocks_to_change)
     }
 
     pub fn mine(start: BlockLocation, blocks: HashSet<BlockLocation>) -> impl Problem<Node=MoveNode> {
         let change = blocks.iter().map(|&loc| (loc, BlockState::AIR)).collect();
-        return BuildNoVehicleProblem::change(start, change);
+        BuildNoVehicleProblem::change(start, change)
     }
 }

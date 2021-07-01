@@ -6,7 +6,7 @@
  */
 
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, Index};
+use std::ops::{Add};
 
 use crate::bootstrap::blocks::BlockData;
 use crate::types::Location;

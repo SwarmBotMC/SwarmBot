@@ -12,7 +12,7 @@ use crate::client::pathfind::context::{GlobalContext, MoveNode};
 use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
 use crate::client::pathfind::moves::Movements::TraverseCardinal;
 use crate::client::pathfind::traits::{Neighbor, Progression};
-use crate::storage::block::{BlockKind, BlockLocation, BlockState, SimpleType};
+use crate::storage::block::{BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 
 pub const MAX_FALL: i32 = 3;
@@ -63,12 +63,12 @@ impl Movements {
         }
 
 
-        macro_rules! get_kind {
-            ($x: expr, $y: expr, $z:expr) => {{
-                let res: Option<BlockKind> = w.get_block_kind(BlockLocation::new($x,$y,$z));
-                res
-            }};
-        }
+        // macro_rules! get_kind {
+        //     ($x: expr, $y: expr, $z:expr) => {{
+        //         let res: Option<BlockKind> = w.get_block_kind(BlockLocation::new($x,$y,$z));
+        //         res
+        //     }};
+        // }
 
         macro_rules! wrap {
             ($block_loc: expr) => {{

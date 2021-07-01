@@ -13,7 +13,7 @@ use crate::client::physics::Physics;
 use crate::client::state::inventory::Inventory;
 use crate::protocol::ClientInfo;
 use crate::storage::block::BlockLocation;
-use crate::types::{Dimension, Location};
+use crate::types::{Dimension};
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 

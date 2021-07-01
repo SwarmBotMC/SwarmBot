@@ -52,6 +52,6 @@ impl TravelProblem {
         let heuristic = NoVehicleHeuristic { move_cost: 1.0, goal };
         let start_node = MoveNode::simple(start);
         let goal_checker = NoVehicleGoalCheck::new(goal);
-        return PlayerProblem::new(start_node, heuristic, goal_checker, HashMap::new());
+        PlayerProblem::new(start_node, heuristic, goal_checker, HashMap::new())
     }
 }

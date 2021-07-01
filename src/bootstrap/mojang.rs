@@ -57,7 +57,7 @@ pub fn calc_hash(server_id: &str, shared_secret: &[u8], public_key_encoded: &[u8
 }
 
 fn hexdigest(bytes: &[u8]) -> String {
-    let bigint = BigInt::from_signed_bytes_be(&bytes);
+    let bigint = BigInt::from_signed_bytes_be(bytes);
     format!("{:x}", bigint)
 }
 

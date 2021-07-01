@@ -20,7 +20,7 @@ use crate::client::processor::InterfaceIn;
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
 use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Mine, Minecraft};
-use crate::protocol::encrypt::{rand_bits, RSA};
+use crate::protocol::encrypt::{rand_bits, Rsa};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
@@ -306,7 +306,7 @@ impl Minecraft for Protocol {
 
         let clientbound::EncryptionRequest { public_key_der, verify_token, server_id } = reader.read_exact_packet().await?;
 
-        let rsa = RSA::from_der(&public_key_der);
+        let rsa = Rsa::from_der(&public_key_der);
 
         let shared_secret = rand_bits();
 

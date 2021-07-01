@@ -15,7 +15,7 @@ use tokio::net::tcp::OwnedReadHalf;
 
 use crate::error::Error::WrongPacket;
 use crate::error::Res;
-use crate::protocol::io::{AES, ZLib};
+use crate::protocol::io::{Aes, ZLib};
 use crate::types::PacketData;
 
 pub struct PacketReader {
@@ -25,7 +25,7 @@ pub struct PacketReader {
 
 struct EncryptedReader {
     reader: BufReader<OwnedReadHalf>,
-    cipher: Option<AES>,
+    cipher: Option<Aes>,
 }
 
 impl AsyncRead for EncryptedReader {
@@ -62,7 +62,7 @@ impl From<OwnedReadHalf> for PacketReader {
 
 impl PacketReader {
     pub fn encryption(&mut self, key: &[u8]) {
-        self.reader.cipher = Some(AES::new(key));
+        self.reader.cipher = Some(Aes::new(key));
     }
 
     pub fn compression(&mut self, threshold: u32) {
