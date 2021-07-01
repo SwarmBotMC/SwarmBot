@@ -157,19 +157,6 @@ impl Movements {
         let floor = get_block!(x, y - 1, z).unwrap();
         let feet = get_block!(x, y, z).unwrap();
 
-        // if get_kind!(x, y, z) == Some(BlockKind::LADDER) {
-        //     if matches!(above, WalkThrough | Water) {
-        //         res.push(Neighbor {
-        //             value: wrap!(BlockLocation::new(x,y+1,z)),
-        //             cost: ctx.path_config.costs.ascend * multiplier,
-        //         });
-        //     }
-        //     if matches!(floor, WalkThrough | Water) {
-        //         res.push(Neighbor {
-        //             value: wrap!(BlockLocation::new(x,y-1,z)),
-        //             cost: ctx.path_config.costs.ascend * multiplier,
-        //         });
-        //     }
         if above == Water || head == Water && above == WalkThrough {
             res.push(Neighbor {
                 value: wrap!(BlockLocation::new(x,y+1,z)),
@@ -194,8 +181,8 @@ impl Movements {
 
                 // we can only move if we couldn't move adjacent without changing elevation
                 if !can_move_adj_noplace[idx] {
-                    let adj_above = get_block!(x+dx, y+2, z+dz).unwrap() == WalkThrough;
-                    let can_jump = adj_above && adj_legs[idx] == Solid && adj_head[idx] == WalkThrough;
+                    let adj_above = matches!(get_block!(x+dx, y+2, z+dz).unwrap(), WalkThrough | Water);
+                    let can_jump = adj_above && adj_legs[idx] == Solid && matches!(adj_head[idx], WalkThrough | Water);
                     if can_jump {
                         res.push(Neighbor {
                             value: wrap!(BlockLocation::new(x+dx,y+1,z+dz)),
