@@ -72,6 +72,13 @@ pub struct PlayerPositionAndRotation {
     pub on_ground: bool,
 }
 
+
+#[derive(Packet, Writable)]
+#[packet(0x20, Login)]
+pub struct UseItem {
+    pub(crate) hand: Hand
+}
+
 #[derive(Writable, Packet)]
 #[packet(0x02, Play)]
 pub struct ChatMessage {
@@ -127,7 +134,7 @@ pub enum DigStatus {
     Finished,
     DropItemStack,
     DropItem,
-    ShootArrow,
+    ShootArrowOrFinishEat,
     SwapItem, // location 0,0,0 face-y
 }
 
@@ -138,6 +145,24 @@ pub struct PlayerDig {
     pub position: Position,
     pub face: u8,
 }
+
+impl PlayerDig {
+    pub fn status(status: DigStatus) -> PlayerDig {
+        Self {
+            status,
+            position: Position::default(),
+            face: 0
+        }
+    }
+}
+
+pub type ChangeSlot = HeldItemChange;
+#[derive(Writable, Packet)]
+#[packet(0x1a, Play)]
+pub struct HeldItemChange {
+    pub slot: u16
+}
+
 
 #[repr(i32)]
 #[derive(EnumWritable)]

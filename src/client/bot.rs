@@ -17,7 +17,7 @@ use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::{LocalState, MineTask};
+use crate::client::state::local::{LocalState, TaskKind, Task};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
@@ -38,16 +38,33 @@ const fn ticks_from_secs(seconds: usize) -> usize {
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
-        match self.state.mining.as_mut() {
+        match self.state.task.as_mut() {
             None => {}
-            Some(mining) => {
-                mining.ticks -= 1;
-                self.out.left_click();
-                if mining.ticks == 0 {
-                    println!("finished mining");
-                    self.out.mine(mining.location, Mine::Finished);
-                    self.state.mining = None;
+            Some(task) => {
+
+                match task.kind {
+                    TaskKind::Mine(loc) => {
+                        self.out.left_click();
+                        if task.ticks == 0 {
+                            self.out.mine(loc, Mine::Finished);
+                        }
+                    }
+                    TaskKind::Eat => {
+                        // self.out.right_click();
+                        if task.ticks == 0 {
+                            println!("finish eating");
+                            self.out.finish_eating();
+                        }
+                    }
                 }
+
+
+                if task.ticks == 0 {
+                    self.state.task = None;
+                } else {
+                    task.ticks -= 1;
+                }
+
             }
         }
         self.move_around(global);
@@ -142,6 +159,19 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             // let closest = self.global.world_blocks.closest(loc,|state| state.kind() == kind);
             // if
         }
+        "eat" => {
+                out.right_click();
+                local.task = Some(Task {
+                ticks: 32,
+                kind: TaskKind::Eat
+            })
+        }
+        "slot" => {
+            if let [number] = args {
+                let number: u8 = number.parse().unwrap();
+                out.change_slot(number);
+            }
+        }
         "goto" => {
             if let [id] = args {
                 let id: u32 = id.parse().unwrap();
@@ -209,12 +239,12 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
                     msg!("started mining at {} .. ticks {}", closest, ticks);
 
-                    let task = MineTask {
+                    let task = Task {
                         ticks,
-                        location: closest,
+                        kind: TaskKind::Mine(closest)
                     };
 
-                    local.mining = Some(task);
+                    local.task = Some(task);
                     out.mine(closest, Mine::Start);
                 }
             }

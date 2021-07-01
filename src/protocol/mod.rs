@@ -29,6 +29,9 @@ pub enum Mine {
 pub trait InterfaceOut {
     fn send_chat(&mut self, message: &str);
     fn left_click(&mut self);
+    fn finish_eating(&mut self);
+    fn right_click(&mut self);
+    fn change_slot(&mut self, number: u8);
     fn mine(&mut self, location: BlockLocation, mine: Mine);
     fn respawn(&mut self);
     fn teleport(&mut self, location: Location);

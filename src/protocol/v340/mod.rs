@@ -206,6 +206,22 @@ impl InterfaceOut for Interface340 {
         });
     }
 
+    fn finish_eating(&mut self) {
+        self.write(serverbound::PlayerDig::status(DigStatus::ShootArrowOrFinishEat));
+    }
+
+    fn right_click(&mut self) {
+        self.write(serverbound::UseItem {
+            hand: Hand::Main
+        });
+    }
+
+    fn change_slot(&mut self, number: u8) {
+        self.write(serverbound::ChangeSlot {
+            slot: number as u16
+        })
+    }
+
     fn mine(&mut self, position: BlockLocation, mine: Mine) {
         let status = match mine {
             Mine::Start => DigStatus::Started,
