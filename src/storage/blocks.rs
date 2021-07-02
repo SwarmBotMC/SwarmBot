@@ -46,7 +46,7 @@ impl<T: Ord> Iterator for HeapIter<T> {
 fn block_chunk_iter(loc: &'a ChunkLocation, column: &'a ChunkData<HighMemoryChunkSection>, selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=BlockLocation> + 'a {
     let start_x = loc.0 << 4;
     let start_z = loc.1 << 4;
-    column.select(selector).map(move |idx| {
+    column.select_up(selector).map(move |idx| {
         let x = idx % 16;
         let leftover = idx >> 4;
         let z = leftover % 16;
@@ -184,6 +184,22 @@ impl WorldBlocks {
             .flat_map(move |(loc, column)| {
                 block_chunk_iter(loc, column, selector)
             })
+    }
+    
+    pub fn get_real_column(&self, location: ChunkLocation) -> Option<&ChunkData<HighMemoryChunkSection>> {
+        let res = self.storage.get(&location)?;
+        match res {
+            ChunkColumn::HighMemory { data } => Some(data),
+            _ => None
+        }
+    }
+
+    pub fn get_real_column_mut(&mut self, location: ChunkLocation) -> Option<&mut ChunkData<HighMemoryChunkSection>> {
+        let res = self.storage.get_mut(&location)?;
+        match res {
+            ChunkColumn::HighMemory { data } => Some(data),
+            _ => None
+        }
     }
 
     pub fn set_block(&mut self, location: BlockLocation, block: BlockState) {

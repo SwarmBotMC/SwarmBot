@@ -23,7 +23,6 @@ impl From<u32> for BlockKind {
 
 impl BlockKind {
     pub const DEFAULT_SLIP: f64 = 0.6;
-
     pub const LADDER: BlockKind = BlockKind(65);
 
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {

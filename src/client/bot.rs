@@ -5,6 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
+use std::cmp::max;
 use std::num::ParseIntError;
 use std::string::ParseError;
 use std::time::Instant;
@@ -116,6 +117,30 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 actions.schedule(PillarTask::new(amount, local));
             }
         }
+        "pillarc" => {
+            if let [a, b] = args {
+                let x = a.parse()?;
+                let z = b.parse()?;
+                let goal = ChunkLocation(x, z);
+
+                let mut task = CompoundTask::default();
+
+                task
+                    .add(ChunkTravelTask::new(goal, local))
+                    .add_lazy(move |local, global| {
+                        let column = global.world_blocks.get_real_column(goal).unwrap();
+                        let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
+                        let highest_block = column.block_location(goal, highest_block);
+
+                        let current_loc = BlockLocation::from(local.physics.location()).below();
+                        let diff_y = max(highest_block.y - current_loc.y, 0) as u32;
+                        PillarTask::new(diff_y, local)
+                    });
+
+                println!("scheduled");
+                actions.schedule(task);
+            }
+        }
         "gotoc" => { // goto chunk
             if let [a, b] = args {
                 let x = a.parse()?;
@@ -162,8 +187,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             local.physics.look_at(below.center_bottom());
             let mine = MineTask { ticks, location: below, face: Face::PosY };
             let fall = FallBucketTask::default();
-            let compound = CompoundTask::new([mine.into(), fall.into()]);
-            actions.task = Some(compound.into())
+            let mut compound = CompoundTask::default();
+            compound.add(mine).add(fall);
+            actions.schedule(compound);
         }
         "goto" => {
             if let [id] = args {

@@ -7,7 +7,8 @@
 
 use std::collections::HashMap;
 
-use crate::storage::block::{BlockApprox, BlockState, SimpleType};
+use crate::storage::block::{BlockApprox, BlockState, SimpleType, BlockLocation};
+use crate::storage::blocks::ChunkLocation;
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
@@ -90,12 +91,47 @@ pub struct ChunkData<T> {
     pub sections: [Option<T>; 16],
 }
 
+impl <T> ChunkData<T> {
+
+    pub fn block_location(&self, location: ChunkLocation, idx: usize) -> BlockLocation {
+        let base_x = location.0 << 4;
+        let base_z = location.1 << 4;
+
+        let x = idx % 16;
+        let leftover = idx >> 4;
+        let z = leftover % 16;
+        let y = leftover / 16;
+        BlockLocation::new(base_x + x as i32, y as i16, base_z + z as i32)
+    }
+
+    fn highest_mut(&mut self) -> Option<&mut T> {
+        self.sections.iter_mut().rev().flatten().next()
+    }
+
+    fn lowest_mut(&mut self) -> Option<&mut T> {
+        self.sections.iter_mut().flatten().next()
+    }
+}
+
 impl ChunkData<HighMemoryChunkSection> {
-    pub fn select(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
+    pub fn select_up(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
         self.sections.iter().enumerate()
             .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec| (chunk_idx << 12, sec)))
             .flat_map(|(idx_start, section)| {
                 IntoIterator::into_iter(section.palette.all_states()).enumerate().map(move |(idx, state)| (idx_start + idx, state))
+            })
+            .filter(move |(_, state)| {
+                selector(*state)
+            })
+            .map(|(idx, _)| idx)
+    }
+
+    // TODO: remove duplicate code... is it even possible?
+    pub fn select_down(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
+        self.sections.iter().enumerate().rev()
+            .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec| (chunk_idx << 12, sec)))
+            .flat_map(|(idx_start, section)| {
+                IntoIterator::into_iter(section.palette.all_states()).enumerate().rev().map(move |(idx, state)| (idx_start + idx, state))
             })
             .filter(move |(_, state)| {
                 selector(*state)

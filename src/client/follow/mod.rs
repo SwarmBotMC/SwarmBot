@@ -311,7 +311,6 @@ mod tests {
             Increment::Finished(res) => res
         };
 
-
         assert!(result.complete, "result is not complete. length was {}", result.value.len());
 
         let mut follower = Follower::new(result).unwrap();

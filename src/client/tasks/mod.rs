@@ -33,12 +33,14 @@ pub enum Task {
     EatTask,
     MineTask,
     PillarTask,
+    LazyTask,
     BlockTravelTask,
     ChunkTravelTask,
     FallBucketTask,
     CompoundTask,
 }
 
+#[derive(Default)]
 pub struct CompoundTask {
     tasks: VecDeque<Task>,
 }
@@ -60,7 +62,7 @@ impl<H: Heuristic, G: GoalCheck> NavigateProblem<H, G> {
 }
 
 
-impl<H: Heuristic + Send + Sync, G: GoalCheck + Send+ Sync> TaskTrait for NavigateProblem<H, G> {
+impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for NavigateProblem<H, G> {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
         let follower = match self.follower.as_mut() {
             None => return false,
@@ -125,10 +127,19 @@ impl BlockTravelTask {
 }
 
 impl CompoundTask {
-    pub fn new<const T: usize>(tasks: [Task; T]) -> CompoundTask {
-        CompoundTask {
-            tasks: IntoIterator::into_iter(tasks).collect()
-        }
+    pub fn add<T: Into<Task>>(&mut self, task: T) -> &mut Self {
+        self.tasks.push_back(task.into());
+        self
+    }
+
+    pub fn add_lazy<A: Into<Task>, T: FnOnce(&mut LocalState, &GlobalState) -> A + 'static + Sync + Send>(&mut self, block: T) -> &mut Self {
+        let lazy = LazyTask::new(|local, global| {
+            block(local, global).into()
+        });
+
+        self.add(lazy);
+
+        self
     }
 }
 
@@ -142,11 +153,17 @@ impl TaskTrait for CompoundTask {
         let finished = front.tick(out, local, global);
 
         if finished {
-            println!("next");
             self.tasks.pop_front();
         }
 
         self.tasks.is_empty()
+    }
+
+    fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {
+        match self.tasks.front_mut() {
+            None => return,
+            Some(res) => res.expensive(end_at, local, global)
+        };
     }
 }
 
@@ -186,6 +203,41 @@ impl TaskTrait for MineTask {
     }
 }
 
+pub struct LazyTask {
+    inner: Option<Box<Task>>,
+    create_task: Option<Box<dyn FnOnce(&mut LocalState, &GlobalState) -> Task + 'static + Sync + Send>>,
+}
+
+impl LazyTask {
+    pub fn new<T: FnOnce(&mut LocalState, &GlobalState) -> Task + 'static + Sync + Send>(block: T) -> LazyTask {
+        Self {
+            inner: None,
+            create_task: Some(box block),
+        }
+    }
+
+    fn get(&mut self, local: &mut LocalState, global: &GlobalState) -> &mut Task {
+
+        if self.inner.is_none() {
+            let f = self.create_task.take().unwrap();
+            self.inner = Some(Box::new(f(local, global)));
+        }
+
+        self.inner.as_mut().unwrap()
+    }
+}
+
+impl TaskTrait for LazyTask {
+    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+        let task = self.get(local, global);
+        task.tick(out, local, global)
+    }
+
+    fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {
+        let task = self.get(local, global);
+        task.expensive(end_at, local, global);
+    }
+}
 
 pub struct PillarTask {
     count: u32,
@@ -196,7 +248,7 @@ impl PillarTask {
     pub fn new(count: u32, local: &LocalState) -> PillarTask {
         Self {
             count,
-            place_loc: BlockLocation::from(local.physics.location()).below()
+            place_loc: BlockLocation::from(local.physics.location()).below(),
         }
     }
 }
@@ -214,7 +266,6 @@ impl TaskTrait for PillarTask {
         self.count == 0
     }
 }
-
 
 
 #[derive(Default)]
