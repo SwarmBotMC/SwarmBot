@@ -10,6 +10,12 @@ pub struct Speed {
     multiplier: f64,
 }
 
+impl Default for Speed {
+    fn default() -> Self {
+        Speed::STOP
+    }
+}
+
 impl Speed {
     const fn new(multiplier: f64) -> Self {
         Self { multiplier }

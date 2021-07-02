@@ -32,6 +32,7 @@ pub trait TaskTrait {
 pub enum Task {
     EatTask,
     MineTask,
+    PillarTask,
     BlockTravelTask,
     ChunkTravelTask,
     FallBucketTask,
@@ -184,6 +185,37 @@ impl TaskTrait for MineTask {
         }
     }
 }
+
+
+pub struct PillarTask {
+    count: u32,
+    place_loc: BlockLocation,
+}
+
+impl PillarTask {
+    pub fn new(count: u32, local: &LocalState) -> PillarTask {
+        Self {
+            count,
+            place_loc: BlockLocation::from(local.physics.location()).below()
+        }
+    }
+}
+
+impl TaskTrait for PillarTask {
+    fn tick(&mut self, _: &mut impl InterfaceOut, local: &mut LocalState, _: &mut GlobalState) -> bool {
+        local.physics.jump();
+
+        if local.physics.at_apex() {
+            local.physics.place_hand(self.place_loc);
+            self.count -= 1;
+            self.place_loc = self.place_loc.above()
+        }
+
+        self.count == 0
+    }
+}
+
+
 
 #[derive(Default)]
 pub struct FallBucketTask {

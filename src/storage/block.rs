@@ -202,6 +202,14 @@ impl BlockLocation {
         }
     }
 
+    pub fn above(&self) -> BlockLocation {
+        Self {
+            x: self.x,
+            y: self.y + 1,
+            z: self.z,
+        }
+    }
+
     pub fn get(&self, idx: usize) -> i32 {
         match idx {
             0 => self.x,

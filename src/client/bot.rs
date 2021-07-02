@@ -5,6 +5,8 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
+use std::num::ParseIntError;
+use std::string::ParseError;
 use std::time::Instant;
 
 use float_ord::FloatOrd;
@@ -12,24 +14,20 @@ use itertools::Itertools;
 
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::MoveNode;
+use crate::client::pathfind::implementations::novehicle::{TravelChunkProblem, TravelProblem};
 use crate::client::pathfind::implementations::Problem;
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask, CompoundTask, BlockTravelTask, ChunkTravelTask};
+use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait};
 use crate::client::timing::Increment;
+use crate::error::Res;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
-use crate::types::{Direction, Displacement};
-use crate::client::pathfind::implementations::novehicle::{TravelProblem, TravelChunkProblem};
-use std::string::ParseError;
-use crate::error::Res;
-use std::num::ParseIntError;
 use crate::storage::blocks::ChunkLocation;
-
-type Prob = Box<dyn Problem<Node=MoveNode>>;
+use crate::types::{Direction, Displacement};
 
 #[derive(Default)]
 pub struct ActionState {
@@ -37,7 +35,7 @@ pub struct ActionState {
 }
 
 impl ActionState {
-    pub fn schedule<T: Into<Task>>(&mut self, task: T){
+    pub fn schedule<T: Into<Task>>(&mut self, task: T) {
         self.task = Some(task.into());
     }
     pub fn clear(&mut self) {
@@ -74,11 +72,15 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             }
         }
 
-
-        self.state.physics.tick(&global.world_blocks);
+        let actions = self.state.physics.tick(&global.world_blocks);
 
         let physics = &self.state.physics;
         self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
+
+        if let Some(place) = actions.block_placed.as_ref() {
+            self.out.right_click();
+            self.out.place_block(place.location, place.face);
+        }
 
         self.state.ticks += 1;
     }
@@ -108,10 +110,11 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         }
 
     match name {
-
-        // goto chunk
-        "gotoc" => {
-            if let [a,b] = args {
+        "pillar" => {
+            actions.schedule(PillarTask::new(10, local));
+        }
+        "gotoc" => { // goto chunk
+            if let [a, b] = args {
                 let x = a.parse()?;
                 let z = b.parse()?;
                 let goal = ChunkLocation(x, z);
@@ -144,8 +147,6 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             }
         }
         "fall" => {
-
-
             let below = BlockLocation::from(local.physics.location()).below();
             let kind = global.world_blocks.get_block_kind(below).unwrap();
             let tool = Tool::new(Material::HAND);
@@ -256,8 +257,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 actions.schedule(mine_task);
             }
         }
-        _ => {
-        }
+        _ => {}
     }
 
     return Ok(());

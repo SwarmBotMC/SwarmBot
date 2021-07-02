@@ -14,6 +14,9 @@ use crate::client::physics::speed::Speed;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
+use crate::protocol::Face;
+use itertools::Itertools;
+use float_ord::FloatOrd;
 
 pub mod tools;
 pub mod speed;
@@ -51,19 +54,13 @@ const PLAYER_HEIGHT_Y: Displacement = Displacement::new(0., PLAYER_HEIGHT, 0.);
 const UNIT_Y: Displacement = Displacement::new(0., 1., 0.);
 const EPSILON_Y: Displacement = Displacement::new(0., 0.001, 0.);
 
-
-#[derive(Debug)]
-struct PendingMovement {
+#[derive(Debug, Default)]
+struct Pending {
     strafe: Option<Strafe>,
+    pub place: Option<BlockPlaced>,
     jump: bool,
     line: Option<Line>,
     speed: Speed,
-}
-
-impl Default for PendingMovement {
-    fn default() -> Self {
-        Self { strafe: None, line: None, speed: Speed::STOP, jump: false }
-    }
 }
 
 fn effects_multiplier(speed: f64, slowness: f64) -> f64 {
@@ -124,6 +121,16 @@ impl Default for MovementState {
     }
 }
 
+#[derive(Debug)]
+pub struct BlockPlaced {
+    pub location: BlockLocation,
+    pub face: Face
+}
+
+pub struct Actions {
+    pub block_placed: Option<BlockPlaced>
+}
+
 fn threshold(value: f64) -> f64 {
     value
 }
@@ -138,7 +145,7 @@ pub struct Physics {
     look: Direction,
     prev: MovementState,
     horizontal: Displacement,
-    pending: PendingMovement,
+    pending: Pending,
     in_water: bool,
 }
 
@@ -183,6 +190,11 @@ impl Physics {
         self.pending.jump = true;
     }
 
+    /// if the bot is at the highest location of a jump
+    pub fn at_apex(&self) -> bool {
+        self.prev.falling && self.prev.y_vel >= 0.0 && self.prev.y_vel - ACC_G < 0.0
+    }
+
     pub fn look(&mut self, direction: Direction) {
         self.look = direction;
         self.horizontal = direction.horizontal().unit_vector();
@@ -204,6 +216,23 @@ impl Physics {
 
     pub fn strafe(&mut self, strafe: Strafe) {
         self.pending.strafe = Some(strafe)
+    }
+
+    pub fn place_hand(&mut self, against: BlockLocation) {
+        let faces = against.faces();
+        let eye_loc = self.location + Displacement::EYE_HEIGHT;
+        let face_idx = IntoIterator::into_iter(faces).position_min_by_key(|&location| FloatOrd(location.dist2(eye_loc))).unwrap();
+
+        let location = faces[face_idx];
+        let face = Face::from(face_idx as u8);
+
+        self.look_at(location);
+
+
+        self.pending.place = Some(BlockPlaced {
+            location: against,
+            face
+        });
     }
 
     pub fn speed(&mut self, speed: Speed) {
@@ -253,7 +282,7 @@ impl Physics {
         true
     }
 
-    pub fn tick(&mut self, world: &WorldBlocks) {
+    pub fn tick(&mut self, world: &WorldBlocks) -> Actions {
         let below_loc = self.location - EPSILON_Y;
         let mut falling = self.cross_section_empty(below_loc, world);
         let below_block_loc = BlockLocation::from(below_loc);
@@ -442,7 +471,13 @@ impl Physics {
 
 
         self.location = new_loc_first;
-        self.pending = PendingMovement::default();
+
+        let actions = Actions {
+            block_placed: self.pending.place.take()
+        };
+
+        self.pending = Pending::default();
+
 
         self.prev = MovementState {
             just_hit_ground,
@@ -450,7 +485,9 @@ impl Physics {
             y_vel,
             slip,
             falling,
-        }
+        };
+
+        return actions
     }
 
     pub fn on_ground(&self) -> bool {
