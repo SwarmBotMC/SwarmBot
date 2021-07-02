@@ -7,24 +7,36 @@
 use std::collections::VecDeque;
 use std::time::Instant;
 
+use float_ord::FloatOrd;
+use itertools::Itertools;
+
+use crate::bootstrap::blocks::BlockData;
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::{MoveNode, MoveRecord};
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
 use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, ChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
 use crate::client::pathfind::incremental::PathResult;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic};
+use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::timing::Increment;
 use crate::protocol::{Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
+use crate::types::{Displacement, Location};
 
 #[enum_dispatch]
 pub trait TaskTrait {
     /// return true if done
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool;
-    fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {}
+
+    /// Do an expensive part of the task. This is done in a multi-threaded environment. An example of
+    /// This has a default implementation of nothing. However, tasks like pathfinding use this. The task
+    /// MUST end by the given {end_by} duration else the game loop is held up. This is called every game
+    /// loop cycle so if the task hasn't finished it by {end_by} it should instead until this function
+    /// is called again.
+    fn expensive(&mut self, end_by: Instant, local: &mut LocalState, global: &GlobalState) {}
 }
 
 #[allow(clippy::enum_variant_names)]
@@ -50,6 +62,23 @@ pub struct NavigateProblem<H: Heuristic, G: GoalCheck> {
     problem: PlayerProblem<H, G>,
     follower: Option<Follower>,
 }
+
+
+impl CompoundTask {
+    pub fn mine_all<T: IntoIterator<Item=BlockLocation>>(blocks: T, local: &LocalState, global: &GlobalState) -> CompoundTask {
+        let eye_location = local.physics.location() + Displacement::EYE_HEIGHT;
+        let tasks = blocks
+            .into_iter()
+            .sorted_unstable_by_key(|&loc| FloatOrd(loc.true_center().dist2(eye_location)))
+            .map(|loc| MineTask::new(loc, local, global).into())
+            .collect();
+
+        Self {
+            tasks
+        }
+    }
+}
+
 
 impl<H: Heuristic, G: GoalCheck> NavigateProblem<H, G> {
     fn raw(problem: PlayerProblem<H, G>) -> NavigateProblem<H, G> {
@@ -185,12 +214,44 @@ impl TaskTrait for EatTask {
 
 pub struct MineTask {
     pub ticks: usize,
+    pub first: bool,
     pub location: BlockLocation,
     pub face: Face,
+    pub look_location: Location,
+}
+
+impl MineTask {
+    pub fn new(location: BlockLocation, local: &LocalState, global: &GlobalState) -> MineTask {
+        let kind = global.world_blocks.get_block_kind(location).unwrap();
+        let tool = Tool::new(Material::DIAMOND);
+        let ticks = tool.wait_time(kind, false, true, &global.block_data);
+
+        let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
+        let faces = location.faces();
+        let min_position = faces.iter().position_min_by_key(|loc| FloatOrd(loc.dist2(eye_loc))).unwrap();
+        let look_location = faces[min_position];
+        let face = Face::from(min_position as u8);
+
+        Self {
+            ticks,
+            location,
+            face,
+            first: true,
+            look_location,
+        }
+    }
 }
 
 impl TaskTrait for MineTask {
-    fn tick(&mut self, out: &mut impl InterfaceOut, _: &mut LocalState, global: &mut GlobalState) -> bool {
+    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+
+        if self.first {
+            self.first = false;
+            out.mine(self.location, Mine::Start, self.face);
+        }
+
+        local.physics.look_at(self.look_location);
+
         out.left_click();
         if self.ticks == 0 {
             out.mine(self.location, Mine::Finished, self.face);
@@ -217,7 +278,6 @@ impl LazyTask {
     }
 
     fn get(&mut self, local: &mut LocalState, global: &GlobalState) -> &mut Task {
-
         if self.inner.is_none() {
             let f = self.create_task.take().unwrap();
             self.inner = Some(Box::new(f(local, global)));

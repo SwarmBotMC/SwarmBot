@@ -126,6 +126,11 @@ impl ChunkData<HighMemoryChunkSection> {
             .map(|(idx, _)| idx)
     }
 
+    pub fn select_locs(&'a self, location: ChunkLocation, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=BlockLocation> + 'a {
+            self.select_up(selector)
+                .map(move |idx| self.block_location(location, idx))
+    }
+
     // TODO: remove duplicate code... is it even possible?
     pub fn select_down(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
         self.sections.iter().enumerate().rev()

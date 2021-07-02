@@ -13,11 +13,28 @@ use crate::client::pathfind::MinHeapNode;
 use crate::schematic::Schematic;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection};
+use std::convert::TryFrom;
+use std::num::ParseIntError;
+use crate::client::bot::{ProcessError, WrongArgCount};
 
 pub mod cache;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct ChunkLocation(pub i32, pub i32);
+
+impl TryFrom<&[&str]> for ChunkLocation {
+    type Error = ProcessError;
+
+    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
+        if let [a,b] = value {
+            let x = a.parse()?;
+            let z = b.parse()?;
+            Ok(ChunkLocation(x,z))
+        } else {
+            Err(WrongArgCount::new(2).into())
+        }
+    }
+}
 
 impl From<BlockLocation> for ChunkLocation {
     fn from(loc: BlockLocation) -> Self {
@@ -185,7 +202,7 @@ impl WorldBlocks {
                 block_chunk_iter(loc, column, selector)
             })
     }
-    
+
     pub fn get_real_column(&self, location: ChunkLocation) -> Option<&ChunkData<HighMemoryChunkSection>> {
         let res = self.storage.get(&location)?;
         match res {

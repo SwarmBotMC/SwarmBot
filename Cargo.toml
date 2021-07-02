@@ -98,6 +98,9 @@ hematite-nbt = "0.5"
 # so we don't have to use v-tables
 enum_dispatch = "0.3"
 
+# for errors
+thiserror = "1.0"
+
 [dev-dependencies]
 more-asserts = "0.2"
 

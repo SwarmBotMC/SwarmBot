@@ -25,6 +25,11 @@ impl BlockKind {
     pub const DEFAULT_SLIP: f64 = 0.6;
     pub const LADDER: BlockKind = BlockKind(65);
 
+    #[inline]
+    pub fn id(self) -> u32 {
+        self.0
+    }
+
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
         blocks.by_id(self.0).unwrap().hardness
     }

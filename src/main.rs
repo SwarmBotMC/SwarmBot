@@ -35,6 +35,9 @@ use crate::error::{HasContext, ResContext};
 #[macro_use]
 extern crate enum_dispatch;
 
+#[macro_use]
+extern crate thiserror;
+
 mod error;
 mod bootstrap;
 mod protocol;

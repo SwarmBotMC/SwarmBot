@@ -6,6 +6,7 @@
  */
 
 use std::cmp::max;
+use std::convert::TryFrom;
 use std::num::ParseIntError;
 use std::string::ParseError;
 use std::time::Instant;
@@ -26,9 +27,11 @@ use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTa
 use crate::client::timing::Increment;
 use crate::error::Res;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
+use std::error::Error;
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Direction, Displacement};
+use std::fmt::{Display, Formatter};
 
 #[derive(Default)]
 pub struct ActionState {
@@ -88,8 +91,39 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 }
 
 
+#[derive(Error, Debug)]
+pub enum ProcessError {
+
+    #[error(transparent)]
+    Parse(#[from] ParseIntError),
+
+    #[error(transparent)]
+    Count(#[from] WrongArgCount),
+}
+
+#[derive(Debug)]
+pub struct WrongArgCount {
+    required: u32
+}
+
+impl std::error::Error for WrongArgCount{}
+
+impl WrongArgCount {
+    pub fn new(required: u32) -> Self {
+        Self {
+            required
+        }
+    }
+}
+
+impl Display for WrongArgCount {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str("wrong arg count")
+    }
+}
+
 /// Always returns None.
-pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, actions: &mut ActionState, out: &mut impl InterfaceOut) -> Result<(), ParseIntError> {
+pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, actions: &mut ActionState, out: &mut impl InterfaceOut) -> Result<(), ProcessError> {
 
     // println! but bold
     macro_rules! msg {
@@ -118,28 +152,33 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             }
         }
         "pillarc" => {
-            if let [a, b] = args {
-                let x = a.parse()?;
-                let z = b.parse()?;
-                let goal = ChunkLocation(x, z);
+            let goal = ChunkLocation::try_from(args)?;
+            let mut task = CompoundTask::default();
 
-                let mut task = CompoundTask::default();
+            task
+                .add(ChunkTravelTask::new(goal, local))
+                .add_lazy(move |local, global| {
+                    let column = global.world_blocks.get_real_column(goal).unwrap();
+                    let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
+                    let highest_block = column.block_location(goal, highest_block);
 
-                task
-                    .add(ChunkTravelTask::new(goal, local))
-                    .add_lazy(move |local, global| {
-                        let column = global.world_blocks.get_real_column(goal).unwrap();
-                        let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
-                        let highest_block = column.block_location(goal, highest_block);
+                    let current_loc = BlockLocation::from(local.physics.location()).below();
+                    let diff_y = max(highest_block.y - current_loc.y, 0) as u32;
+                    PillarTask::new(diff_y, local)
+                });
 
-                        let current_loc = BlockLocation::from(local.physics.location()).below();
-                        let diff_y = max(highest_block.y - current_loc.y, 0) as u32;
-                        PillarTask::new(diff_y, local)
-                    });
+            println!("scheduled");
+            actions.schedule(task);
+        }
+        "minec" => {
+            let goal = ChunkLocation::try_from(args)?;
+            let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
+            let column = global.world_blocks.get_real_column(goal).unwrap();
+            let blocks = column.select_locs(goal, |state| state.kind().mineable(&global.block_data))
+                .filter(|loc| loc.true_center().dist2(eye_loc) < 3.5*3.5);
 
-                println!("scheduled");
-                actions.schedule(task);
-            }
+            let task = CompoundTask::mine_all(blocks, local, global);
+            actions.schedule(task);
         }
         "gotoc" => { // goto chunk
             if let [a, b] = args {
@@ -176,16 +215,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         }
         "fall" => {
             let below = BlockLocation::from(local.physics.location()).below();
-            let kind = global.world_blocks.get_block_kind(below).unwrap();
-            let tool = Tool::new(Material::HAND);
-            let ticks = tool.wait_time(kind, false, true, &global.block_data) + 1;
-            println!("mine ticks {}", ticks);
 
-            out.mine(below, Mine::Start, Face::PosY);
-            out.left_click();
-
-            local.physics.look_at(below.center_bottom());
-            let mine = MineTask { ticks, location: below, face: Face::PosY };
+            let mine = MineTask::new(below, local, global);
             let fall = FallBucketTask::default();
             let mut compound = CompoundTask::default();
             compound.add(mine).add(fall);
@@ -262,27 +293,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             let closest = global.world_blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
 
             if let Some(closest) = closest {
-                let kind = global.world_blocks.get_block_kind(closest).unwrap();
-                let faces = closest.faces();
-
-                println!("faces {:?}", faces);
-                let best_loc_idx = IntoIterator::into_iter(faces).position_min_by_key(|loc| FloatOrd(loc.dist2(origin))).unwrap();
-
-                let best_loc = faces[best_loc_idx];
-                let face = Face::from(best_loc_idx as u8);
-
-                let displacement = best_loc - origin;
-                local.physics.look(displacement.into());
-
-                let tool = Tool::new(Material::DIAMOND);
-                let ticks = tool.wait_time(kind, false, true, &global.block_data) + 1;
-
-                msg!("started mining at {} .. ticks {}.. face {:?}", closest, ticks, face);
-
-                out.mine(closest, Mine::Start, face);
-                out.left_click();
-
-                let mine_task = MineTask { ticks, location: closest, face };
+                let mine_task = MineTask::new(closest, local, global);
                 actions.schedule(mine_task);
             }
         }

@@ -808,6 +808,7 @@ dependencies = [
  "serde_json",
  "sha1",
  "smallvec",
+ "thiserror",
  "tokio",
  "tokio-socks",
  "tokio-stream",
