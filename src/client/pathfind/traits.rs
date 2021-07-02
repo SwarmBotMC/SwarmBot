@@ -6,8 +6,9 @@
  */
 
 use std::fmt::{Debug, Formatter};
+use crate::client::pathfind::context::MoveNode;
 
-pub trait Heuristic<T> {
+pub trait Heuristic<T = MoveNode> {
     fn heuristic(&self, input: &T) -> f64;
 }
 
@@ -36,11 +37,11 @@ impl<T: Debug> Debug for Progression<T> {
     }
 }
 
-pub trait Progressor<T> {
+pub trait Progressor<T=MoveNode> {
     fn progressions(&self, input: &T) -> Progression<T>;
 }
 
 
-pub trait GoalCheck<T> {
+pub trait GoalCheck<T=MoveNode> {
     fn is_goal(&self, input: &T) -> bool;
 }

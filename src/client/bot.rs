@@ -18,7 +18,7 @@ use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask, CompoundTask};
+use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask, CompoundTask, BlockTravelTask};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
@@ -30,21 +30,13 @@ type Prob = Box<dyn Problem<Node=MoveNode>>;
 #[derive(Default)]
 pub struct ActionState {
     pub task: Option<Task>,
-    pub follower: Option<Follower>,
-    pub travel_problem: Option<Prob>,
-    pub last_problem: Option<Prob>,
 }
 
 impl ActionState {
-    pub fn travel_to_block(&mut self, goal: BlockLocation, local: &LocalState) {
-        let from = local.physics.location().into();
-        println!("starting nav");
-        let problem = box TravelProblem::create(from, goal);
-
-        self.travel_problem = Some(problem);
+    pub fn schedule<T: Into<Task>>(&mut self, task: T){
+        self.task = Some(task.into());
     }
 }
-
 
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
     pub state: LocalState,
@@ -64,9 +56,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             }
         }
 
-        self.move_around(global);
-
-        if self.actions.follower.is_none() {
+        if self.actions.task.is_none() {
             let mut vel = self.state.physics.velocity();
             vel.dy = 0.;
             if vel.mag2() > 0.01 {
@@ -77,48 +67,13 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             }
         }
 
+
         self.state.physics.tick(&global.world_blocks);
 
         let physics = &self.state.physics;
         self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 
         self.state.ticks += 1;
-    }
-
-    fn move_around(&mut self, global: &mut GlobalState) {
-        if let Some(follower) = self.actions.follower.as_mut() {
-            let follow_result = follower.follow(&mut self.state, global);
-            if follow_result == FollowResult::Failed || follower.should_recalc() {
-                if let Some(mut problem) = self.actions.last_problem.take() {
-                    let block_loc = self.state.physics.location().into();
-                    problem.recalc(MoveNode::simple(block_loc));
-                    self.actions.travel_problem = Some(problem);
-                }
-
-                if follow_result == FollowResult::Failed {
-                    self.actions.follower = None;
-                }
-            } else if follow_result == FollowResult::Finished {
-                self.actions.follower = None;
-                self.actions.last_problem = None;
-                self.actions.travel_problem = None;
-            }
-        } else if self.state.follow_closest {
-            let current_loc = self.state.physics.location();
-            let closest = global.world_entities.iter().min_by_key(|(_id, data)| {
-                FloatOrd(data.location.dist2(current_loc))
-            });
-
-            if let Some((_id, data)) = closest {
-                let displacement = data.location - current_loc;
-                if displacement.has_length() {
-                    let dir = Direction::from(displacement);
-                    self.state.physics.look(dir);
-                    self.state.physics.line(Line::Forward);
-                    self.state.physics.speed(Speed::WALK);
-                }
-            }
-        }
     }
 }
 
@@ -144,6 +99,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         }
 
     match name {
+        "minechunk" => {
+
+        }
         "jump" => {
             local.physics.jump();
         }
@@ -197,7 +155,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let closest = global.world_blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
 
                 if let Some(closest) = closest {
-                    actions.travel_to_block(closest, local);
+                    actions.schedule(BlockTravelTask::new(closest, local));
                 } else {
                     msg!("There is no block {} by me", id);
                 }
@@ -208,13 +166,11 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let y = b.parse().unwrap();
                 let z = c.parse().unwrap();
                 let dest = BlockLocation::new(x, y, z);
-                actions.travel_to_block(dest, local);
+                actions.schedule(BlockTravelTask::new(dest, local));
             }
         }
         "stop" => {
-            actions.follower = None;
-            actions.travel_problem = None;
-            actions.last_problem = None;
+            actions.task = None;
         }
         "loc" => {
             msg!("My location is {} in {}", local.physics.location(), local.dimension);
@@ -224,11 +180,6 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 if name == &local.info.username {
                     msg!("location {}", local.physics.location());
                     msg!("on ground {}", local.physics.on_ground());
-                    if let Some(follower) = actions.follower.as_ref() {
-                        for point in follower.points() {
-                            msg!("{}", point);
-                        }
-                    }
                 }
             }
         }
@@ -286,7 +237,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 out.left_click();
 
                 let mine_task = MineTask { ticks, location: closest, face };
-                actions.task = Some(mine_task.into());
+                actions.schedule(mine_task);
             }
         }
         _ => {
@@ -295,29 +246,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
     }
 }
 
-pub fn run_threaded(_scope: &rayon::Scope, local: &mut LocalState, actions: &mut ActionState, global: &GlobalState, end_by: Instant) {
-
-    // TODO: this is pretty jank
-    if let Some(traverse) = actions.travel_problem.as_mut() {
-        let res = traverse.iterate_until(end_by, local, global);
-
-        if let Increment::Finished(res) = res {
-            if !res.complete {
-                println!("incomplete goal of size {}", res.value.len());
-            }
-
-            match actions.follower.as_mut() {
-                None => actions.follower = {
-                    println!("no merge");
-                    Follower::new(res)
-                },
-                Some(follow) => {
-                    println!("merging");
-                    follow.merge(res)
-                }
-            }
-
-            actions.last_problem = actions.travel_problem.take();
-        }
+pub fn run_threaded(_: &rayon::Scope, local: &mut LocalState, actions: &mut ActionState, global: &GlobalState, end_by: Instant) {
+    if let Some(task) = actions.task.as_mut() {
+        task.expensive(end_by, local, global);
     }
 }

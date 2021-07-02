@@ -29,7 +29,7 @@ pub trait Problem: Send + Sync {
 
 type BlockLookup = HashMap<BlockLocation, BlockState>;
 
-struct PlayerProblem<H: Heuristic<MoveNode>, G: GoalCheck<MoveNode>> {
+pub struct PlayerProblem<H: Heuristic<MoveNode>, G: GoalCheck<MoveNode>> {
     a_star: AStar<MoveNode>,
     heuristic: H,
     goal_checker: G,

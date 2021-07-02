@@ -69,9 +69,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_death(&mut self) {
-        self.actions.follower = None;
-        self.actions.travel_problem = None;
-        self.actions.last_problem = None;
+        self.actions.task = None;
         self.out.respawn();
         self.out.send_chat("I died... oof... well I guess I should respawn");
     }

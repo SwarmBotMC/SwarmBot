@@ -4,16 +4,27 @@
  * Proprietary and confidential.
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
+use std::collections::VecDeque;
+use std::time::Instant;
+
+use crate::client::follow::{Follower, FollowResult};
+use crate::client::pathfind::context::{MoveNode, MoveRecord};
+use crate::client::pathfind::implementations::{PlayerProblem, Problem};
+use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, ChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
+use crate::client::pathfind::incremental::PathResult;
+use crate::client::pathfind::traits::{GoalCheck, Heuristic};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
+use crate::client::timing::Increment;
 use crate::protocol::{Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState};
-use std::collections::VecDeque;
+use crate::storage::blocks::ChunkLocation;
 
 #[enum_dispatch]
 pub trait TaskTrait {
     /// return true if done
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool;
+    fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {}
 }
 
 #[allow(clippy::enum_variant_names)]
@@ -21,12 +32,95 @@ pub trait TaskTrait {
 pub enum Task {
     EatTask,
     MineTask,
+    BlockTravelTask,
+    ChunkTravelTask,
     FallBucketTask,
-    CompoundTask
+    CompoundTask,
 }
 
 pub struct CompoundTask {
     tasks: VecDeque<Task>,
+}
+
+pub struct NavigateProblem<H: Heuristic, G: GoalCheck> {
+    calculate: bool,
+    problem: PlayerProblem<H, G>,
+    follower: Option<Follower>,
+}
+
+impl<H: Heuristic, G: GoalCheck> NavigateProblem<H, G> {
+    fn raw(problem: PlayerProblem<H, G>) -> NavigateProblem<H, G> {
+        Self {
+            calculate: true,
+            problem,
+            follower: None,
+        }
+    }
+}
+
+
+impl<H: Heuristic + Send + Sync, G: GoalCheck + Send+ Sync> TaskTrait for NavigateProblem<H, G> {
+    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+        let follower = match self.follower.as_mut() {
+            None => return false,
+            Some(inner) => inner
+        };
+
+        if follower.should_recalc() {
+            self.problem.recalc(MoveNode::simple(local.physics.location().into()));
+            self.calculate = true;
+        }
+
+        match follower.follow(local, global) {
+            FollowResult::Failed => {
+                self.follower = None;
+                self.problem.recalc(MoveNode::simple(local.physics.location().into()));
+                self.calculate = true;
+                false
+            }
+            FollowResult::InProgress => false,
+            FollowResult::Finished => true
+        }
+    }
+
+    fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {
+        if !self.calculate {
+            return;
+        }
+
+        let res = self.problem.iterate_until(end_at, local, global);
+        match res {
+            Increment::Finished(res) => {
+                self.calculate = false;
+                match self.follower.as_mut() {
+                    None => self.follower = Follower::new(res),
+                    Some(before) => before.merge(res)
+                };
+            }
+
+            // Nothing as we are still in progress
+            Increment::InProgress => {}
+        }
+    }
+}
+
+pub type ChunkTravelTask = NavigateProblem<ChunkHeuristic, ChunkGoalCheck>;
+pub type BlockTravelTask = NavigateProblem<BlockHeuristic, BlockGoalCheck>;
+
+impl ChunkTravelTask {
+    pub fn new(goal: ChunkLocation, local: &LocalState) -> Self {
+        let start = local.physics.location().into();
+        let problem = TravelProblem::navigate_chunk(start, goal);
+        Self::raw(problem)
+    }
+}
+
+impl BlockTravelTask {
+    pub fn new(goal: BlockLocation, local: &LocalState) -> Self {
+        let start = local.physics.location().into();
+        let problem = TravelProblem::navigate_block(start, goal);
+        Self::raw(problem)
+    }
 }
 
 impl CompoundTask {
@@ -113,7 +207,7 @@ impl TaskTrait for FallBucketTask {
         let current_loc = local.physics.location();
         let below = global.world_blocks.first_below(current_loc.into());
         match below {
-            None => {},
+            None => {}
             Some((location, _)) => {
                 local.physics.look_at(location.center_bottom());
                 let dy = current_loc.y - (location.y as f64 + 1.0);
