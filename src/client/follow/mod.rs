@@ -282,7 +282,7 @@ mod tests {
         local_state.physics.teleport(start.center_bottom());
 
         while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
-            local_state.physics.tick(&global_state.world_blocks);
+            local_state.physics.tick(&mut global_state.world_blocks);
             assert!(local_state.physics.location().y > 79.0, "the player fell... location was {}", local_state.physics.location());
         }
 
@@ -319,7 +319,7 @@ mod tests {
         local_state.physics.teleport(start.center_bottom());
 
         while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
-            local_state.physics.tick(&global_state.world_blocks);
+            local_state.physics.tick(&mut global_state.world_blocks);
             assert!(local_state.physics.location().y >= 0.0, "the player fell... location was {} front was {:?} left {}", local_state.physics.location(), follower.xs.front(), follower.xs.len());
         }
 

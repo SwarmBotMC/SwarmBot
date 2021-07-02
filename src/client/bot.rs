@@ -72,7 +72,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             }
         }
 
-        let actions = self.state.physics.tick(&global.world_blocks);
+        let actions = self.state.physics.tick(&mut global.world_blocks);
 
         let physics = &self.state.physics;
         self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
@@ -111,7 +111,10 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
     match name {
         "pillar" => {
-            actions.schedule(PillarTask::new(10, local));
+            if let [a] = args {
+                let amount = a.parse()?;
+                actions.schedule(PillarTask::new(amount, local));
+            }
         }
         "gotoc" => { // goto chunk
             if let [a, b] = args {

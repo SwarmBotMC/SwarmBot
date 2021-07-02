@@ -8,15 +8,15 @@
 use std::collections::HashSet;
 use std::default::default;
 
+use float_ord::FloatOrd;
+use itertools::Itertools;
 use num::traits::Pow;
 
 use crate::client::physics::speed::Speed;
-use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, SimpleType};
+use crate::protocol::Face;
+use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
-use crate::protocol::Face;
-use itertools::Itertools;
-use float_ord::FloatOrd;
 
 pub mod tools;
 pub mod speed;
@@ -124,11 +124,11 @@ impl Default for MovementState {
 #[derive(Debug)]
 pub struct BlockPlaced {
     pub location: BlockLocation,
-    pub face: Face
+    pub face: Face,
 }
 
 pub struct Actions {
-    pub block_placed: Option<BlockPlaced>
+    pub block_placed: Option<BlockPlaced>,
 }
 
 fn threshold(value: f64) -> f64 {
@@ -182,6 +182,10 @@ struct MovementProc {}
 impl Physics {
     /// move to location and zero out velocity
     pub fn teleport(&mut self, location: Location) {
+
+        // sometimes the server tells us that should be in a block *_*
+        self.location.y = self.location.y.round();
+
         self.location = location;
         self.prev = MovementState::default();
     }
@@ -231,7 +235,7 @@ impl Physics {
 
         self.pending.place = Some(BlockPlaced {
             location: against,
-            face
+            face,
         });
     }
 
@@ -282,7 +286,14 @@ impl Physics {
         true
     }
 
-    pub fn tick(&mut self, world: &WorldBlocks) -> Actions {
+    pub fn tick(&mut self, world: &mut WorldBlocks) -> Actions {
+        if let Some(place) = self.pending.place.as_ref() {
+            let against = place.location;
+            let actual_loc = against + place.face.change();
+            // TODO: change this to the right block when inventory is supported
+            world.set_block(actual_loc, BlockState::STONE);
+        }
+
         let below_loc = self.location - EPSILON_Y;
         let mut falling = self.cross_section_empty(below_loc, world);
         let below_block_loc = BlockLocation::from(below_loc);
@@ -487,7 +498,7 @@ impl Physics {
             falling,
         };
 
-        return actions
+        return actions;
     }
 
     pub fn on_ground(&self) -> bool {
@@ -515,12 +526,9 @@ mod tests {
     use crate::storage::blocks::WorldBlocks;
     use crate::types::{Direction, Displacement, Location};
 
-    static WORLD: SyncLazy<WorldBlocks> = SyncLazy::new(|| {
-        WorldBlocks::flat()
-    });
-
     #[test]
     fn test_run() {
+        let mut world = WorldBlocks::flat();
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
@@ -534,7 +542,7 @@ mod tests {
         loop {
             physics.line(Line::Forward);
             physics.speed(Speed::SPRINT);
-            physics.tick(&WORLD);
+            physics.tick(&mut world);
 
             ticks += 1;
 
@@ -550,6 +558,7 @@ mod tests {
 
     #[test]
     fn test_sprint_jump() {
+        let mut world = WorldBlocks::flat();
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
@@ -564,7 +573,7 @@ mod tests {
             physics.line(Line::Forward);
             physics.speed(Speed::SPRINT);
             physics.jump();
-            physics.tick(&WORLD);
+            physics.tick(&mut world);
 
             ticks += 1;
 
@@ -579,13 +588,14 @@ mod tests {
     }
 
     fn test_multiple_jumps() {
+        let mut world = WorldBlocks::flat();
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
         let mut zero_count = 0;
         for _ in 0..12 * 10 {
             physics.jump();
-            physics.tick(&WORLD);
+            physics.tick(&mut world);
             if physics.location.y == 0.0 {
                 zero_count += 1;
             }
@@ -596,6 +606,8 @@ mod tests {
 
     #[test]
     fn test_jump() {
+        let mut world = WorldBlocks::flat();
+
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
 
@@ -604,7 +616,7 @@ mod tests {
         let mut ticks_in_air = 0;
         let mut highest_y = 0_f64;
         loop {
-            physics.tick(&WORLD);
+            physics.tick(&mut world);
             ticks_in_air += 1;
             if physics.on_ground() {
                 break;

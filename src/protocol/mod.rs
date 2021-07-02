@@ -38,6 +38,20 @@ pub enum Face {
     PosX
 }
 
+impl Face {
+    pub fn change(self) -> BlockLocation {
+        match self {
+            Face::NegY => BlockLocation::new(0, -1, 0),
+            Face::PosY => BlockLocation::new(0, 1, 0),
+            Face::NegZ => BlockLocation::new(0, 0, -1),
+            Face::PosZ => BlockLocation::new(0, 0, 1),
+            Face::NegX => BlockLocation::new(-1, 0, 0),
+            Face::PosX => BlockLocation::new(1, 0, 0),
+        }
+    }
+    
+}
+
 impl From<u8> for Face {
     fn from(elem: u8) -> Self {
         use Face::*;
