@@ -13,6 +13,7 @@ use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
 use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
+use std::num::ParseIntError;
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -57,7 +58,12 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
             if let Some(cmd) = msg.into_cmd() {
                 let name = cmd.command;
                 let args_str: Vec<&str> = cmd.args.iter().map(|x| x.as_str()).collect();
-                process_command(&name, &args_str, self.local, self.global, self.actions, self.out);
+                match process_command(&name, &args_str, self.local, self.global, self.actions, self.out) {
+                    Err(err) => {
+                        println!("could not process command. Reason: {}", err);
+                    }
+                    _ => {}
+                }
             }
         };
 

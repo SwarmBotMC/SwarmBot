@@ -24,6 +24,9 @@ use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::types::{Direction, Displacement};
 use crate::client::pathfind::implementations::novehicle::TravelProblem;
+use std::string::ParseError;
+use crate::error::Res;
+use std::num::ParseIntError;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
@@ -77,7 +80,9 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 }
 
-pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, actions: &mut ActionState, out: &mut impl InterfaceOut) {
+
+/// Always returns None.
+pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, actions: &mut ActionState, out: &mut impl InterfaceOut) -> Result<(), ParseIntError> {
 
     // println! but bold
     macro_rules! msg {
@@ -99,7 +104,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         }
 
     match name {
-        "minechunk" => {
+
+        // goto chunk
+        "gotoc" => {
 
         }
         "jump" => {
@@ -162,9 +169,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             }
 
             if let [a, b, c] = args {
-                let x = a.parse().unwrap();
-                let y = b.parse().unwrap();
-                let z = c.parse().unwrap();
+                let x = a.parse()?;
+                let y = b.parse()?;
+                let z = c.parse()?;
                 let dest = BlockLocation::new(x, y, z);
                 actions.schedule(BlockTravelTask::new(dest, local));
             }
@@ -185,9 +192,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         }
         "get" => {
             if let [a, b, c] = args {
-                let x = a.parse().unwrap();
-                let y = b.parse().unwrap();
-                let z = c.parse().unwrap();
+                let x = a.parse()?;
+                let y = b.parse()?;
+                let z = c.parse()?;
                 let location = BlockLocation::new(x, y, z);
 
                 msg!("The block is {:?}", global.world_blocks.get_block(location));
@@ -195,9 +202,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         }
         "place" => {
             if let [a, b, c] = args {
-                let x = a.parse().unwrap();
-                let y = b.parse().unwrap();
-                let z = c.parse().unwrap();
+                let x = a.parse()?;
+                let y = b.parse()?;
+                let z = c.parse()?;
 
                 let origin = local.physics.location() + Displacement::EYE_HEIGHT;
 
@@ -241,9 +248,10 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             }
         }
         _ => {
-            // self.out.send_chat("invalid command");
         }
     }
+
+    return Ok(());
 }
 
 pub fn run_threaded(_: &rayon::Scope, local: &mut LocalState, actions: &mut ActionState, global: &GlobalState, end_by: Instant) {

@@ -9,6 +9,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 use packets::types::PacketState;
 use reqwest::StatusCode;
+use std::num::ParseIntError;
 
 pub type Res<T = ()> = Result<T, Error>;
 pub type ResContext<T = ()> = Result<T, ErrorContext<Error>>;
