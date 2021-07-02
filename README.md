@@ -21,3 +21,18 @@ alt account may get locked.
 - `users.csv` a CSV (separated by `:`) of users `email:pass`
 
 both CSVs have no header.
+
+
+# Structure 
+
+As of `d4b6d27444347a2bb54f82d212b1ad5a70126edf` the structure is as follows
+
+|Type|Path|
+|-------|----------|
+A* progressions| `moves.rs`|
+A* | `pathfind/incremental/mod.rs`
+Physics | `physics/mod.rs`
+Path follower | `follow/mod.rs`
+Commands |`bot.rs`
+1.12 Protocol |`v340/mod.rs`
+Runner |`runner.rs`
