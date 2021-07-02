@@ -174,18 +174,19 @@ impl CompoundTask {
 
 impl TaskTrait for CompoundTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-        let front = match self.tasks.front_mut() {
-            None => return true,
-            Some(inner) => inner
-        };
 
-        let finished = front.tick(out, local, global);
+        // this is so we can do multiple 0-tick tasks in a gametick
+        while let Some(front) = self.tasks.front_mut() {
+            let finished = front.tick(out, local, global);
 
-        if finished {
-            self.tasks.pop_front();
+            if finished {
+                self.tasks.pop_front();
+            } else {
+                return false;
+            }
         }
 
-        self.tasks.is_empty()
+        return true;
     }
 
     fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {
@@ -224,7 +225,9 @@ impl MineTask {
     pub fn new(location: BlockLocation, local: &LocalState, global: &GlobalState) -> MineTask {
         let kind = global.world_blocks.get_block_kind(location).unwrap();
         let tool = Tool::new(Material::DIAMOND);
-        let ticks = tool.wait_time(kind, false, true, &global.block_data);
+
+        // taking one tick off because most servers are ok with this
+        let ticks = tool.wait_time(kind, false, true, 5, &global.block_data) - 1;
 
         let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
         let faces = location.faces();

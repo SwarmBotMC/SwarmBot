@@ -33,21 +33,25 @@ impl Tool {
     pub fn new(material: Material) -> Self {
         Self { material }
     }
-    fn strength_against_block(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> f64 {
+    fn strength_against_block(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData, efficiency: u32) -> f64 {
         let hardness = kind.hardness(data).unwrap_or(f64::INFINITY);
         if hardness < 0.0 { return 0.0; }
 
-        let mut d = 1.0;
-        d *= self.material.strength;
+        let mut d = self.material.strength;
+
+        if efficiency > 0 {
+            d += (efficiency.pow(2) + 1) as f64
+        }
+
         if underwater { d /= 5.0; }
         if !on_ground { d /= 5.0; }
 
         d / hardness / 30.0
     }
 
-    pub fn wait_time(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> usize {
-        let strength = self.strength_against_block(kind, underwater, on_ground, data);
+    /// https://minecraft.fandom.com/wiki/Breaking#Speed
+    pub fn wait_time(&self, kind: BlockKind, underwater: bool, on_ground: bool, efficiency: u32, data: &BlockData) -> usize {
+        let strength = self.strength_against_block(kind, underwater, on_ground, data, efficiency);
         (1.0 / strength).round() as usize
-
     }
 }
