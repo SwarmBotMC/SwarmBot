@@ -45,6 +45,7 @@ pub enum Task {
     EatTask,
     MineTask,
     PillarTask,
+    DelayTask,
     LazyTask,
     BlockTravelTask,
     ChunkTravelTask,
@@ -52,15 +53,30 @@ pub enum Task {
     CompoundTask,
 }
 
+
+pub struct DelayTask(u32);
+
+impl DelayTask {
+    pub fn new(ticks: u32) -> Self {
+        Self(ticks)
+    }
+}
+
+impl TaskTrait for DelayTask {
+    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+        let ticks_left = self.0;
+        if ticks_left == 0 {
+            true
+        } else {
+            self.0 -= 1;
+            false
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct CompoundTask {
     tasks: VecDeque<Task>,
-}
-
-pub struct NavigateProblem<H: Heuristic, G: GoalCheck> {
-    calculate: bool,
-    problem: PlayerProblem<H, G>,
-    follower: Option<Follower>,
 }
 
 
@@ -77,6 +93,12 @@ impl CompoundTask {
             tasks
         }
     }
+}
+
+pub struct NavigateProblem<H: Heuristic, G: GoalCheck> {
+    calculate: bool,
+    problem: PlayerProblem<H, G>,
+    follower: Option<Follower>,
 }
 
 
@@ -247,7 +269,6 @@ impl MineTask {
 
 impl TaskTrait for MineTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-
         if self.first {
             self.first = false;
             out.mine(self.location, Mine::Start, self.face);

@@ -23,7 +23,7 @@ use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait};
+use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask};
 use crate::client::timing::Increment;
 use crate::error::Res;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
@@ -157,6 +157,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
             task
                 .add(ChunkTravelTask::new(goal, local))
+                .add(DelayTask::new(10))
                 .add_lazy(move |local, global| {
                     let column = global.world_blocks.get_real_column(goal).unwrap();
                     let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
