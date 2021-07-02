@@ -18,26 +18,30 @@ use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask, CompoundTask, BlockTravelTask};
+use crate::client::tasks::{EatTask, MineTask, Task, TaskTrait, FallBucketTask, CompoundTask, BlockTravelTask, ChunkTravelTask};
 use crate::client::timing::Increment;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::types::{Direction, Displacement};
-use crate::client::pathfind::implementations::novehicle::TravelProblem;
+use crate::client::pathfind::implementations::novehicle::{TravelProblem, TravelChunkProblem};
 use std::string::ParseError;
 use crate::error::Res;
 use std::num::ParseIntError;
+use crate::storage::blocks::ChunkLocation;
 
 type Prob = Box<dyn Problem<Node=MoveNode>>;
 
 #[derive(Default)]
 pub struct ActionState {
-    pub task: Option<Task>,
+    task: Option<Task>,
 }
 
 impl ActionState {
     pub fn schedule<T: Into<Task>>(&mut self, task: T){
         self.task = Some(task.into());
+    }
+    pub fn clear(&mut self) {
+        self.task = None;
     }
 }
 
@@ -107,7 +111,12 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
         // goto chunk
         "gotoc" => {
-
+            if let [a,b] = args {
+                let x = a.parse()?;
+                let z = b.parse()?;
+                let goal = ChunkLocation(x, z);
+                actions.schedule(ChunkTravelTask::new(goal, local));
+            }
         }
         "jump" => {
             local.physics.jump();

@@ -25,7 +25,7 @@ impl GoalCheck for ChunkGoalCheck {
     fn is_goal(&self, input: &MoveNode) -> bool {
         let cx = input.location.x >> 4;
         let cz = input.location.z >> 4;
-        let chunk_loc = ChunkLocation(cx,cz);
+        let chunk_loc = ChunkLocation(cx, cz);
         chunk_loc == self.goal
     }
 }
@@ -58,6 +58,7 @@ impl Heuristic for BlockHeuristic {
     }
 }
 
+#[derive(Debug)]
 pub struct ChunkHeuristic {
     pub move_cost: f64,
     pub center_x: i32,
@@ -71,7 +72,7 @@ impl ChunkHeuristic {
 
             // the center of the chunk
             center_x: goal.0 << 4 + 8,
-            center_z: goal.1 << 4 + 8
+            center_z: goal.1 << 4 + 8,
         }
     }
 }
@@ -80,8 +81,8 @@ impl Heuristic for ChunkHeuristic {
     fn heuristic(&self, input: &MoveNode) -> f64 {
         let dx = (input.location.x - self.center_x) as f64;
         let dz = (input.location.z - self.center_z) as f64;
-        let dist2 = dx*dx + dz*dz;
-        dist2.sqrt()
+        let dist2 = dx * dx + dz * dz;
+        dist2.sqrt() * self.move_cost * 0.2
     }
 }
 
@@ -101,8 +102,7 @@ impl TravelProblem {
     pub fn navigate_chunk(start: BlockLocation, goal: ChunkLocation) -> TravelChunkProblem {
         let heuristic = ChunkHeuristic::new(goal, 1.0);
         let start_node = MoveNode::simple(start);
-        let goal_checker = ChunkGoalCheck {goal};
+        let goal_checker = ChunkGoalCheck { goal };
         PlayerProblem::new(start_node, heuristic, goal_checker, HashMap::new())
-
     }
 }
