@@ -49,25 +49,12 @@ impl Default for PathConfig {
 
 #[derive(Clone)]
 pub struct GlobalContext<'a> {
-    pub blocks_to_change: &'a HashMap<BlockLocation, BlockState>,
     pub path_config: &'a PathConfig,
     pub world: &'a WorldBlocks,
 }
 
 #[derive(Debug)]
 pub struct MoveNode {
-    /// # Building
-    /// Suppose we are building a structure. We will take the number
-    /// of blocks which need to be changed and make blocks_needed_change that
-    /// amount. Then each time we modify a block we can check if we are changing
-    /// a block that needs to be changed. If we are changing to the right block,
-    /// we decrement the value. If we set it to the wrong block, we increment.
-    /// A goal can only be reached when blocks_needed_change is 0
-    /// # Mining
-    /// Suppose we are mining an area. Then this will be the number of blocks
-    /// we want to be air.
-    pub blocks_needed_change: usize,
-
     /// The current location of the user
     pub location: BlockLocation,
 
@@ -83,18 +70,15 @@ pub struct MoveNode {
 impl MoveNode {
     pub fn simple(location: BlockLocation) -> MoveNode {
         MoveNode {
-            blocks_needed_change: 0,
             location,
             action_to_obtain: None,
             throwaway_block_count: 0,
         }
     }
 
-    pub fn new(location: BlockLocation, blocks_to_change: &std::collections::HashMap<BlockLocation, BlockState>) -> MoveNode {
-        let blocks_needed_change = blocks_to_change.len();
+    pub fn new(location: BlockLocation) -> MoveNode {
 
         MoveNode {
-            blocks_needed_change,
             location,
             action_to_obtain: None,
             throwaway_block_count: 0,
@@ -111,7 +95,6 @@ impl MoveNode {
 impl Clone for MoveNode {
     fn clone(&self) -> Self {
         Self {
-            blocks_needed_change: self.blocks_needed_change,
             location: self.location,
             action_to_obtain: None,
             throwaway_block_count: self.throwaway_block_count,

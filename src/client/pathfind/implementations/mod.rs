@@ -18,7 +18,6 @@ use crate::storage::block::{BlockLocation, BlockState};
 use crate::client::pathfind::moves::Movements;
 
 pub mod novehicle;
-pub mod build;
 
 
 pub trait Problem: Send + Sync {
@@ -33,16 +32,14 @@ pub struct PlayerProblem<H: Heuristic<MoveNode>, G: GoalCheck<MoveNode>> {
     a_star: AStar<MoveNode>,
     heuristic: H,
     goal_checker: G,
-    blocks_to_change: BlockLookup,
 }
 
 
 impl<H: Heuristic<MoveNode> + Send + Sync, G: GoalCheck<MoveNode> + Send + Sync> PlayerProblem<H, G> {
-    pub fn new(start: MoveNode, heuristic: H, goal_checker: G, blocks_to_change: BlockLookup) -> PlayerProblem<H, G> {
+    pub fn new(start: MoveNode, heuristic: H, goal_checker: G) -> PlayerProblem<H, G> {
         let a_star = AStar::new(start);
         Self {
             heuristic,
-            blocks_to_change,
             a_star,
             goal_checker,
         }
@@ -66,7 +63,6 @@ impl<H: Heuristic<MoveNode> + Send + Sync, G: GoalCheck<MoveNode> + Send + Sync>
 
     fn iterate_until(&mut self, end_at: Instant, _: &mut LocalState, global: &GlobalState) -> Increment<PathResult<MoveRecord>> {
         let ctx = GlobalContext {
-            blocks_to_change: &self.blocks_to_change,
             path_config: &global.travel_config,
             world: &global.world_blocks,
         };

@@ -14,7 +14,7 @@ use crate::bootstrap::blocks::BlockData;
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::{MoveNode, MoveRecord};
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
-use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, ChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
+use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, ChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem, CenterChunkGoalCheck};
 use crate::client::pathfind::incremental::PathResult;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic};
 use crate::client::physics::tools::{Material, Tool};
@@ -162,13 +162,13 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
     }
 }
 
-pub type ChunkTravelTask = NavigateProblem<ChunkHeuristic, ChunkGoalCheck>;
+pub type ChunkTravelTask = NavigateProblem<ChunkHeuristic, CenterChunkGoalCheck>;
 pub type BlockTravelTask = NavigateProblem<BlockHeuristic, BlockGoalCheck>;
 
 impl ChunkTravelTask {
     pub fn new(goal: ChunkLocation, local: &LocalState) -> Self {
         let start = local.physics.location().into();
-        let problem = TravelProblem::navigate_chunk(start, goal);
+        let problem = TravelProblem::navigate_center_chunk(start, goal);
         Self::raw(problem)
     }
 }
