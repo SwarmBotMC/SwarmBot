@@ -8,9 +8,24 @@
 use bytes::{BufMut, BytesMut};
 
 use crate::types::VarInt;
+use std::io::Write;
 
 pub struct ByteWriter {
     bytes: BytesMut,
+}
+
+impl Write for ByteWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        for elem in buf {
+            self.write(*elem);
+        }
+
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
 }
 
 impl ByteWritable for u8 {

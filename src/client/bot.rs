@@ -230,6 +230,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             compound.add(mine).add(fall);
             actions.schedule(compound);
         }
+        "drop" => {
+            local.inventory.drop_hotbar(out);
+        }
         "goto" => {
             if let [id] = args {
                 let id: u32 = id.parse().unwrap();

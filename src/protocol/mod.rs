@@ -13,6 +13,7 @@ use crate::error::Res;
 use crate::storage::block::BlockLocation;
 use crate::types::{Direction, Location};
 use crate::client::pathfind::moves::CardinalDirection;
+use crate::client::state::inventory::ItemStack;
 
 pub mod v340;
 
@@ -79,9 +80,31 @@ impl From<u8> for Face {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum MouseButton {
+    Left,
+    Right
+}
+
+impl Into<u8> for MouseButton {
+    fn into(self) -> u8 {
+        match self {
+            MouseButton::Left => 0,
+            MouseButton::Right => 1
+        }
+    }
+}
+
+pub enum InvAction {
+    Q(u16),
+    Click(u16, MouseButton, ItemStack),
+    ShiftClick(u16, MouseButton, ItemStack),
+}
+
 pub trait InterfaceOut {
     fn place_block(&mut self, against: BlockLocation, face: Face);
     fn send_chat(&mut self, message: &str);
+    fn inventory_action(&mut self, action: InvAction);
     fn left_click(&mut self);
     fn finish_eating(&mut self);
     fn right_click(&mut self);

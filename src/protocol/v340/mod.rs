@@ -20,7 +20,7 @@ use crate::client::processor::InterfaceIn;
 use crate::client::state::inventory::ItemStack;
 use crate::error::{err, Res};
 use crate::error::Error::WrongPacket;
-use crate::protocol::{ClientInfo, EventQueue, Face, InterfaceOut, Login, Mine, Minecraft};
+use crate::protocol::{ClientInfo, EventQueue, Face, InterfaceOut, InvAction, Login, Mine, Minecraft};
 use crate::protocol::encrypt::{rand_bits, Rsa};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
@@ -28,7 +28,7 @@ use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState};
 use crate::storage::block::{BlockKind, BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Dimension, Direction, Location, PacketData};
+use crate::types::{Dimension, Direction, Location, PacketData, Slot};
 
 mod clientbound;
 mod serverbound;
@@ -83,7 +83,7 @@ impl EventQueue340 {
                             let count = slot.item_count.unwrap();
                             let id = slot.block_id;
                             let kind = BlockKind(id as u32);
-                            let stack = ItemStack::new(kind, count.into());
+                            let stack = ItemStack::new(kind, count, slot.item_damage.unwrap(), slot.nbt);
                             processor.on_pickup_item(idx, stack)
                         } else {
                             processor.on_lose_item(idx);
@@ -198,13 +198,32 @@ impl EventQueue340 {
 #[derive(Clone)]
 pub struct Interface340 {
     tx: Rc<RefCell<PacketWriteChannel>>,
+    inv_action_id: u16,
 }
 
 impl Interface340 {
     fn new(tx: PacketWriteChannel) -> Interface340 {
         Interface340 {
-            tx: Rc::new(RefCell::new(tx))
+            tx: Rc::new(RefCell::new(tx)),
+            inv_action_id: 0,
         }
+    }
+
+    fn click(&mut self, slot: u16, button: impl Into<u8>, mode: i32, clicked: impl Into<Slot>){
+
+        let action_number = self.inv_action_id;
+        let to_send = serverbound::ClickWindow {
+            window_id: 0,
+            slot,
+            button: button.into(),
+            action_number,
+            mode: VarInt(mode),
+            clicked: clicked.into()
+        };
+
+        self.write(to_send);
+
+        self.inv_action_id += 1;
     }
 
     #[inline]
@@ -229,6 +248,20 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::ChatMessage {
             message: message.to_string()
         });
+    }
+
+    fn inventory_action(&mut self, action: InvAction) {
+        match action {
+            InvAction::Q(slot) => {
+                self.click(slot, 0, 4, Slot::EMPTY)
+            },
+            InvAction::Click(slot, button, clicked) => {
+                self.click(slot, button, 0, clicked)
+            },
+            InvAction::ShiftClick(slot, button, clicked) => {
+                self.click(slot, button, 1, clicked)
+            }
+        }
     }
 
     fn left_click(&mut self) {

@@ -6,17 +6,20 @@
  */
 
 use crate::storage::block::{BlockKind};
-use std::fmt::{Display, Formatter};
+use crate::types::Nbt;
+use crate::protocol::{InterfaceOut, InvAction};
 
 #[derive(Debug)]
 pub struct ItemStack {
-    kind: BlockKind,
-    count: u32
+    pub kind: BlockKind,
+    pub count: u8,
+    pub damage: u16,
+    pub nbt: Option<Nbt>
 }
 
 impl ItemStack {
-    pub fn new(kind: BlockKind, count: u32) -> ItemStack {
-        Self {kind, count}
+    pub fn new(kind: BlockKind, count: u8, damage: u16, nbt: Option<Nbt>) -> ItemStack {
+        Self {kind, count, damage, nbt}
     }
 }
 
@@ -37,6 +40,18 @@ impl Default for PlayerInventory {
 impl PlayerInventory {
     pub fn hotbar(&self) -> &[Option<ItemStack>] {
         &self.slots[36..45]
+    }
+
+    pub fn hotbar_mut(&mut self) -> &mut [Option<ItemStack>] {
+        &mut self.slots[36..45]
+    }
+
+    pub fn drop_hotbar(&mut self, out: &mut impl InterfaceOut){
+        for idx in 36..45 {
+            if self.slots[idx].take().is_some() {
+                out.inventory_action(InvAction::Q(idx as u16))
+            }
+        }
     }
 
     pub fn remove(&mut self, idx: usize){

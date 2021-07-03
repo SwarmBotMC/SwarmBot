@@ -9,7 +9,7 @@ use packets::*;
 use packets::types::VarInt;
 use packets::write::{ByteWritable, ByteWriter};
 
-use crate::types::{Direction, Location, Position};
+use crate::types::{Direction, Location, Position, Slot};
 
 #[derive(Packet, Writable)]
 #[packet(0x00, Handshake)]
@@ -87,12 +87,26 @@ pub struct ChatMessage {
 }
 
 
+#[derive(Writable, Packet)]
+#[packet(0x07, Play)]
+pub struct ClickWindow {
+    pub window_id: u8,
+    pub slot: u16,
+    pub button: u8,
+    pub action_number: u16,
+    pub mode: VarInt,
+    pub clicked: Slot
+}
+
+
 #[derive(Writable, Default)]
 pub struct Cursor {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
+
+
 
 #[derive(Writable, Packet)]
 #[packet(0x1f, Play)]

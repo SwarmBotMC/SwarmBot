@@ -290,17 +290,15 @@ pub struct Displacement {
 #[derive(Debug)]
 pub struct Nbt(nbt::Blob);
 
-impl Deref for Nbt {
-    type Target = nbt::Blob;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 impl ByteReadable for Nbt {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         Nbt(nbt::Blob::from_reader(byte_reader).unwrap())
+    }
+}
+
+impl ByteWritable for Nbt {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        self.0.to_writer(writer).unwrap();
     }
 }
 
@@ -318,6 +316,7 @@ impl<T: ByteReadable> ByteReadable for ShortVec<T> {
     }
 }
 
+
 /// https://wiki.vg/Slot_Data
 #[derive(Debug)]
 pub struct Slot {
@@ -327,9 +326,45 @@ pub struct Slot {
     pub nbt: Option<Nbt>,
 }
 
+impl From<ItemStack> for Slot {
+    fn from(stack: ItemStack) -> Self {
+        Self {
+            block_id: stack.kind.0 as i16,
+            item_count: Some(stack.count),
+            item_damage: Some(stack.damage),
+            nbt: stack.nbt,
+        }
+    }
+}
+
 impl Slot {
+    pub const EMPTY: Slot = {
+        Slot {
+            block_id: -1,
+            item_count: None,
+            item_damage: None,
+            nbt: None,
+        }
+    };
+
     pub fn present(&self) -> bool {
         self.block_id != -1
+    }
+}
+
+impl ByteWritable for Slot {
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        writer.write(self.block_id);
+
+        if self.block_id != -1 {
+            writer.write(self.item_count.unwrap());
+            writer.write(self.item_damage.unwrap());
+
+            match self.nbt {
+                None => writer.write(0_u8),
+                Some(nbt) => writer.write(nbt)
+            };
+        }
     }
 }
 
