@@ -47,5 +47,5 @@ Runner |`runner.rs`
 3. Partition into layers
 4. For each layer find the furthest block away from the pillar
 - (a) If the furthest block can be mined without moving mine that and all blocks without moving
-- (b) Else go to as close to the pillar as possible to mine the furthest block. Then mine all of the blocks within reach that are further than the current location standing. That is in reach. After that go to (a)
+- (b) Else go to as close to the pillar as possible to mine the furthest block. Then mine all of the blocks within reach that are further than the current location standing that are in reach. After that go to (a)
 5. Go to pillar and mine one block down
