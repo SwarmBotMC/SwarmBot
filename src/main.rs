@@ -39,6 +39,9 @@ extern crate enum_dispatch;
 extern crate thiserror;
 
 #[macro_use]
+extern crate serde;
+
+#[macro_use]
 extern crate packets;
 
 mod error;

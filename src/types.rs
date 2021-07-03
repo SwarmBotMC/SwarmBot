@@ -287,18 +287,36 @@ pub struct Displacement {
     pub dz: f64,
 }
 
-#[derive(Debug)]
-pub struct Nbt(nbt::Blob);
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub struct Enchantment {
+    pub lvl: u16,
+    pub id: u16
+}
 
-impl ByteReadable for Nbt {
-    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        Nbt(nbt::Blob::from_reader(byte_reader).unwrap())
+impl Enchantment {
+    pub fn efficiency(self) -> Option<u16> {
+        if self.id == 32 {
+            Some(self.lvl)
+        } else {
+            None
+        }
     }
 }
 
-impl ByteWritable for Nbt {
-    fn write_to_bytes(self, writer: &mut ByteWriter) {
-        self.0.to_writer(writer).unwrap();
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ItemNbt {
+    pub ench: Vec<Enchantment>
+}
+
+impl ByteReadable for ItemNbt {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        nbt::from_reader(byte_reader).unwrap()
+    }
+}
+
+impl ByteWritable for ItemNbt {
+    fn write_to_bytes(mut self, writer: &mut ByteWriter) {
+        nbt::to_writer(writer, &mut self, None).unwrap();
     }
 }
 
@@ -323,7 +341,7 @@ pub struct Slot {
     pub block_id: i16,
     pub item_count: Option<u8>,
     pub item_damage: Option<u16>,
-    pub nbt: Option<Nbt>,
+    pub nbt: Option<ItemNbt>,
 }
 
 impl Into<Option<ItemStack>> for Slot {

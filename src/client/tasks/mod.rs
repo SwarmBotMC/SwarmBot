@@ -252,8 +252,11 @@ impl MineTask {
         let kind = global.world_blocks.get_block_kind(location).unwrap();
         let tool = local.inventory.current_tool();
 
-        // taking one tick off because most servers are ok with this
-        let ticks = tool.wait_time(kind, false, true, 5, &global.block_data) - 1;
+        let mut ticks = tool.wait_time(kind, false, true, &global.block_data);
+
+        if ticks == 0 {
+            ticks +=1;
+        }
 
         let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
         let faces = location.faces();
@@ -273,12 +276,14 @@ impl MineTask {
 
 impl TaskTrait for MineTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+
+        local.physics.look_at(self.look_location);
+
         if self.first {
+            out.left_click();
             self.first = false;
             out.mine(self.location, Mine::Start, self.face);
         }
-
-        local.physics.look_at(self.look_location);
 
         out.left_click();
         if self.ticks == 0 {

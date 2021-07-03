@@ -22,6 +22,7 @@ pub trait InterfaceIn {
     fn on_death(&mut self);
     fn on_update_health(&mut self, health: f32, food: u8);
     fn on_dimension_change(&mut self, dimension: Dimension);
+    fn on_join(&mut self);
     fn on_move(&mut self, location: Location);
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool);
     fn on_entity_move(&mut self, id: u32, location: LocationOrigin);
@@ -98,6 +99,11 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
     fn on_dimension_change(&mut self, dimension: Dimension) {
         self.local.dimension = dimension;
+    }
+
+    fn on_join(&mut self) {
+        // always start with slot 0
+        self.out.change_slot(0);
     }
 
     fn on_move(&mut self, location: Location) {

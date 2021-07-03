@@ -317,7 +317,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         _ => {}
     }
 
-    return Ok(());
+    Ok(())
 }
 
 pub fn run_threaded(_: &rayon::Scope, local: &mut LocalState, actions: &mut ActionState, global: &GlobalState, end_by: Instant) {

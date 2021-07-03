@@ -70,6 +70,7 @@ impl EventQueue340 {
         match data.id {
             JoinGame::ID => {
                 let JoinGame { dimension, .. } = data.read();
+                processor.on_join();
                 processor.on_dimension_change(dimension);
             }
 

@@ -6,9 +6,8 @@
  */
 
 use crate::storage::block::{BlockKind};
-use crate::types::{Nbt};
+use crate::types::{ItemNbt};
 use crate::protocol::{InterfaceOut, InvAction};
-use itertools::Itertools;
 use crate::client::physics::tools::Tool;
 use float_ord::FloatOrd;
 
@@ -17,12 +16,11 @@ pub struct ItemStack {
     pub kind: BlockKind,
     pub count: u8,
     pub damage: u16,
-    pub nbt: Option<Nbt>
+    pub nbt: Option<ItemNbt>
 }
 
-
 impl ItemStack {
-    pub fn new(kind: BlockKind, count: u8, damage: u16, nbt: Option<Nbt>) -> ItemStack {
+    pub fn new(kind: BlockKind, count: u8, damage: u16, nbt: Option<ItemNbt>) -> ItemStack {
         Self {kind, count, damage, nbt}
     }
 }
@@ -62,7 +60,7 @@ impl PlayerInventory {
 
     pub fn current_tool(&self) -> Tool {
         match &self.hotbar()[self.selected as usize] {
-            Some(item) => item.kind.to_tool(),
+            Some(item) => Tool::from(item),
             None => Tool::default(),
         }
     }
@@ -77,7 +75,7 @@ impl PlayerInventory {
             .enumerate()
             .filter_map(|(idx, item_stack)| {
                 let item_stack = item_stack.as_ref()?;
-                let tool = item_stack.kind.to_tool();
+                let tool = Tool::from(item_stack);
                 Some((idx, tool))
             });
 
