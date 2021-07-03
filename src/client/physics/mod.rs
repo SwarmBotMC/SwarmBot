@@ -181,13 +181,12 @@ struct MovementProc {}
 
 impl Physics {
     /// move to location and zero out velocity
-    pub fn teleport(&mut self, location: Location) {
+    pub fn teleport(&mut self, mut location: Location) {
 
         // sometimes the server tells us that should be in a block *_*
-        self.location.y = self.location.y.round();
-
         self.location = location;
         self.prev = MovementState::default();
+        self.prev.falling = true;
     }
 
     pub fn jump(&mut self) {
@@ -222,14 +221,11 @@ impl Physics {
         self.pending.strafe = Some(strafe)
     }
 
-    pub fn place_hand(&mut self, against: BlockLocation) {
-        let faces = against.faces();
-        let eye_loc = self.location + Displacement::EYE_HEIGHT;
-        let face_idx = IntoIterator::into_iter(faces).position_min_by_key(|&location| FloatOrd(location.dist2(eye_loc))).unwrap();
+    pub fn place_hand_face(&mut self, against: BlockLocation, face: Face){
 
-        let location = faces[face_idx];
-        let face = Face::from(face_idx as u8);
-
+        let locations = against.faces();
+        let face_idx = face as usize;
+        let location = locations[face_idx];
         self.look_at(location);
 
 
@@ -237,6 +233,17 @@ impl Physics {
             location: against,
             face,
         });
+    }
+
+    pub fn place_hand(&mut self, against: BlockLocation) {
+        let faces = against.faces();
+        let eye_loc = self.location + Displacement::EYE_HEIGHT;
+        let face_idx = IntoIterator::into_iter(faces).position_min_by_key(|&location| FloatOrd(location.dist2(eye_loc))).unwrap();
+
+        let face = Face::from(face_idx as u8);
+
+        self.place_hand_face(against, face);
+
     }
 
     pub fn speed(&mut self, speed: Speed) {
@@ -292,6 +299,14 @@ impl Physics {
             let actual_loc = against + place.face.change();
             // TODO: change this to the right block when inventory is supported
             world.set_block(actual_loc, BlockState::STONE);
+        }
+
+
+        let in_block_loc = BlockLocation::from(self.location);
+
+        if world.get_block_simple(in_block_loc) == Some(SimpleType::Solid) {
+            println!("was in block");
+            self.location.y = in_block_loc.y as f64 + 1.0;
         }
 
         let below_loc = self.location - EPSILON_Y;

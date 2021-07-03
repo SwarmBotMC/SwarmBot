@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::storage::block::BlockLocation;
 use crate::types::Origin::{Abs, Rel};
+use crate::client::pathfind::moves::Change;
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -282,6 +283,16 @@ pub struct Displacement {
     pub dx: f64,
     pub dy: f64,
     pub dz: f64,
+}
+
+impl From<Change> for Displacement {
+    fn from(change: Change) -> Self {
+        Self {
+            dx: change.dx as f64,
+            dy: change.dy as f64,
+            dz: change.dz as f64
+        }
+    }
 }
 
 impl Display for Displacement {

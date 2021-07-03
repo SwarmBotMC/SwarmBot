@@ -24,7 +24,10 @@ use crate::client::timing::Increment;
 use crate::protocol::{Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Displacement, Location};
+use crate::types::{Displacement, Location, Direction};
+use crate::client::pathfind::moves::{CardinalDirection, Change};
+use crate::client::physics::speed::Speed;
+use crate::client::physics::Line;
 
 #[enum_dispatch]
 pub trait TaskTrait {
@@ -43,6 +46,7 @@ pub trait TaskTrait {
 #[enum_dispatch(TaskTrait)]
 pub enum Task {
     EatTask,
+    BridgeTask,
     MineTask,
     PillarTask,
     DelayTask,
@@ -323,6 +327,7 @@ impl TaskTrait for LazyTask {
     }
 }
 
+
 pub struct PillarTask {
     count: u32,
     place_loc: BlockLocation,
@@ -389,5 +394,61 @@ impl TaskTrait for FallBucketTask {
         }
 
         false
+    }
+}
+
+pub struct BridgeTask {
+    count: u32,
+    place_against: BlockLocation,
+    direction: CardinalDirection,
+}
+
+impl BridgeTask {
+    pub fn new(count: u32, direction: CardinalDirection, local: &LocalState) -> BridgeTask {
+        let start = BlockLocation::from(local.physics.location()).below();
+        Self {count, place_against: start, direction}
+    }
+}
+
+impl TaskTrait for BridgeTask {
+    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+
+        let displacement = Displacement::from(self.direction.unit_change());
+
+        let direction = Direction::from(displacement);
+
+        local.physics.look(direction);
+        local.physics.line(Line::Forward);
+        local.physics.jump();
+        local.physics.speed(Speed::SPRINT);
+
+        let target_loc = self.place_against.true_center();
+        let current_loc = local.physics.location();
+
+        let place = match self.direction {
+            CardinalDirection::North => {
+                target_loc.x - current_loc.x < (0.4 - 0.2)
+            }
+            CardinalDirection::South => {
+                target_loc.x - current_loc.x > (-0.4 + 0.2)
+            }
+            CardinalDirection::West => {
+                target_loc.z - current_loc.z > (0.4 - 0.2)
+            }
+            CardinalDirection::East => {
+                target_loc.z + current_loc.z > (0.4 + 0.2)
+            }
+        };
+
+        if place {
+            let face = Face::from(self.direction);
+            local.physics.place_hand_face(self.place_against, face);
+            let change = BlockLocation::from(self.direction.unit_change());
+            self.place_against = self.place_against + change;
+            self.count -= 1;
+        }
+
+        self.count == 0
+
     }
 }

@@ -10,6 +10,7 @@ use std::ops::Add;
 
 use crate::bootstrap::blocks::BlockData;
 use crate::types::{Displacement, Location};
+use crate::client::pathfind::moves::Change;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -160,6 +161,16 @@ pub struct BlockLocation {
     pub x: i32,
     pub y: i16,
     pub z: i32,
+}
+
+impl From<Change> for BlockLocation {
+    fn from(change: Change) -> Self {
+        Self {
+            x: change.dx,
+            y: change.dy,
+            z: change.dz
+        }
+    }
 }
 
 impl Add for BlockLocation {

@@ -331,6 +331,7 @@ fn drop_y(start: BlockLocation, world: &WorldBlocks) -> Option<i16> {
     None
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum CardinalDirection {
     North,
     South,
@@ -357,8 +358,9 @@ impl Change {
     }
 }
 
+
 impl CardinalDirection {
-    fn unit_change(&self) -> Change {
+    pub fn unit_change(&self) -> Change {
         match self {
             CardinalDirection::North => Change::new(1, 0, 0),
             CardinalDirection::South => Change::new(-1, 0, 0),

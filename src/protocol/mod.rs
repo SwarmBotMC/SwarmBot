@@ -12,6 +12,7 @@ use crate::client::processor::InterfaceIn;
 use crate::error::Res;
 use crate::storage::block::BlockLocation;
 use crate::types::{Direction, Location};
+use crate::client::pathfind::moves::CardinalDirection;
 
 pub mod v340;
 
@@ -38,6 +39,17 @@ pub enum Face {
     PosX
 }
 
+impl From<CardinalDirection> for Face{
+    fn from(dir: CardinalDirection) -> Self {
+        match dir {
+            CardinalDirection::North => Face::PosX,
+            CardinalDirection::South => Face::NegX,
+            CardinalDirection::West => Face::PosZ,
+            CardinalDirection::East => Face::NegZ
+        }
+    }
+}
+
 impl Face {
     pub fn change(self) -> BlockLocation {
         match self {
@@ -49,7 +61,7 @@ impl Face {
             Face::PosX => BlockLocation::new(1, 0, 0),
         }
     }
-    
+
 }
 
 impl From<u8> for Face {

@@ -23,7 +23,7 @@ use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask};
+use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask};
 use crate::client::timing::Increment;
 use crate::error::Res;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
@@ -32,6 +32,7 @@ use crate::storage::block::{BlockKind, BlockLocation};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Direction, Displacement};
 use std::fmt::{Display, Formatter};
+use crate::client::pathfind::moves::CardinalDirection;
 
 #[derive(Default)]
 pub struct ActionState {
@@ -151,6 +152,12 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 actions.schedule(PillarTask::new(amount, local));
             }
         }
+        "bridge" => {
+            if let [a] = args {
+                let amount = a.parse()?;
+                actions.schedule(BridgeTask::new(amount, CardinalDirection::North, local));
+            }
+        }
         "pillarc" => {
             let goal = ChunkLocation::try_from(args)?;
             let mut task = CompoundTask::default();
@@ -258,6 +265,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 if name == &local.info.username {
                     msg!("location {}", local.physics.location());
                     msg!("on ground {}", local.physics.on_ground());
+                    let below_loc = BlockLocation::from(local.physics.location() - Displacement::EPSILON_Y);
+                    msg!("below kind {:?}", global.world_blocks.get_block_kind(below_loc));
                 }
             }
         }

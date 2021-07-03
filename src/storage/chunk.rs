@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use crate::storage::block::{BlockApprox, BlockState, SimpleType, BlockLocation};
+use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::ChunkLocation;
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
@@ -42,13 +42,18 @@ impl Default for LowMemoryChunkSection {
     }
 }
 
-pub fn bits_needed(mut number: usize) -> u8 {
-    let mut bits = 0_u8;
-    while number > 1 {
-        number /= 2;
-        bits += 1;
+pub fn bits_needed(number: usize) -> u8 {
+
+    // 1 bit can encode 2
+    let mut start = 2;
+    let mut bits_needed = 1;
+
+    while start < number {
+        start <<= 1;
+        bits_needed += 1;
     }
-    bits
+
+    bits_needed
 }
 
 impl LowMemoryChunkSection {
@@ -91,8 +96,7 @@ pub struct ChunkData<T> {
     pub sections: [Option<T>; 16],
 }
 
-impl <T> ChunkData<T> {
-
+impl<T> ChunkData<T> {
     pub fn block_location(&self, location: ChunkLocation, idx: usize) -> BlockLocation {
         let base_x = location.0 << 4;
         let base_z = location.1 << 4;
@@ -127,8 +131,8 @@ impl ChunkData<HighMemoryChunkSection> {
     }
 
     pub fn select_locs(&'a self, location: ChunkLocation, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=BlockLocation> + 'a {
-            self.select_up(selector)
-                .map(move |idx| self.block_location(location, idx))
+        self.select_up(selector)
+            .map(move |idx| self.block_location(location, idx))
     }
 
     // TODO: remove duplicate code... is it even possible?
@@ -269,7 +273,6 @@ impl Palette {
 
 
         let value = value as u64;
-
         let indv_value_mask = (1 << self.bits_per_block) - 1;
 
         let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
@@ -402,5 +405,20 @@ impl ChunkColumn {
                 })
             }
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::storage::chunk::bits_needed;
+
+    #[test]
+    fn test_bits_needed() {
+        assert_eq!(1, bits_needed(1)); // 000
+        assert_eq!(1, bits_needed(2)); // 001
+        assert_eq!(2, bits_needed(3)); // 010
+        assert_eq!(2, bits_needed(4)); // 011
+        assert_eq!(3, bits_needed(5)); // 100
     }
 }
