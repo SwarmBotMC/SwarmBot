@@ -38,6 +38,9 @@ extern crate enum_dispatch;
 #[macro_use]
 extern crate thiserror;
 
+#[macro_use]
+extern crate packets;
+
 mod error;
 mod bootstrap;
 mod protocol;

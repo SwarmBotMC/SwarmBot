@@ -267,6 +267,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                     msg!("on ground {}", local.physics.on_ground());
                     let below_loc = BlockLocation::from(local.physics.location() - Displacement::EPSILON_Y);
                     msg!("below kind {:?}", global.world_blocks.get_block_kind(below_loc));
+                    msg!("inventory slots {:?}", local.inventory.hotbar());
                 }
             }
         }

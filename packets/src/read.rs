@@ -26,6 +26,12 @@ impl ByteReader {
         T::read_from_bytes(self)
     }
 
+    pub fn back(&mut self, bytes: u64){
+        let position = self.bytes.position();
+        let new_position = position - bytes;
+        self.bytes.set_position(new_position);
+    }
+
     pub fn read_with_len<T: ByteReadable>(&mut self) -> LenRead<T> {
         let pos_before = self.bytes.position();
         let value = T::read_from_bytes(self);

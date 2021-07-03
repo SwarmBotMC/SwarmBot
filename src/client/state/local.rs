@@ -6,7 +6,7 @@
  */
 
 use crate::client::physics::Physics;
-use crate::client::state::inventory::Inventory;
+use crate::client::state::inventory::PlayerInventory;
 use crate::protocol::{ClientInfo, Face};
 use crate::storage::block::BlockLocation;
 use crate::types::Dimension;
@@ -22,7 +22,7 @@ pub struct LocalState {
     pub bot_id: u32,
     pub physics: Physics,
     pub disconnected: bool,
-    pub inventory: Inventory,
+    pub inventory: PlayerInventory,
     pub info: ClientInfo,
     pub alive: bool,
     pub dimension: Dimension,
@@ -46,7 +46,7 @@ impl LocalState {
             bot_id,
             physics: Physics::default(),
             disconnected: false,
-            inventory: Inventory {},
+            inventory: PlayerInventory::default(),
             alive: true,
             dimension: Dimension::Overworld,
             info,

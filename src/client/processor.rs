@@ -13,10 +13,12 @@ use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
 use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
-use std::num::ParseIntError;
+use crate::client::state::inventory::ItemStack;
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
+    fn on_pickup_item(&mut self, idx: usize, item: ItemStack);
+    fn on_lose_item(&mut self, idx: usize);
     fn on_death(&mut self);
     fn on_update_health(&mut self, health: f32, food: u8);
     fn on_dimension_change(&mut self, dimension: Dimension);
@@ -72,6 +74,14 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         } else if let Some(msg) = message.player_dm() {
             process(msg);
         }
+    }
+
+    fn on_pickup_item(&mut self, idx: usize, item: ItemStack) {
+        self.local.inventory.add(idx, item);
+    }
+
+    fn on_lose_item(&mut self, idx: usize) {
+        self.local.inventory.remove(idx);
     }
 
     fn on_death(&mut self) {

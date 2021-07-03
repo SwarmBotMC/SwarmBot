@@ -17,15 +17,16 @@ use crate::bootstrap::{Address, Connection};
 use crate::bootstrap::mojang::calc_hash;
 use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
+use crate::client::state::inventory::ItemStack;
 use crate::error::{err, Res};
 use crate::error::Error::WrongPacket;
-use crate::protocol::{ClientInfo, EventQueue, InterfaceOut, Login, Mine, Minecraft, Face};
+use crate::protocol::{ClientInfo, EventQueue, Face, InterfaceOut, Login, Mine, Minecraft};
 use crate::protocol::encrypt::{rand_bits, Rsa};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState};
-use crate::storage::block::{BlockLocation, BlockState};
+use crate::storage::block::{BlockKind, BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Dimension, Direction, Location, PacketData};
 
@@ -70,6 +71,25 @@ impl EventQueue340 {
             JoinGame::ID => {
                 let JoinGame { dimension, .. } = data.read();
                 processor.on_dimension_change(dimension);
+            }
+
+            window::Items::ID => {
+                let window::Items { window_id, slots } = data.read();
+
+                if window_id == 0 { // is player inventory
+
+                    for (idx, slot) in slots.0.into_iter().enumerate() {
+                        if slot.present() {
+                            let count = slot.item_count.unwrap();
+                            let id = slot.block_id;
+                            let kind = BlockKind(id as u32);
+                            let stack = ItemStack::new(kind, count.into());
+                            processor.on_pickup_item(idx, stack)
+                        } else {
+                            processor.on_lose_item(idx);
+                        }
+                    }
+                }
             }
 
             BlockChange::ID => {
@@ -194,16 +214,14 @@ impl Interface340 {
 }
 
 impl InterfaceOut for Interface340 {
-
     fn place_block(&mut self, against: BlockLocation, face: Face) {
-
         let face = VarInt(face as i32);
 
         self.write(serverbound::PlaceBlock {
             location: against,
             face,
             hand: Hand::Main,
-            cursor: Default::default()
+            cursor: Default::default(),
         });
     }
 
@@ -343,7 +361,7 @@ impl Minecraft for Protocol {
         // set compression or login success
         let mut data = reader.read().await?;
 
-        let LoginSuccess {..} = match data.id {
+        let LoginSuccess { .. } = match data.id {
             clientbound::SetCompression::ID => {
                 let clientbound::SetCompression { threshold } = data.read();
 

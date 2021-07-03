@@ -345,6 +345,40 @@ impl ByteReadableLike for ChunkColumnPacket {
     }
 }
 
+
+pub mod window {
+    use crate::types::{ShortVec, Slot};
+
+    #[derive(Packet, Debug, Readable)]
+    #[packet(0x13, Play)]
+    pub struct Open {
+
+        pub window_id: u8,
+
+        /// https://wiki.vg/Inventory
+        pub kind: String,
+
+        pub title: String,
+
+        pub slot_count: u8,
+
+        // TODO: entity id if EntityHorse
+
+    }
+
+    #[derive(Packet, Readable)]
+    #[packet(0x14, Play)]
+    pub struct Items {
+        /// 0 if player inventory
+        pub window_id: u8,
+
+        // number of elements in the array
+        pub slots: ShortVec<Slot>
+    }
+
+}
+
+
 pub struct ChunkSection {
     palette: crate::storage::chunk::Palette,
 

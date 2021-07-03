@@ -8,19 +8,21 @@
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::lazy::SyncLazy;
-use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Deref, Index, Mul, MulAssign, Neg, Sub};
 
 use ansi_term::Style;
 use itertools::Itertools;
 use packets::*;
 use packets::read::{ByteReadable, ByteReader};
+use packets::types::VarInt;
 use packets::write::{ByteWritable, ByteWriter};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
+use crate::client::pathfind::moves::Change;
+use crate::client::state::inventory::ItemStack;
 use crate::storage::block::BlockLocation;
 use crate::types::Origin::{Abs, Rel};
-use crate::client::pathfind::moves::Change;
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -285,12 +287,90 @@ pub struct Displacement {
     pub dz: f64,
 }
 
+#[derive(Debug)]
+pub struct Nbt(nbt::Blob);
+
+impl Deref for Nbt {
+    type Target = nbt::Blob;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl ByteReadable for Nbt {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        Nbt(nbt::Blob::from_reader(byte_reader).unwrap())
+    }
+}
+
+pub struct ShortVec<T>(pub Vec<T>);
+
+impl<T: ByteReadable> ByteReadable for ShortVec<T> {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let length: u16 = byte_reader.read();
+        let length = length as usize;
+        let mut vec = Vec::with_capacity(length);
+        for _ in 0..length {
+            vec.push(byte_reader.read());
+        }
+        ShortVec(vec)
+    }
+}
+
+/// https://wiki.vg/Slot_Data
+#[derive(Debug)]
+pub struct Slot {
+    pub block_id: i16,
+    pub item_count: Option<u8>,
+    pub item_damage: Option<u16>,
+    pub nbt: Option<Nbt>,
+}
+
+impl Slot {
+    pub fn present(&self) -> bool {
+        self.block_id != -1
+    }
+}
+
+impl ByteReadable for Slot {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let block_id: i16 = byte_reader.read();
+
+        if block_id != -1 {
+            let item_count = byte_reader.read();
+            let item_damage = byte_reader.read();
+
+            let first: u8 = byte_reader.read();
+            let nbt = (first != 0).then(|| {
+                byte_reader.back(1);
+                byte_reader.read()
+            });
+
+            Slot {
+                block_id,
+                item_count: Some(item_count),
+                item_damage: Some(item_damage),
+                nbt,
+            }
+        } else {
+            Slot {
+                block_id,
+                item_count: None,
+                item_damage: None,
+                nbt: None,
+            }
+        }
+    }
+}
+
+
 impl From<Change> for Displacement {
     fn from(change: Change) -> Self {
         Self {
             dx: change.dx as f64,
             dy: change.dy as f64,
-            dz: change.dz as f64
+            dz: change.dz as f64,
         }
     }
 }
@@ -331,7 +411,6 @@ impl Add for Displacement {
 }
 
 impl Displacement {
-
     pub const EYE_HEIGHT: Displacement = Displacement::new(0., 1.6, 0.);
     pub const EPSILON_Y: Displacement = Displacement::new(0., 0.01, 0.);
 
