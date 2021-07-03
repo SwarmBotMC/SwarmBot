@@ -11,6 +11,7 @@ use std::ops::Add;
 use crate::bootstrap::blocks::BlockData;
 use crate::types::{Displacement, Location};
 use crate::client::pathfind::moves::Change;
+use crate::client::physics::tools::Tool;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -33,6 +34,35 @@ impl BlockKind {
 
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
         blocks.by_id(self.0).unwrap().hardness
+    }
+
+    pub fn to_tool(&self) -> Tool{
+        use crate::client::physics::tools::ToolKind::*;
+        use crate::client::physics::tools::Material::*;
+
+        match self.id() {
+            256 => Tool::new(Shovel, Iron),
+            257 => Tool::new(Pickaxe, Iron),
+            258 => Tool::new(Axe, Iron),
+
+            269 => Tool::new(Shovel, Wood),
+            270 => Tool::new(Pickaxe, Wood),
+            271 => Tool::new(Axe, Wood),
+
+            273 => Tool::new(Shovel, Stone),
+            274 => Tool::new(Pickaxe, Stone),
+            275 => Tool::new(Axe, Stone),
+
+            277 => Tool::new(Shovel, Diamond),
+            278 => Tool::new(Pickaxe, Diamond),
+            279 => Tool::new(Axe, Diamond),
+
+            284 => Tool::new(Shovel, Gold),
+            285 => Tool::new(Pickaxe, Gold),
+            286 => Tool::new(Axe, Gold),
+
+            _ =>  Tool::new(Generic, Hand)
+        }
     }
 
     pub fn mineable(&self, blocks: &BlockData) -> bool {

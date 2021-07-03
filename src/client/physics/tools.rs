@@ -8,36 +8,65 @@
 use crate::bootstrap::blocks::BlockData;
 use crate::storage::block::BlockKind;
 
-pub struct Material {
-    strength: f64,
+#[derive(Copy, Clone)]
+pub enum Material {
+    Hand,
+    Wood,
+    Stone,
+    Iron,
+    Diamond,
+    Gold
 }
 
-impl Material {
-    pub const HAND: Self = Self::new(1.0);
-    pub const WOOD: Self = Self::new(2.0);
-    pub const STONE: Self = Self::new(4.0);
-    pub const IRON: Self = Self::new(6.0);
-    pub const DIAMOND: Self = Self::new(8.0);
-    pub const GOLD: Self = Self::new(12.0);
 
-    const fn new(strength: f64) -> Material {
-        Self { strength }
+#[derive(Copy, Clone)]
+pub enum ToolKind {
+    Generic,
+    Pickaxe,
+    Hoe,
+    Shovel,
+    Axe,
+    Sword
+}
+
+
+impl Material {
+
+    pub fn strength(self) -> f64 {
+        match self {
+            Material::Hand => 1.0,
+            Material::Wood => 2.0,
+            Material::Stone => 4.0,
+            Material::Iron => 6.0,
+            Material::Diamond => 8.0,
+            Material::Gold => 12.0,
+        }
     }
 }
 
 pub struct Tool {
-    material: Material,
+    pub material: Material,
+    pub kind: ToolKind
+}
+
+impl Default for Tool {
+    fn default() -> Self {
+        Self {
+            material: Material::Hand,
+            kind: ToolKind::Generic
+        }
+    }
 }
 
 impl Tool {
-    pub fn new(material: Material) -> Self {
-        Self { material }
+    pub fn new(kind: ToolKind, material: Material) -> Self {
+        Self { material, kind }
     }
     fn strength_against_block(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData, efficiency: u32) -> f64 {
         let hardness = kind.hardness(data).unwrap_or(f64::INFINITY);
         if hardness < 0.0 { return 0.0; }
 
-        let mut d = self.material.strength;
+        let mut d = self.material.strength();
 
         if efficiency > 0 {
             d += (efficiency.pow(2) + 1) as f64

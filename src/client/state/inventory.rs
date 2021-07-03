@@ -6,8 +6,11 @@
  */
 
 use crate::storage::block::{BlockKind};
-use crate::types::{Nbt, Slot};
+use crate::types::{Nbt};
 use crate::protocol::{InterfaceOut, InvAction};
+use itertools::Itertools;
+use crate::client::physics::tools::Tool;
+use float_ord::FloatOrd;
 
 #[derive(Debug)]
 pub struct ItemStack {
@@ -26,14 +29,16 @@ impl ItemStack {
 
 #[derive(Debug)]
 pub struct PlayerInventory {
-    slots: [Option<ItemStack>; 46]
+    slots: [Option<ItemStack>; 46],
+    selected: u8,
 }
 
 impl Default for PlayerInventory {
     fn default() -> Self {
         const NONE: Option<ItemStack> = None;
         Self {
-            slots: [NONE; 46]
+            slots: [NONE; 46],
+            selected: 0
         }
     }
 }
@@ -51,6 +56,36 @@ impl PlayerInventory {
         for idx in 36..45 {
             if self.slots[idx].take().is_some() {
                 out.inventory_action(InvAction::Q(idx as u16))
+            }
+        }
+    }
+
+    pub fn current_tool(&self) -> Tool {
+        match &self.hotbar()[self.selected as usize] {
+            Some(item) => item.kind.to_tool(),
+            None => Tool::default(),
+        }
+    }
+
+    pub fn change_slot(&mut self, idx: u8, out: &mut impl InterfaceOut){
+        self.selected = idx;
+        out.change_slot(idx);
+    }
+
+    pub fn switch_tool(&mut self, out: &mut impl InterfaceOut) -> Tool{
+        let tools = self.hotbar().iter()
+            .enumerate()
+            .filter_map(|(idx, item_stack)| {
+                let item_stack = item_stack.as_ref()?;
+                let tool = item_stack.kind.to_tool();
+                Some((idx, tool))
+            });
+
+        match tools.max_by_key(move |(_, tool)| FloatOrd(tool.material.strength())) {
+            None => Tool::default(),
+            Some((idx, tool)) => {
+                self.change_slot(idx as u8, out);
+                tool
             }
         }
     }

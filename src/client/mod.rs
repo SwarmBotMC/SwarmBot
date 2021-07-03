@@ -12,5 +12,5 @@ pub mod pathfind;
 mod timing;
 mod follow;
 pub mod state;
-mod physics;
+pub mod physics;
 mod tasks;

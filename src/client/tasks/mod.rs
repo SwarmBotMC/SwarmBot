@@ -250,7 +250,7 @@ pub struct MineTask {
 impl MineTask {
     pub fn new(location: BlockLocation, local: &LocalState, global: &GlobalState) -> MineTask {
         let kind = global.world_blocks.get_block_kind(location).unwrap();
-        let tool = Tool::new(Material::DIAMOND);
+        let tool = local.inventory.current_tool();
 
         // taking one tick off because most servers are ok with this
         let ticks = tool.wait_time(kind, false, true, 5, &global.block_data) - 1;

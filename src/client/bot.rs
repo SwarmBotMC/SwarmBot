@@ -230,6 +230,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             compound.add(mine).add(fall);
             actions.schedule(compound);
         }
+        "tool" => {
+            local.inventory.switch_tool(out);
+        }
         "drop" => {
             local.inventory.drop_hotbar(out);
         }
