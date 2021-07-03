@@ -19,9 +19,6 @@ serde = { version = "1.0", features = ["derive"] }
 # socket5
 tokio-socks = "0.5"
 
-# for database stuff
-tokio-stream = "0.1"
-
 # tokio
 tokio = { version = "1.7", features = ["rt", "io-std", "io-util", "sync", "parking_lot"] }
 
@@ -67,7 +64,6 @@ serde_json = "1.0"
 itertools = "0.10"
 
 # for data storage
-#flexbuffers = "2.0"
 bincode = "1.3"
 
 # chat parsing
@@ -109,6 +105,6 @@ more-asserts = "0.2"
 opt-level = 2
 
 [profile.release]
-#debug = true
+debug = true
 #lto = "fat"
 #codegen-units = 1
