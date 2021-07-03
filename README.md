@@ -36,3 +36,16 @@ Path follower | `follow/mod.rs`
 Commands |`bot.rs`
 1.12 Protocol |`v340/mod.rs`
 Runner |`runner.rs`
+
+
+# Procedures
+
+## Mining a chunk
+
+1. Go to the center (x,z) of the chunk (does not matter biased towards which side)
+2. Pillar to the highest block we want to mine
+3. Partition into layers
+4. For each layer find the furthest block away from the pillar
+- (a) If the furthest block can be mined without moving mine that and all blocks without moving
+- (b) Else go to as close to the pillar as possible to mine the furthest block. Then mine all of the blocks within reach that are further than the current location standing. That is in reach. After that go to (a)
+5. Go to pillar and mine one block down
