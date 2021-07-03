@@ -6,7 +6,7 @@
  */
 
 use crate::storage::block::{BlockKind};
-use crate::types::Nbt;
+use crate::types::{Nbt, Slot};
 use crate::protocol::{InterfaceOut, InvAction};
 
 #[derive(Debug)]
@@ -16,6 +16,7 @@ pub struct ItemStack {
     pub damage: u16,
     pub nbt: Option<Nbt>
 }
+
 
 impl ItemStack {
     pub fn new(kind: BlockKind, count: u8, damage: u16, nbt: Option<Nbt>) -> ItemStack {

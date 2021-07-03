@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::client::pathfind::moves::Change;
 use crate::client::state::inventory::ItemStack;
-use crate::storage::block::BlockLocation;
+use crate::storage::block::{BlockLocation, BlockKind};
 use crate::types::Origin::{Abs, Rel};
 
 #[derive(Clone)]
@@ -324,6 +324,19 @@ pub struct Slot {
     pub item_count: Option<u8>,
     pub item_damage: Option<u16>,
     pub nbt: Option<Nbt>,
+}
+
+impl Into<Option<ItemStack>> for Slot {
+    fn into(self) -> Option<ItemStack> {
+        if self.present() {
+            let count = self.item_count.unwrap();
+            let id = self.block_id;
+            let kind = BlockKind(id as u32);
+            Some(ItemStack::new(kind, count, self.item_damage.unwrap(), self.nbt))
+        } else {
+            None
+        }
+    }
 }
 
 impl From<ItemStack> for Slot {

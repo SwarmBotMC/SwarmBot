@@ -73,20 +73,24 @@ impl EventQueue340 {
                 processor.on_dimension_change(dimension);
             }
 
+            window::Set::ID => {
+                let window::Set { window_id, slot: idx, data } = data.read();
+                if window_id == 0 {
+                    match data.into() {
+                        None => processor.on_lose_item(idx as usize),
+                        Some(item_stack) => processor.on_pickup_item(idx as usize, item_stack)
+                    }
+                }
+            }
+
             window::Items::ID => {
                 let window::Items { window_id, slots } = data.read();
 
                 if window_id == 0 { // is player inventory
-
                     for (idx, slot) in slots.0.into_iter().enumerate() {
-                        if slot.present() {
-                            let count = slot.item_count.unwrap();
-                            let id = slot.block_id;
-                            let kind = BlockKind(id as u32);
-                            let stack = ItemStack::new(kind, count, slot.item_damage.unwrap(), slot.nbt);
-                            processor.on_pickup_item(idx, stack)
-                        } else {
-                            processor.on_lose_item(idx);
+                        match slot.into() {
+                            None => processor.on_lose_item(idx),
+                            Some(item_stack) => processor.on_pickup_item(idx, item_stack)
                         }
                     }
                 }

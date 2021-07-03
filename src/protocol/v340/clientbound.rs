@@ -350,6 +350,14 @@ pub mod window {
     use crate::types::{ShortVec, Slot};
 
     #[derive(Packet, Debug, Readable)]
+    #[packet(0x16, Play)]
+    pub struct Set {
+        pub window_id: u8,
+        pub slot: u16,
+        pub data: Slot
+    }
+
+    #[derive(Packet, Debug, Readable)]
     #[packet(0x13, Play)]
     pub struct Open {
 
