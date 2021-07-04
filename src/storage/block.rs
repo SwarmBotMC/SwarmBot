@@ -282,10 +282,10 @@ impl BlockLocation {
 }
 
 impl BlockLocation {
-    pub(crate) fn dist2(&self, other: BlockLocation) -> u64 {
-        let dx = (self.x - other.x).abs() as u64;
-        let dy = (self.y - other.y).abs() as u64;
-        let dz = (self.z - other.z).abs() as u64;
+    pub(crate) fn dist2(&self, other: BlockLocation) -> f64 {
+        let dx = (self.x - other.x).abs() as f64;
+        let dy = (self.y - other.y).abs() as f64;
+        let dz = (self.z - other.z).abs() as f64;
         dx * dx + dy * dy + dz * dz
     }
 

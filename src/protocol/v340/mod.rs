@@ -247,7 +247,7 @@ impl InterfaceOut for Interface340 {
             hand: Hand::Main,
             cursor: serverbound::BlockCursor {
                 x: 1.0,
-                y: 0.5,
+                y: 1.5,
                 z: 0.5
             },
         });

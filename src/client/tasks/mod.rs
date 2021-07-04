@@ -4,7 +4,7 @@
  * Proprietary and confidential.
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
-use std::collections::{VecDeque, HashSet};
+use std::collections::{HashSet, VecDeque};
 use std::time::Instant;
 
 use float_ord::FloatOrd;
@@ -13,7 +13,7 @@ use itertools::Itertools;
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::MoveNode;
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
-use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, CenterChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
+use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, BlockNearGoalCheck, CenterChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
 use crate::client::pathfind::moves::CardinalDirection;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic};
 use crate::client::physics::Line;
@@ -25,6 +25,7 @@ use crate::protocol::{Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Direction, Displacement, Location};
+use std::cmp::max;
 
 #[enum_dispatch]
 pub trait TaskTrait {
@@ -39,18 +40,24 @@ pub trait TaskTrait {
     fn expensive(&mut self, end_by: Instant, local: &mut LocalState, global: &GlobalState) {}
 }
 
+pub type ChunkTravelTask = NavigateProblem<ChunkHeuristic, CenterChunkGoalCheck>;
+pub type BlockTravelTask = NavigateProblem<BlockHeuristic, BlockGoalCheck>;
+pub type BlockTravelNearTask = NavigateProblem<BlockHeuristic, BlockNearGoalCheck>;
+
 #[allow(clippy::enum_variant_names)]
 #[enum_dispatch(TaskTrait)]
 pub enum Task {
     EatTask,
     BridgeTask,
     MineTask,
+    BlockTravelNearTask,
     PillarTask,
     DelayTask,
     PillarAndMineTask,
     LazyTask,
     BlockTravelTask,
     ChunkTravelTask,
+    MineLayerTask,
     FallBucketTask,
     CompoundTask,
 }
@@ -103,9 +110,8 @@ pub struct NavigateProblem<H: Heuristic, G: GoalCheck> {
     follower: Option<Follower>,
 }
 
-
-impl<H: Heuristic, G: GoalCheck> NavigateProblem<H, G> {
-    fn raw(problem: PlayerProblem<H, G>) -> NavigateProblem<H, G> {
+impl<H: Heuristic, G: GoalCheck> From<PlayerProblem<H, G>> for NavigateProblem<H, G> {
+    fn from(problem: PlayerProblem<H, G>) -> Self {
         Self {
             calculate: true,
             problem: box problem,
@@ -113,7 +119,6 @@ impl<H: Heuristic, G: GoalCheck> NavigateProblem<H, G> {
         }
     }
 }
-
 
 impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for NavigateProblem<H, G> {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
@@ -160,14 +165,11 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
     }
 }
 
-pub type ChunkTravelTask = NavigateProblem<ChunkHeuristic, CenterChunkGoalCheck>;
-pub type BlockTravelTask = NavigateProblem<BlockHeuristic, BlockGoalCheck>;
-
 impl ChunkTravelTask {
     pub fn new(goal: ChunkLocation, local: &LocalState) -> Self {
         let start = local.physics.location().into();
         let problem = TravelProblem::navigate_center_chunk(start, goal);
-        Self::raw(problem)
+        problem.into()
     }
 }
 
@@ -175,7 +177,7 @@ impl BlockTravelTask {
     pub fn new(goal: BlockLocation, local: &LocalState) -> Self {
         let start = local.physics.location().into();
         let problem = TravelProblem::navigate_block(start, goal);
-        Self::raw(problem)
+        problem.into()
     }
 }
 
@@ -283,12 +285,12 @@ impl TaskTrait for MineTask {
         if self.first {
             out.swing_arm();
             self.first = false;
-            out.mine(self.location, Mine::Start, self.face);
+            out.mine(self.location, Mine::Start, Face::PosY);
         }
 
         out.swing_arm();
         if self.ticks == 0 {
-            out.mine(self.location, Mine::Finished, self.face);
+            out.mine(self.location, Mine::Finished, Face::PosY);
             global.blocks.set_block(self.location, BlockState::AIR);
             true
         } else {
@@ -307,11 +309,13 @@ pub struct LazyStream<T: TaskStream> {
     create_task: T,
 }
 
-impl<T: TaskStream> LazyStream<T> {
-
-    fn new(create_task: T) -> LazyStream<T> {
-        Self {create_task, current: None}
+impl <T: TaskStream> From<T> for LazyStream<T> {
+    fn from(create_task: T) -> Self {
+        Self { create_task, current: None }
     }
+}
+
+impl<T: TaskStream> LazyStream<T> {
 
     fn get(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<&mut Task> {
         if self.current.is_none() {
@@ -386,10 +390,10 @@ impl TaskTrait for LazyTask {
 pub type PillarAndMineTask = LazyStream<PillarOrMine>;
 
 impl PillarAndMineTask {
-   pub fn pillar_and_mine(height: u32) -> Self {
-       let state = PillarOrMine {height};
-       Self::new(state)
-   }
+    pub fn pillar_and_mine(height: u32) -> Self {
+        let state = PillarOrMine { height };
+        Self::from(state)
+    }
 }
 
 pub struct PillarOrMine {
@@ -398,7 +402,6 @@ pub struct PillarOrMine {
 
 impl TaskStream for PillarOrMine {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<Task> {
-
         if self.height == 0 {
             return None;
         }
@@ -542,5 +545,110 @@ impl TaskTrait for BridgeTask {
         }
 
         self.count == 0
+    }
+}
+
+pub type MineLayerTask = LazyStream<MineLayer>;
+
+pub struct MineLayer {
+    blocks_to_mine: HashSet<BlockLocation>,
+    start_loc: BlockLocation,
+}
+
+impl MineLayer {
+    pub fn new(local: &LocalState, global: &GlobalState) -> Option<MineLayer> {
+        let current_loc = local.physics.location();
+        let below_block_loc = BlockLocation::from(current_loc).below();
+        let y_search =  below_block_loc.y;
+
+        let chunk_location = ChunkLocation::from(below_block_loc);
+
+        let start_x = chunk_location.0 << 4;
+        let start_z = chunk_location.1 << 4;
+
+        let column = global.blocks.get_real_column(chunk_location)?;
+        let layer = column.all_at(y_search as u8)?;
+
+        let blocks_to_mine = IntoIterator::into_iter(layer).enumerate()
+            .filter(|(_, state)| state.kind().mineable(&global.block_data))
+            .map(|(idx, _)| BlockLocation::new((idx % 16) as i32 + start_x, y_search as i16, (idx / 16) as i32 + start_z))
+            .collect();
+
+        Some(Self {
+            blocks_to_mine,
+            start_loc: below_block_loc,
+        })
+    }
+}
+
+impl TaskStream for MineLayer {
+    fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<Task> {
+        const MINE_DIST2: f64 = 3.0 * 3.0;
+        const TRAVEL_DIST2: f64 = 1.0 * 1.0;
+
+        let current_block_loc = BlockLocation::from(local.physics.location()).below();
+
+        if self.blocks_to_mine.len() == 1 {
+            let value = *self.blocks_to_mine.iter().next().unwrap();
+            return if current_block_loc == value {
+                println!("mine final");
+                self.blocks_to_mine.clear();
+                Some(MineTask::new(value, local, global).into())
+            } else {
+                let travel = TravelProblem::navigate_block(current_block_loc.above(), value.above());
+                println!("navigate 1 to {}", value.above());
+                Some(NavigateProblem::from(travel).into())
+            }
+        } else if self.blocks_to_mine.is_empty() {
+            println!("end");
+            return None
+        }
+
+        let furthest_out = *self.blocks_to_mine.iter().max_by_key(|loc| FloatOrd(loc.dist2(self.start_loc)))?;
+
+        let on_furthest = (furthest_out.dist2(self.start_loc) - current_block_loc.dist2(self.start_loc)).abs() < f64::EPSILON;
+
+        let task: Task = if !on_furthest && furthest_out.dist2(current_block_loc) < MINE_DIST2 {
+            println!("mine");
+            // mine
+            let current_dist2 = current_block_loc.dist2(self.start_loc);
+            let blocks = self.blocks_to_mine.iter()
+                .filter(|&&loc| {
+                    let within_mine_dist = loc.dist2(current_block_loc) < MINE_DIST2;
+                    let further_than_current = loc.dist2(self.start_loc) > current_dist2;
+                    within_mine_dist && further_than_current
+                })
+                .cloned()
+                .collect_vec();
+
+            for block in &blocks {
+                self.blocks_to_mine.remove(block);
+            }
+
+            let task = CompoundTask::mine_all(blocks, local, global);
+            task.into()
+        } else if !on_furthest{
+            println!("navigate 2 {}", furthest_out.above());
+            // navigate out
+            let problem = TravelProblem::navigate_near_block(current_block_loc.above(), furthest_out.above(), TRAVEL_DIST2, true);
+            let mut compound = CompoundTask::default();
+            compound.add(NavigateProblem::from(problem))
+                .add(DelayTask(20));
+
+            compound.into()
+        } else {
+            // navigate in
+            let furthest_out_dist2 = furthest_out.dist2(self.start_loc);
+            let less_dist2 = (furthest_out_dist2 - 1.).max(0.);
+            println!("navigate 3 to {}", less_dist2);
+            let problem = TravelProblem::navigate_near_block(current_block_loc.above(), self.start_loc.above(), less_dist2, false);
+            let mut compound = CompoundTask::default();
+            compound.add(NavigateProblem::from(problem))
+                .add(DelayTask(20));
+
+            compound.into()
+        };
+
+        Some(task)
     }
 }

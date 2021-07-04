@@ -8,29 +8,18 @@
 use std::cmp::max;
 use std::convert::TryFrom;
 use std::num::ParseIntError;
-use std::string::ParseError;
 use std::time::Instant;
 
 use float_ord::FloatOrd;
 use itertools::Itertools;
 
-use crate::client::follow::{Follower, FollowResult};
-use crate::client::pathfind::context::MoveNode;
-use crate::client::pathfind::implementations::novehicle::{TravelChunkProblem, TravelProblem};
-use crate::client::pathfind::implementations::Problem;
-use crate::client::physics::Line;
-use crate::client::physics::speed::Speed;
-use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask, PillarAndMineTask};
-use crate::client::timing::Increment;
-use crate::error::Res;
-use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
-use std::error::Error;
+use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask, PillarAndMineTask, MineLayerTask, MineLayer};
+use crate::protocol::{EventQueue, Face, InterfaceOut};
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Direction, Displacement};
+use crate::types::{Displacement};
 use std::fmt::{Display, Formatter};
 use crate::client::pathfind::moves::CardinalDirection;
 
@@ -81,13 +70,14 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
         let physics = &self.state.physics;
 
+        self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
+
         if let Some(place) = actions.block_placed.as_ref() {
             self.out.swing_arm();
             self.out.place_block(place.location, place.face);
         }
 
         // this should be after everything else as actions depend on the previous location
-        self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 
         self.state.ticks += 1;
     }
@@ -179,6 +169,11 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 });
 
             println!("scheduled");
+            actions.schedule(task);
+        }
+        "minel" => {
+            let mine_layer = MineLayer::new(local, global).unwrap();
+            let task = MineLayerTask::from(mine_layer);
             actions.schedule(task);
         }
         "minec" => {

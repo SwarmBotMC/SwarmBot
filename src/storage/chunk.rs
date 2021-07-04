@@ -118,6 +118,26 @@ impl<T> ChunkData<T> {
 }
 
 impl ChunkData<HighMemoryChunkSection> {
+    pub fn all_at(&self, y: u8) -> Option<[BlockState; 256]> {
+        let section_idx = y >> 4;
+
+        let chunk_y = y - (section_idx << 4);
+        let section = self.sections[section_idx as usize].as_ref()?;
+
+        let mut res = [BlockState::AIR; 16 * 16];
+
+        let mut idx = 0;
+
+        for z in 0..16 {
+            for x in 0..16 {
+                let state = section.palette.get_block(x, chunk_y, z);
+                res[idx] = state;
+                idx += 1;
+            }
+        }
+
+        Some(res)
+    }
     pub fn select_up(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
         self.sections.iter().enumerate()
             .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec| (chunk_idx << 12, sec)))
@@ -130,7 +150,7 @@ impl ChunkData<HighMemoryChunkSection> {
             .map(|(idx, _)| idx)
     }
 
-    pub fn select_locs(&'a self, location: ChunkLocation, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=BlockLocation> + 'a {
+    pub fn select_locs(&'a self, location: ChunkLocation, selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=BlockLocation> + 'a {
         self.select_up(selector)
             .map(move |idx| self.block_location(location, idx))
     }

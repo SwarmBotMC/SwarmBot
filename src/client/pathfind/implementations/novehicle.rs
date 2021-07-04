@@ -5,7 +5,6 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::collections::HashMap;
 
 use crate::client::pathfind::context::MoveNode;
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
@@ -15,6 +14,30 @@ use crate::storage::blocks::ChunkLocation;
 
 pub struct BlockGoalCheck {
     goal: BlockLocation,
+}
+
+pub struct BlockNearGoalCheck {
+    goal: BlockLocation,
+    dist2: f64,
+    must_not_hit: bool
+}
+
+impl BlockNearGoalCheck {
+    fn new(goal: BlockLocation, dist2: f64, must_not_hit: bool) -> Self {
+        Self{goal, dist2 ,must_not_hit}
+    }
+}
+
+impl GoalCheck for BlockNearGoalCheck {
+    fn is_goal(&self, input: &MoveNode) -> bool {
+        let dist2 = input.location.dist2(self.goal) as f64;
+        let same = if self.must_not_hit {
+            self.goal.x == input.location.x && self.goal.z == input.location.z
+        } else {
+            false
+        };
+        !same &&  dist2 <= self.dist2
+    }
 }
 
 pub struct ChunkGoalCheck {
@@ -111,6 +134,7 @@ impl Heuristic for ChunkHeuristic {
 
 pub struct TravelProblem;
 
+pub type TravelNearProblem = PlayerProblem<BlockHeuristic, BlockNearGoalCheck>;
 pub type TravelBlockProblem = PlayerProblem<BlockHeuristic, BlockGoalCheck>;
 pub type TravelChunkProblem = PlayerProblem<ChunkHeuristic, ChunkGoalCheck>;
 pub type TravelChunkCenterProblem = PlayerProblem<ChunkHeuristic, CenterChunkGoalCheck>;
@@ -120,6 +144,13 @@ impl TravelProblem {
         let heuristic = BlockHeuristic { move_cost: 1.0, goal };
         let start_node = MoveNode::simple(start);
         let goal_checker = BlockGoalCheck::new(goal);
+        PlayerProblem::new(start_node, heuristic, goal_checker)
+    }
+
+    pub fn navigate_near_block(start: BlockLocation, goal: BlockLocation, dist2: f64, must_not_hit: bool) -> TravelNearProblem {
+        let heuristic = BlockHeuristic { move_cost: 1.0, goal };
+        let start_node = MoveNode::simple(start);
+        let goal_checker = BlockNearGoalCheck::new(goal, dist2, must_not_hit);
         PlayerProblem::new(start_node, heuristic, goal_checker)
     }
 

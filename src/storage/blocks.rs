@@ -14,8 +14,9 @@ use crate::schematic::Schematic;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection};
 use std::convert::TryFrom;
-use std::num::ParseIntError;
 use crate::client::bot::{ProcessError, WrongArgCount};
+use crate::types::Location;
+use float_ord::FloatOrd;
 
 pub mod cache;
 
@@ -39,6 +40,13 @@ impl TryFrom<&[&str]> for ChunkLocation {
 impl From<BlockLocation> for ChunkLocation {
     fn from(loc: BlockLocation) -> Self {
         Self(loc.x >> 4, loc.z >> 4)
+    }
+}
+
+impl From<Location> for ChunkLocation {
+    fn from(loc: Location) -> Self {
+        let block_loc = BlockLocation::from(loc);
+        Self::from(block_loc)
     }
 }
 
@@ -161,7 +169,7 @@ impl WorldBlocks {
         let chunk = self.storage.get(&loc)?;
 
         if let ChunkColumn::HighMemory {data} = chunk {
-           block_chunk_iter(&loc, data, selector).min_by_key(|&location| origin.dist2(location))
+           block_chunk_iter(&loc, data, selector).min_by_key(|&location| FloatOrd(origin.dist2(location)))
         } else {
             None
         }
@@ -170,7 +178,7 @@ impl WorldBlocks {
 
     pub fn closest(&'a self, origin: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> Option<BlockLocation> {
         self.select(origin, max_chunks, selector)
-            .min_by_key(|loc| loc.dist2(origin))
+            .min_by_key(|loc| FloatOrd(loc.dist2(origin)))
     }
 
     pub fn closest_iter(&'a self, origin: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {

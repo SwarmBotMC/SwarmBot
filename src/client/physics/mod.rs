@@ -233,17 +233,17 @@ impl Physics {
         // the code below is so we target the closest area on the face as possible. A case where this is nice is when we are bridging we don't want
         // to be looking at an angle else we will fall off
 
-        if !face.is_x() {
-            place_loc.x = current_loc.x.clamp(self.location.x - EPSILON, self.location.x + EPSILON)
-        }
-
-        if !face.is_y() {
-            place_loc.y = current_loc.y.clamp(self.location.y - EPSILON, self.location.y + EPSILON)
-        }
-
-        if !face.is_z() {
-            place_loc.z = current_loc.z.clamp(self.location.z - EPSILON, self.location.z + EPSILON)
-        }
+        // if !face.is_x() {
+        //     place_loc.x = current_loc.x.clamp(self.location.x - EPSILON, self.location.x + EPSILON)
+        // }
+        //
+        // if !face.is_y() {
+        //     place_loc.y = current_loc.y.clamp(self.location.y - EPSILON, self.location.y + EPSILON)
+        // }
+        //
+        // if !face.is_z() {
+        //     place_loc.z = current_loc.z.clamp(self.location.z - EPSILON, self.location.z + EPSILON)
+        // }
 
         self.look_at(place_loc);
 
