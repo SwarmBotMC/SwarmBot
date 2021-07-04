@@ -272,10 +272,10 @@ impl Movements {
 
                     let rad2 = (dx * dx + dz * dz) as f64;
 
-                    const MIN_RAD: f64 = 2.0;
+                    const MIN_RAD: f64 = 1.1;
                     const MAX_RAD: f64 = 4.5;
 
-                    if same_y_possible && rad2 <= MAX_RAD * MAX_RAD && rad2 > MIN_RAD * MIN_RAD && is_open {
+                    if same_y_possible && rad2 <= MAX_RAD * MAX_RAD && rad2 >= MIN_RAD * MIN_RAD && is_open {
                         res.push(Neighbor {
                             value: wrap!(BlockLocation::new(x+dx,y,z+dz)),
                             cost: ctx.path_config.costs.block_parkour * multiplier,

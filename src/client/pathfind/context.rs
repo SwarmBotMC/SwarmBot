@@ -35,7 +35,7 @@ impl Default for PathConfig {
         Self {
             costs: Costs {
                 block_walk: 1.0,
-                block_parkour: 3.5,
+                block_parkour: 1.5,
                 mine_unrelated: 20.0,
                 ascend: 1.0,
                 no_breathe_mult: 3.0,

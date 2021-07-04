@@ -187,20 +187,29 @@ impl Follower {
         let look_displacement = disp_horizontal - velocity * VELOCITY_IMPORTANCE;
         let corr = velocity.normalize().dot(disp_horizontal.normalize());
 
+        // let vel_percent2 = (velocity.mag2() / (SPRINT_BLOCKS_PER_TICK * SPRINT_BLOCKS_PER_TICK)).min(1.0);
+
+        // println!("vel percent {}", vel_percent2);
+
         // if displacement.mag2() < DISPLACEMENT_CONSIDER_THRESH * DISPLACEMENT_CONSIDER_THRESH {
         //     look_displacement = disp_horizontal;
         //     corr = 1.0;
         // }
 
+        const THRESH_VEL: f64 = 3.0/20.;
+        // const THRESH_VEL: f64 = 0.0;
+
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
         if local.physics.on_ground() && mag2_horizontal > MIN_JUMP_DIST * MIN_JUMP_DIST {
             // it is far away... we probably have to jump to it
 
-            if mag2_horizontal < MAX_JUMP_DIST * MAX_JUMP_DIST && corr > 0.95 {
+            // min distance we can jump at
+            if mag2_horizontal < MAX_JUMP_DIST * MAX_JUMP_DIST && corr > 0.95 && velocity.mag2() > THRESH_VEL * THRESH_VEL {
                 local.physics.jump();
             }
 
-            if mag2_horizontal < MIN_SPRINT_DIST * MIN_SPRINT_DIST {
+            // walk if close
+            if mag2_horizontal < MIN_SPRINT_DIST * MIN_SPRINT_DIST && velocity.mag2() > THRESH_VEL * THRESH_VEL {
                 local.physics.speed(Speed::WALK);
             }
         }

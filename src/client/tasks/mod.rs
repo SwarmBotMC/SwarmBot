@@ -588,7 +588,7 @@ impl MineLayer {
 
 impl TaskStream for MineLayer {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<Task> {
-        const MINE_DIST2: f64 = 3.0 * 3.0;
+        const MINE_DIST2: f64 = 3.3 * 3.3;
         const TRAVEL_DIST2: f64 = 2.5 * 2.5;
 
         let current_block_loc = BlockLocation::from(local.physics.location()).below();
@@ -611,7 +611,9 @@ impl TaskStream for MineLayer {
 
         let furthest_out = *self.blocks_to_mine.iter().max_by_key(|loc| FloatOrd(loc.dist2(self.start_loc)))?;
 
-        let on_furthest =current_block_loc.dist2(self.start_loc) >= furthest_out.dist2(self.start_loc) - f64::EPSILON;
+        // we need to compare because there might be multiple equally far blocks
+        let same_y = current_block_loc.y == furthest_out.y;
+        let on_furthest = same_y && current_block_loc.dist2(self.start_loc) >= furthest_out.dist2(self.start_loc) - f64::EPSILON;
 
         let task: Task = if !on_furthest && furthest_out.dist2(current_block_loc) < MINE_DIST2 {
             println!("mine {}", furthest_out);
@@ -620,7 +622,7 @@ impl TaskStream for MineLayer {
             let blocks = self.blocks_to_mine.iter()
                 .filter(|&&loc| {
                     let within_mine_dist = loc.dist2(current_block_loc) < MINE_DIST2;
-                    let further_than_current = loc.dist2(self.start_loc) > current_dist2;
+                    let further_than_current = !same_y || loc.dist2(self.start_loc) > current_dist2;
                     within_mine_dist && further_than_current
                 })
                 .cloned()
@@ -631,7 +633,8 @@ impl TaskStream for MineLayer {
                 self.blocks_to_mine.remove(block);
             }
 
-            let task = CompoundTask::mine_all(blocks, local, global);
+            let mut task = CompoundTask::mine_all(blocks, local, global);
+            task.add(DelayTask::new(2));
             task.into()
         } else if !on_furthest{
             println!("navigate 2 {}", furthest_out.above());
