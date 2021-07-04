@@ -190,6 +190,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             let task = CompoundTask::mine_all(blocks, local, global);
             actions.schedule(task);
         }
+        "block" => {
+            local.inventory.switch_block(out);
+        }
         "gotoc" => { // goto chunk
             if let [a, b] = args {
                 let x = a.parse()?;

@@ -70,6 +70,20 @@ impl PlayerInventory {
         out.change_slot(idx);
     }
 
+    pub fn switch_block(&mut self, out: &mut impl InterfaceOut){
+        let block_idx = self.hotbar().iter()
+            .enumerate()
+            .filter_map(|(idx, item_stack)| {
+                let item_stack = item_stack.as_ref()?;
+                item_stack.kind.throw_away_block().then(||idx)
+            })
+            .next();
+
+        if let Some(idx) = block_idx {
+            self.change_slot(idx as u8, out);
+        }
+    }
+
     pub fn switch_tool(&mut self, out: &mut impl InterfaceOut) -> Tool{
         let tools = self.hotbar().iter()
             .enumerate()

@@ -36,6 +36,13 @@ impl BlockKind {
         block.hardness
     }
 
+    pub fn throw_away_block(self) -> bool {
+        match self.id() {
+            4 | 3 => true,
+            _ => false
+        }
+    }
+
     pub fn mineable(&self, blocks: &BlockData) -> bool {
 
         // we can't mine air
