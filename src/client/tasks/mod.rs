@@ -142,7 +142,10 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
                 false
             }
             FollowResult::InProgress => false,
-            FollowResult::Finished => true
+            FollowResult::Finished => {
+                println!("finished!");
+                true
+            }
         }
     }
 
@@ -586,7 +589,7 @@ impl MineLayer {
 impl TaskStream for MineLayer {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<Task> {
         const MINE_DIST2: f64 = 3.0 * 3.0;
-        const TRAVEL_DIST2: f64 = 2.8 * 2.8;
+        const TRAVEL_DIST2: f64 = 2.5 * 2.5;
 
         let current_block_loc = BlockLocation::from(local.physics.location()).below();
 
