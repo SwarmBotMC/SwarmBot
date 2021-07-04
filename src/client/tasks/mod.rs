@@ -14,9 +14,12 @@ use crate::bootstrap::blocks::BlockData;
 use crate::client::follow::{Follower, FollowResult};
 use crate::client::pathfind::context::{MoveNode, MoveRecord};
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
-use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, ChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem, CenterChunkGoalCheck};
+use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, CenterChunkGoalCheck, ChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
 use crate::client::pathfind::incremental::PathResult;
+use crate::client::pathfind::moves::{CardinalDirection, Change};
 use crate::client::pathfind::traits::{GoalCheck, Heuristic};
+use crate::client::physics::Line;
+use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
@@ -24,10 +27,7 @@ use crate::client::timing::Increment;
 use crate::protocol::{Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Displacement, Location, Direction};
-use crate::client::pathfind::moves::{CardinalDirection, Change};
-use crate::client::physics::speed::Speed;
-use crate::client::physics::Line;
+use crate::types::{Direction, Displacement, Location};
 
 #[enum_dispatch]
 pub trait TaskTrait {
@@ -255,7 +255,7 @@ impl MineTask {
         let mut ticks = tool.wait_time(kind, false, true, &global.block_data);
 
         if ticks == 0 {
-            ticks +=1;
+            ticks += 1;
         }
 
         let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
@@ -276,16 +276,15 @@ impl MineTask {
 
 impl TaskTrait for MineTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-
         local.physics.look_at(self.look_location);
 
         if self.first {
-            out.left_click();
+            out.swing_arm();
             self.first = false;
             out.mine(self.location, Mine::Start, self.face);
         }
 
-        out.left_click();
+        out.swing_arm();
         if self.ticks == 0 {
             out.mine(self.location, Mine::Finished, self.face);
             global.world_blocks.set_block(self.location, BlockState::AIR);
@@ -350,8 +349,13 @@ impl PillarTask {
 impl TaskTrait for PillarTask {
     fn tick(&mut self, _: &mut impl InterfaceOut, local: &mut LocalState, _: &mut GlobalState) -> bool {
         local.physics.jump();
+        let down = Direction {
+            yaw: 90.,
+            pitch: 90.
+        };
+        local.physics.look(down);
 
-        if local.physics.at_apex() {
+        if local.physics.location().y - self.place_loc.y as f64 > 2.18 {
             local.physics.place_hand(self.place_loc);
             self.count -= 1;
             self.place_loc = self.place_loc.above()
@@ -374,7 +378,7 @@ impl TaskTrait for FallBucketTask {
         if self.placed {
             self.ticks_since_place += 1;
             if self.ticks_since_place > 10 {
-                out.right_click();
+                out.swing_arm();
                 out.place_block(self.location.unwrap(), Face::PosY);
                 return true;
             }
@@ -389,7 +393,7 @@ impl TaskTrait for FallBucketTask {
                 local.physics.look_at(location.center_bottom());
                 let dy = current_loc.y - (location.y as f64 + 1.0);
                 if dy < 3.4 {
-                    out.right_click();
+                    out.swing_arm();
                     out.place_block(location, Face::PosY);
                     self.location = Some(location);
                     self.placed = true;
@@ -411,37 +415,35 @@ pub struct BridgeTask {
 impl BridgeTask {
     pub fn new(count: u32, direction: CardinalDirection, local: &LocalState) -> BridgeTask {
         let start = BlockLocation::from(local.physics.location()).below();
-        Self {count, place_against: start, direction}
+        Self { count, place_against: start, direction }
     }
 }
 
 impl TaskTrait for BridgeTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-
         let displacement = Displacement::from(self.direction.unit_change());
 
-        let direction = Direction::from(displacement);
+        let direction = Direction::from(-displacement);
 
         local.physics.look(direction);
-        local.physics.line(Line::Forward);
-        local.physics.jump();
-        local.physics.speed(Speed::SPRINT);
+        local.physics.line(Line::Backward);
+        local.physics.speed(Speed::WALK);
 
         let target_loc = self.place_against.true_center();
         let current_loc = local.physics.location();
 
         let place = match self.direction {
             CardinalDirection::North => {
-                target_loc.x - current_loc.x < (0.4 - 0.2)
+                target_loc.x - current_loc.x < (-0.6)
             }
             CardinalDirection::South => {
-                target_loc.x - current_loc.x > (-0.4 + 0.2)
+                target_loc.x - current_loc.x > (-0.4 + 0.5)
             }
             CardinalDirection::West => {
-                target_loc.z - current_loc.z > (0.4 - 0.2)
+                target_loc.z - current_loc.z > (0.4 - 0.5)
             }
             CardinalDirection::East => {
-                target_loc.z + current_loc.z > (0.4 + 0.2)
+                target_loc.z + current_loc.z > (0.4 + 0.5)
             }
         };
 
@@ -454,6 +456,5 @@ impl TaskTrait for BridgeTask {
         }
 
         self.count == 0
-
     }
 }

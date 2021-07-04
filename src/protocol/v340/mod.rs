@@ -245,7 +245,11 @@ impl InterfaceOut for Interface340 {
             location: against,
             face,
             hand: Hand::Main,
-            cursor: Default::default(),
+            cursor: serverbound::BlockCursor {
+                x: 1.0,
+                y: 0.5,
+                z: 0.5
+            },
         });
     }
 
@@ -269,7 +273,7 @@ impl InterfaceOut for Interface340 {
         }
     }
 
-    fn left_click(&mut self) {
+    fn swing_arm(&mut self) {
         self.write(serverbound::ArmAnimation {
             hand: Hand::Main
         });
@@ -279,7 +283,7 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::PlayerDig::status(DigStatus::ShootArrowOrFinishEat));
     }
 
-    fn right_click(&mut self) {
+    fn use_item(&mut self) {
         self.write(serverbound::UseItem {
             hand: Hand::Main
         });
@@ -299,7 +303,7 @@ impl InterfaceOut for Interface340 {
         };
 
         if status == DigStatus::Started {
-            self.left_click();
+            self.swing_arm();
         }
 
         self.write(serverbound::PlayerDig {

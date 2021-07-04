@@ -484,6 +484,15 @@ impl Displacement {
         Displacement { dx, dy, dz }
     }
 
+    pub fn zero_if_reachable(&self) -> Displacement {
+        const EPSILON: f64 = 0.01;
+
+        let dx = if self.dx.abs() < 0.5 {0.} else {self.dx};
+        let dy = if self.dy.abs() < 0.5 {0.} else {self.dy};
+        let dz = if self.dz.abs() < 0.5 {0.} else {self.dz};
+        Self{dx,dy,dz}
+    }
+
 
     pub fn make_dy(&self, dy: f64) -> Displacement {
         Self {

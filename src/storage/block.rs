@@ -8,10 +8,9 @@
 use std::fmt::{Display, Formatter};
 use std::ops::Add;
 
-use crate::bootstrap::blocks::{BlockData, Block};
+use crate::bootstrap::blocks::{BlockData};
 use crate::types::{Displacement, Location};
 use crate::client::pathfind::moves::Change;
-use crate::client::physics::tools::Tool;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]

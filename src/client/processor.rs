@@ -61,11 +61,8 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
             if let Some(cmd) = msg.into_cmd() {
                 let name = cmd.command;
                 let args_str: Vec<&str> = cmd.args.iter().map(|x| x.as_str()).collect();
-                match process_command(&name, &args_str, self.local, self.global, self.actions, self.out) {
-                    Err(err) => {
-                        println!("could not process command. Reason: {}", err);
-                    }
-                    _ => {}
+                if let Err(err) = process_command(&name, &args_str, self.local, self.global, self.actions, self.out) {
+                    println!("could not process command. Reason: {}", err);
                 }
             }
         };

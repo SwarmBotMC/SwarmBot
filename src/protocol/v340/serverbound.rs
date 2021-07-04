@@ -100,7 +100,7 @@ pub struct ClickWindow {
 
 
 #[derive(Writable, Default)]
-pub struct Cursor {
+pub struct BlockCursor {
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -114,7 +114,7 @@ pub struct PlaceBlock {
     pub location: Position,
     pub face: VarInt,
     pub hand: Hand,
-    pub cursor: Cursor
+    pub cursor: BlockCursor
 }
 
 #[derive(Writable, Packet)]

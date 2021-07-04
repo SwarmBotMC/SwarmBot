@@ -67,25 +67,27 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
         }
 
         if self.actions.task.is_none() {
-            let mut vel = self.state.physics.velocity();
-            vel.dy = 0.;
-            if vel.mag2() > 0.01 {
-                vel *= -1.;
-                self.state.physics.look(Direction::from(vel));
-                self.state.physics.speed(Speed::SPRINT);
-                self.state.physics.line(Line::Forward);
-            }
+            // let mut vel = self.state.physics.velocity();
+            // vel.dy = 0.;
+            // if vel.mag2() > 0.01 {
+            //     vel *= -1.;
+            //     self.state.physics.look(Direction::from(vel));
+            //     self.state.physics.speed(Speed::SPRINT);
+            //     self.state.physics.line(Line::Forward);
+            // }
         }
 
         let actions = self.state.physics.tick(&mut global.world_blocks);
 
         let physics = &self.state.physics;
-        self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 
         if let Some(place) = actions.block_placed.as_ref() {
-            self.out.right_click();
+            self.out.swing_arm();
             self.out.place_block(place.location, place.face);
         }
+
+        // this should be after everything else as actions depend on the previous location
+        self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 
         self.state.ticks += 1;
     }
@@ -209,7 +211,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             // TODO: try to kill themself by fall damage/lava/etc
         }
         "eat" => {
-            out.right_click();
+            out.use_item();
 
             // shouldn't need to be 40 (32... but because of lag I guess it sometimes does)
             let eat_task = EatTask { ticks: 40 };
@@ -300,7 +302,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let best_loc_idx = IntoIterator::into_iter(faces).position_min_by_key(|loc| FloatOrd(loc.dist2(origin))).unwrap();
 
                 local.physics.look_at(faces[best_loc_idx]);
-                out.right_click();
+                out.use_item();
                 out.place_block(location, Face::from(best_loc_idx as u8));
             }
         }

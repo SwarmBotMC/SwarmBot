@@ -181,7 +181,7 @@ struct MovementProc {}
 
 impl Physics {
     /// move to location and zero out velocity
-    pub fn teleport(&mut self, mut location: Location) {
+    pub fn teleport(&mut self, location: Location) {
 
         // sometimes the server tells us that should be in a block *_*
         self.location = location;
@@ -221,13 +221,31 @@ impl Physics {
         self.pending.strafe = Some(strafe)
     }
 
-    pub fn place_hand_face(&mut self, against: BlockLocation, face: Face){
+    pub fn place_hand_face(&mut self, against: BlockLocation, face: Face) {
 
+        let current_loc = self.location;
         let locations = against.faces();
         let face_idx = face as usize;
-        let location = locations[face_idx];
-        self.look_at(location);
+        let mut place_loc = locations[face_idx];
 
+        const EPSILON: f64 = 0.4;
+
+        // the code below is so we target the closest area on the face as possible. A case where this is nice is when we are bridging we don't want
+        // to be looking at an angle else we will fall off
+
+        if !face.is_x() {
+            place_loc.x = current_loc.x.clamp(self.location.x - EPSILON, self.location.x + EPSILON)
+        }
+
+        if !face.is_y() {
+            place_loc.y = current_loc.y.clamp(self.location.y - EPSILON, self.location.y + EPSILON)
+        }
+
+        if !face.is_z() {
+            place_loc.z = current_loc.z.clamp(self.location.z - EPSILON, self.location.z + EPSILON)
+        }
+
+        self.look_at(place_loc);
 
         self.pending.place = Some(BlockPlaced {
             location: against,
@@ -243,7 +261,6 @@ impl Physics {
         let face = Face::from(face_idx as u8);
 
         self.place_hand_face(against, face);
-
     }
 
     pub fn speed(&mut self, speed: Speed) {

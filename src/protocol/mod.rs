@@ -52,6 +52,18 @@ impl From<CardinalDirection> for Face{
 }
 
 impl Face {
+
+    pub fn is_x(self) -> bool {
+        matches!(self, Face::PosX | Face::NegX)
+    }
+
+    pub fn is_y(self) -> bool {
+        matches!(self, Face::PosY | Face::NegY)
+    }
+
+    pub fn is_z(self) -> bool {
+        matches!(self, Face::PosZ | Face::NegZ)
+    }
     pub fn change(self) -> BlockLocation {
         match self {
             Face::NegY => BlockLocation::new(0, -1, 0),
@@ -105,9 +117,12 @@ pub trait InterfaceOut {
     fn place_block(&mut self, against: BlockLocation, face: Face);
     fn send_chat(&mut self, message: &str);
     fn inventory_action(&mut self, action: InvAction);
-    fn left_click(&mut self);
+    fn swing_arm(&mut self);
     fn finish_eating(&mut self);
-    fn right_click(&mut self);
+
+    /// default right click https://wiki.vg/index.php?title=Protocol&oldid=14204#Chunk_Data
+    fn use_item(&mut self);
+
     fn change_slot(&mut self, number: u8);
     fn mine(&mut self, location: BlockLocation, mine: Mine, face: Face);
     fn respawn(&mut self);
