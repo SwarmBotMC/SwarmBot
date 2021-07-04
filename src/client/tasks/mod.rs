@@ -4,28 +4,25 @@
  * Proprietary and confidential.
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashSet};
 use std::time::Instant;
 
 use float_ord::FloatOrd;
 use itertools::Itertools;
 
-use crate::bootstrap::blocks::BlockData;
 use crate::client::follow::{Follower, FollowResult};
-use crate::client::pathfind::context::{MoveNode, MoveRecord};
+use crate::client::pathfind::context::MoveNode;
 use crate::client::pathfind::implementations::{PlayerProblem, Problem};
-use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, CenterChunkGoalCheck, ChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
-use crate::client::pathfind::incremental::PathResult;
-use crate::client::pathfind::moves::{CardinalDirection, Change};
+use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, CenterChunkGoalCheck, ChunkHeuristic, TravelChunkProblem, TravelProblem};
+use crate::client::pathfind::moves::CardinalDirection;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic};
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
-use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::timing::Increment;
 use crate::protocol::{Face, InterfaceOut, Mine};
-use crate::storage::block::{BlockLocation, BlockState};
+use crate::storage::block::{BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Direction, Displacement, Location};
 
@@ -50,6 +47,7 @@ pub enum Task {
     MineTask,
     PillarTask,
     DelayTask,
+    PillarAndMineTask,
     LazyTask,
     BlockTravelTask,
     ChunkTravelTask,
@@ -101,7 +99,7 @@ impl CompoundTask {
 
 pub struct NavigateProblem<H: Heuristic, G: GoalCheck> {
     calculate: bool,
-    problem: PlayerProblem<H, G>,
+    problem: Box<PlayerProblem<H, G>>,
     follower: Option<Follower>,
 }
 
@@ -110,7 +108,7 @@ impl<H: Heuristic, G: GoalCheck> NavigateProblem<H, G> {
     fn raw(problem: PlayerProblem<H, G>) -> NavigateProblem<H, G> {
         Self {
             calculate: true,
-            problem,
+            problem: box problem,
             follower: None,
         }
     }
@@ -196,6 +194,10 @@ impl CompoundTask {
 
         self
     }
+
+    pub fn prepend(&mut self, task: impl Into<Task>) {
+        self.tasks.push_front(task.into());
+    }
 }
 
 impl TaskTrait for CompoundTask {
@@ -212,12 +214,12 @@ impl TaskTrait for CompoundTask {
             }
         }
 
-        return true;
+        true
     }
 
     fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {
         match self.tasks.front_mut() {
-            None => return,
+            None => {}
             Some(res) => res.expensive(end_at, local, global)
         };
     }
@@ -249,7 +251,7 @@ pub struct MineTask {
 
 impl MineTask {
     pub fn new(location: BlockLocation, local: &LocalState, global: &GlobalState) -> MineTask {
-        let kind = global.world_blocks.get_block_kind(location).unwrap();
+        let kind = global.blocks.get_block_kind(location).unwrap();
         let tool = local.inventory.current_tool();
 
         let mut ticks = tool.wait_time(kind, false, true, &global.block_data);
@@ -287,12 +289,61 @@ impl TaskTrait for MineTask {
         out.swing_arm();
         if self.ticks == 0 {
             out.mine(self.location, Mine::Finished, self.face);
-            global.world_blocks.set_block(self.location, BlockState::AIR);
+            global.blocks.set_block(self.location, BlockState::AIR);
             true
         } else {
             self.ticks -= 1;
             false
         }
+    }
+}
+
+pub trait TaskStream {
+    fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<Task>;
+}
+
+pub struct LazyStream<T: TaskStream> {
+    current: Option<Box<Task>>,
+    create_task: T,
+}
+
+impl<T: TaskStream> LazyStream<T> {
+
+    fn new(create_task: T) -> LazyStream<T> {
+        Self {create_task, current: None}
+    }
+
+    fn get(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<&mut Task> {
+        if self.current.is_none() {
+            let next = self.create_task.poll(out, local, global)?;
+            self.current = Some(box next)
+        }
+
+        self.current.as_deref_mut()
+    }
+}
+
+impl<T: TaskStream> TaskTrait for LazyStream<T> {
+    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+        let current = match self.get(out, local, global) {
+            None => return true,
+            Some(inner) => inner
+        };
+
+        let finished_subtask = current.tick(out, local, global);
+        if finished_subtask {
+            self.current = None;
+        }
+
+        false
+    }
+
+    fn expensive(&mut self, end_by: Instant, local: &mut LocalState, global: &GlobalState) {
+        let current = match self.current.as_mut() {
+            None => return,
+            Some(inner) => inner
+        };
+        current.expensive(end_by, local, global);
     }
 }
 
@@ -332,6 +383,41 @@ impl TaskTrait for LazyTask {
 }
 
 
+pub type PillarAndMineTask = LazyStream<PillarOrMine>;
+
+impl PillarAndMineTask {
+   pub fn pillar_and_mine(height: u32) -> Self {
+       let state = PillarOrMine {height};
+       Self::new(state)
+   }
+}
+
+pub struct PillarOrMine {
+    height: u32,
+}
+
+impl TaskStream for PillarOrMine {
+    fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<Task> {
+
+        if self.height == 0 {
+            return None;
+        }
+
+        let above = local.physics.location() + Displacement::new(0., 3.5, 0.);
+        let mut set = HashSet::new();
+        local.physics.in_cross_section(above, &global.blocks, &mut set);
+        if let Some(position) = set.into_iter().next() {
+            local.inventory.switch_tool(out);
+            Some(MineTask::new(position, local, global).into())
+        } else {
+            local.inventory.switch_block(out);
+            self.height -= 1;
+            Some(PillarTask::new(1, local).into())
+        }
+    }
+}
+
+
 pub struct PillarTask {
     count: u32,
     place_loc: BlockLocation,
@@ -351,7 +437,7 @@ impl TaskTrait for PillarTask {
         local.physics.jump();
         let down = Direction {
             yaw: 90.,
-            pitch: 90.
+            pitch: 90.,
         };
         local.physics.look(down);
 
@@ -386,7 +472,7 @@ impl TaskTrait for FallBucketTask {
         }
 
         let current_loc = local.physics.location();
-        let below = global.world_blocks.first_below(current_loc.into());
+        let below = global.blocks.first_below(current_loc.into());
         match below {
             None => {}
             Some((location, _)) => {

@@ -11,10 +11,9 @@ use crate::storage::blocks::WorldBlocks;
 use crate::storage::entities::WorldEntities;
 
 pub struct GlobalState {
-    pub world_blocks: WorldBlocks,
-
+    pub blocks: WorldBlocks,
     pub block_data: BlockData,
-    pub world_entities: WorldEntities,
+    pub entities: WorldEntities,
     pub ticks: usize,
     pub travel_config: PathConfig,
 }
@@ -26,9 +25,9 @@ impl GlobalState {
         let block_data = BlockData::read().unwrap();
 
         GlobalState {
-            world_blocks: default(),
+            blocks: default(),
             block_data,
-            world_entities: default(),
+            entities: default(),
             ticks: 0,
             travel_config: default(),
         }

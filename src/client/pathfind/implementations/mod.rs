@@ -64,7 +64,7 @@ impl<H: Heuristic<MoveNode> + Send + Sync, G: GoalCheck<MoveNode> + Send + Sync>
     fn iterate_until(&mut self, end_at: Instant, _: &mut LocalState, global: &GlobalState) -> Increment<PathResult<MoveRecord>> {
         let ctx = GlobalContext {
             path_config: &global.travel_config,
-            world: &global.world_blocks,
+            world: &global.blocks,
         };
         let progressor = GenericProgressor { ctx };
         self.a_star.iterate_until(end_at, &self.heuristic, &progressor, &self.goal_checker)

@@ -252,12 +252,12 @@ mod tests {
         let mut local_state = LocalState::mock();
         let mut global_state = GlobalState::init();
 
-        global_state.world_blocks.load(&course);
+        global_state.blocks.load(&course);
 
         let start = BlockLocation::new(-162, 82, -357);
         let end = BlockLocation::new(-152, 80, -338);
 
-        let world = &global_state.world_blocks;
+        let world = &global_state.blocks;
         let start_below = world.get_block(start.below()).unwrap().as_real().id();
         let end_below = world.get_block(end.below()).unwrap().as_real().id();
 
@@ -282,7 +282,7 @@ mod tests {
         local_state.physics.teleport(start.center_bottom());
 
         while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
-            local_state.physics.tick(&mut global_state.world_blocks);
+            local_state.physics.tick(&mut global_state.blocks);
             assert!(local_state.physics.location().y > 79.0, "the player fell... location was {}", local_state.physics.location());
         }
 
@@ -299,7 +299,7 @@ mod tests {
         let start = BlockLocation::new(0, 1, 0);
         let end = BlockLocation::new(950, 1, 950);
 
-        let world = &mut global_state.world_blocks;
+        let world = &mut global_state.blocks;
         world.set_random_floor();
 
         let mut problem = TravelProblem::navigate_block(start, end);
@@ -318,7 +318,7 @@ mod tests {
         local_state.physics.teleport(start.center_bottom());
 
         while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
-            local_state.physics.tick(&mut global_state.world_blocks);
+            local_state.physics.tick(&mut global_state.blocks);
             assert!(local_state.physics.location().y >= 0.0, "the player fell... location was {} front was {:?} left {}", local_state.physics.location(), follower.xs.front(), follower.xs.len());
         }
 

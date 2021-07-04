@@ -110,27 +110,27 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
     fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool) {
         if new {
-            self.global.world_blocks.add_column(location, column);
+            self.global.blocks.add_column(location, column);
         } else {
-            self.global.world_blocks.modify_column(location, column);
+            self.global.blocks.modify_column(location, column);
         }
     }
 
     fn on_entity_move(&mut self, id: u32, location: LocationOrigin) {
-        self.global.world_entities.update_entity(id, self.local.bot_id, location);
+        self.global.entities.update_entity(id, self.local.bot_id, location);
     }
 
     fn on_block_change(&mut self, location: BlockLocation, state: BlockState) {
-        self.global.world_blocks.set_block(location, state);
+        self.global.blocks.set_block(location, state);
     }
 
 
     fn on_entity_destroy(&mut self, id: u32) {
-        self.global.world_entities.remove_entity(id, self.local.bot_id);
+        self.global.entities.remove_entity(id, self.local.bot_id);
     }
 
     fn on_entity_spawn(&mut self, id: u32, location: Location) {
-        self.global.world_entities.put_entity(id, self.local.bot_id, location);
+        self.global.entities.put_entity(id, self.local.bot_id, location);
     }
 
     fn on_disconnect(&mut self, _reason: &str) {

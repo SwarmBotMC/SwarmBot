@@ -23,7 +23,7 @@ use crate::client::physics::speed::Speed;
 use crate::client::physics::tools::{Material, Tool};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask};
+use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask, PillarAndMineTask};
 use crate::client::timing::Increment;
 use crate::error::Res;
 use crate::protocol::{EventQueue, Face, InterfaceOut, Mine};
@@ -77,7 +77,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             // }
         }
 
-        let actions = self.state.physics.tick(&mut global.world_blocks);
+        let actions = self.state.physics.tick(&mut global.blocks);
 
         let physics = &self.state.physics;
 
@@ -168,13 +168,14 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 .add(ChunkTravelTask::new(goal, local))
                 .add(DelayTask::new(10))
                 .add_lazy(move |local, global| {
-                    let column = global.world_blocks.get_real_column(goal).unwrap();
+                    let column = global.blocks.get_real_column(goal).unwrap();
                     let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
                     let highest_block = column.block_location(goal, highest_block);
 
                     let current_loc = BlockLocation::from(local.physics.location()).below();
                     let diff_y = max(highest_block.y - current_loc.y, 0) as u32;
-                    PillarTask::new(diff_y, local)
+
+                    PillarAndMineTask::pillar_and_mine(diff_y)
                 });
 
             println!("scheduled");
@@ -183,7 +184,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         "minec" => {
             let goal = ChunkLocation::try_from(args)?;
             let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
-            let column = global.world_blocks.get_real_column(goal).unwrap();
+            let column = global.blocks.get_real_column(goal).unwrap();
             let blocks = column.select_locs(goal, |state| state.kind().mineable(&global.block_data))
                 .filter(|loc| loc.true_center().dist2(eye_loc) < 3.5*3.5);
 
@@ -248,7 +249,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
                 let loc = BlockLocation::from(local.physics.location());
 
-                let closest = global.world_blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
+                let closest = global.blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
 
                 if let Some(closest) = closest {
                     actions.schedule(BlockTravelTask::new(closest, local));
@@ -277,7 +278,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                     msg!("location {}", local.physics.location());
                     msg!("on ground {}", local.physics.on_ground());
                     let below_loc = BlockLocation::from(local.physics.location() - Displacement::EPSILON_Y);
-                    msg!("below kind {:?}", global.world_blocks.get_block_kind(below_loc));
+                    msg!("below kind {:?}", global.blocks.get_block_kind(below_loc));
                     msg!("inventory slots {:?}", local.inventory.hotbar());
                 }
             }
@@ -289,7 +290,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 let z = c.parse()?;
                 let location = BlockLocation::new(x, y, z);
 
-                msg!("The block is {:?}", global.world_blocks.get_block(location));
+                msg!("The block is {:?}", global.blocks.get_block(location));
             }
         }
         "place" => {
@@ -312,7 +313,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         "mine" => {
             let origin = local.physics.location() + Displacement::EYE_HEIGHT;
 
-            let closest = global.world_blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
+            let closest = global.blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
 
             if let Some(closest) = closest {
                 let mine_task = MineTask::new(closest, local, global);
