@@ -24,7 +24,7 @@ const MIN_JUMP_DIST: f64 = 1.2;
 const MIN_SPRINT_DIST: f64 = 3.0;
 const MAX_JUMP_DIST: f64 = 4.0;
 
-const MAX_TICKS: usize = 29;
+const MAX_TICKS: usize = 50;
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum FollowResult {

@@ -269,26 +269,17 @@ impl Movements {
                     let same_y = get_block!(x+dx, y - 1, z+dz).unwrap();
 
                     let same_y_possible = same_y == Solid;
-                    let below_y_possible = false;
-                    // let below_y_possible = same_y == WalkThrough && below_y == Solid;
 
                     let rad2 = (dx * dx + dz * dz) as f64;
 
                     const MIN_RAD: f64 = 2.0;
                     const MAX_RAD: f64 = 4.5;
 
-                    if rad2 <= MAX_RAD * MAX_RAD && rad2 > MIN_RAD * MIN_RAD && is_open {
-                        if same_y_possible {
-                            res.push(Neighbor {
-                                value: wrap!(BlockLocation::new(x+dx,y,z+dz)),
-                                cost: ctx.path_config.costs.block_walk * multiplier,
-                            });
-                        } else if below_y_possible {
-                            res.push(Neighbor {
-                                value: wrap!(BlockLocation::new(x+dx,y-1,z+dz)),
-                                cost: (3.0 * ctx.path_config.costs.block_walk) * multiplier,
-                            });
-                        }
+                    if same_y_possible && rad2 <= MAX_RAD * MAX_RAD && rad2 > MIN_RAD * MIN_RAD && is_open {
+                        res.push(Neighbor {
+                            value: wrap!(BlockLocation::new(x+dx,y,z+dz)),
+                            cost: ctx.path_config.costs.block_parkour * multiplier,
+                        });
                     }
                 }
             }

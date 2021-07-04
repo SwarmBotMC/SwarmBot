@@ -15,6 +15,7 @@ use crate::storage::blocks::WorldBlocks;
 #[derive(Clone)]
 pub struct Costs {
     pub block_walk: f64,
+    pub block_parkour: f64,
     pub mine_unrelated: f64,
     pub mine_required: f64,
     pub place_unrelated: f64,
@@ -34,6 +35,7 @@ impl Default for PathConfig {
         Self {
             costs: Costs {
                 block_walk: 1.0,
+                block_parkour: 3.5,
                 mine_unrelated: 20.0,
                 ascend: 1.0,
                 no_breathe_mult: 3.0,

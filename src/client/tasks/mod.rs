@@ -128,12 +128,14 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
         };
 
         if follower.should_recalc() {
+            println!("recalc");
             self.problem.recalc(MoveNode::simple(local.physics.location().into()));
             self.calculate = true;
         }
 
         match follower.follow(local, global) {
             FollowResult::Failed => {
+                println!("failed");
                 self.follower = None;
                 self.problem.recalc(MoveNode::simple(local.physics.location().into()));
                 self.calculate = true;
@@ -584,7 +586,7 @@ impl MineLayer {
 impl TaskStream for MineLayer {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> Option<Task> {
         const MINE_DIST2: f64 = 3.0 * 3.0;
-        const TRAVEL_DIST2: f64 = 1.0 * 1.0;
+        const TRAVEL_DIST2: f64 = 2.8 * 2.8;
 
         let current_block_loc = BlockLocation::from(local.physics.location()).below();
 
@@ -606,10 +608,10 @@ impl TaskStream for MineLayer {
 
         let furthest_out = *self.blocks_to_mine.iter().max_by_key(|loc| FloatOrd(loc.dist2(self.start_loc)))?;
 
-        let on_furthest = (furthest_out.dist2(self.start_loc) - current_block_loc.dist2(self.start_loc)).abs() < f64::EPSILON;
+        let on_furthest =current_block_loc.dist2(self.start_loc) >= furthest_out.dist2(self.start_loc) - f64::EPSILON;
 
         let task: Task = if !on_furthest && furthest_out.dist2(current_block_loc) < MINE_DIST2 {
-            println!("mine");
+            println!("mine {}", furthest_out);
             // mine
             let current_dist2 = current_block_loc.dist2(self.start_loc);
             let blocks = self.blocks_to_mine.iter()
@@ -622,6 +624,7 @@ impl TaskStream for MineLayer {
                 .collect_vec();
 
             for block in &blocks {
+                println!("block {}", block);
                 self.blocks_to_mine.remove(block);
             }
 
@@ -632,19 +635,17 @@ impl TaskStream for MineLayer {
             // navigate out
             let problem = TravelProblem::navigate_near_block(current_block_loc.above(), furthest_out.above(), TRAVEL_DIST2, true);
             let mut compound = CompoundTask::default();
-            compound.add(NavigateProblem::from(problem))
-                .add(DelayTask(20));
+            compound.add(NavigateProblem::from(problem));
 
             compound.into()
         } else {
             // navigate in
             let furthest_out_dist2 = furthest_out.dist2(self.start_loc);
-            let less_dist2 = (furthest_out_dist2 - 1.).max(0.);
+            let less_dist2 = (furthest_out_dist2 - 2.).max(0.);
             println!("navigate 3 to {}", less_dist2);
             let problem = TravelProblem::navigate_near_block(current_block_loc.above(), self.start_loc.above(), less_dist2, false);
             let mut compound = CompoundTask::default();
-            compound.add(NavigateProblem::from(problem))
-                .add(DelayTask(20));
+            compound.add(NavigateProblem::from(problem));
 
             compound.into()
         };
