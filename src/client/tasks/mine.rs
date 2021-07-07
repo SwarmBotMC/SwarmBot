@@ -54,7 +54,7 @@ impl TaskTrait for MineTask {
             out.mine(self.location, Mine::Start, self.face);
         }
 
-        println!("mining {}", self.location);
+        // println!("mining {}", self.location);
 
         out.swing_arm();
         if self.ticks == 0 {

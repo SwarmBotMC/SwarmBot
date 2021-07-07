@@ -34,7 +34,7 @@ impl Lazy for GoMineTop {
             }
         }
 
-        println!("highest y {}", highest_y);
+        // println!("highest y {}", highest_y);
 
         PillarAndMineTask::pillar_and_mine(highest_y as u32).into()
     }
