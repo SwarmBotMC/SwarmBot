@@ -29,7 +29,7 @@ impl TaskTrait for FallBucketTask {
             if self.ticks_since_place > BUCKET_LEAVE_TICKS {
                 out.use_item();
                 let place_loc = self.place_loc.unwrap();
-                out.place_block(place_loc, Face::PosY);
+                // out.place_block(place_loc, Face::PosY);
                 global.blocks.set_block(place_loc.above(), BlockState::AIR);
             }
 
@@ -57,7 +57,7 @@ impl TaskTrait for FallBucketTask {
                 let dy = current_loc.y - (location.y as f64 + 1.0);
                 if dy < 3.4 {
                     out.use_item();
-                    out.place_block(location, Face::PosY);
+                    // out.place_block(location, Face::PosY);
                     global.blocks.set_block(location.above(), BlockState::WATER);
                     self.place_loc = Some(location);
                     self.placed = true;

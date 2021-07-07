@@ -185,10 +185,6 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             actions.schedule(task);
         }
         "mine" => {
-            let mine_region =LazyStream::from(MineRegion);
-            actions.schedule(mine_region);
-        }
-        "rg" => {
             match args {
                 [a,b,c,d] => {
                     let from = {
@@ -221,6 +217,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 }
                 _ => {}
             }
+
+            let mine_region =LazyStream::from(MineRegion);
+            actions.schedule(mine_region);
         }
         "block" => {
             local.inventory.switch_block(out);
