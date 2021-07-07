@@ -6,17 +6,18 @@
  */
 
 use std::collections::{BinaryHeap, HashMap};
+use std::convert::TryFrom;
+
+use float_ord::FloatOrd;
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 
+use crate::client::bot::{ProcessError, WrongArgCount};
 use crate::client::pathfind::MinHeapNode;
 use crate::schematic::Schematic;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection};
-use std::convert::TryFrom;
-use crate::client::bot::{ProcessError, WrongArgCount};
 use crate::types::Location;
-use float_ord::FloatOrd;
 
 pub mod cache;
 
@@ -27,10 +28,10 @@ impl TryFrom<&[&str]> for ChunkLocation {
     type Error = ProcessError;
 
     fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        if let [a,b] = value {
+        if let [a, b] = value {
             let x = a.parse()?;
             let z = b.parse()?;
-            Ok(ChunkLocation(x,z))
+            Ok(ChunkLocation(x, z))
         } else {
             Err(WrongArgCount::new(2).into())
         }
@@ -104,7 +105,6 @@ impl WorldBlocks {
                     Some((loc, exact))
                 }
             })
-
     }
 
     /// similar to a bedrock floor. (0,0) is guaranteed to be a solid as well as (950, 950)
@@ -125,9 +125,8 @@ impl WorldBlocks {
         self.set_block(BlockLocation::new(950, 0, 950), BlockState::STONE);
     }
 
-    pub fn y_slice(&self, origin: BlockLocation, radius: u8, mut selector: impl FnMut(BlockState) -> bool) -> Option<Vec<BlockLocation>>{
-
-        let BlockLocation{x, y, z} = origin;
+    pub fn y_slice(&self, origin: BlockLocation, radius: u8, mut selector: impl FnMut(BlockState) -> bool) -> Option<Vec<BlockLocation>> {
+        let BlockLocation { x, y, z } = origin;
 
         let radius = radius as i32;
 
@@ -161,7 +160,7 @@ impl WorldBlocks {
                         let r = dx.max(dz);
                         r <= radius
                     })
-                    .filter(|(_,state)| selector(*state))
+                    .filter(|(_, state)| selector(*state))
                     .map(|(loc, _)| loc);
 
                 res.extend(iter);
@@ -171,7 +170,7 @@ impl WorldBlocks {
         Some(res)
     }
 
-    pub fn load(&mut self, schematic: &Schematic) {
+    pub fn paste(&mut self, schematic: &Schematic) {
         for (location, state) in schematic.blocks() {
             self.set_block(location, state)
         }
@@ -214,12 +213,11 @@ impl WorldBlocks {
         let loc = ChunkLocation::from(origin);
         let chunk = self.storage.get(&loc)?;
 
-        if let ChunkColumn::HighMemory {data} = chunk {
-           block_chunk_iter(&loc, data, selector).min_by_key(|&location| FloatOrd(origin.dist2(location)))
+        if let ChunkColumn::HighMemory { data } = chunk {
+            block_chunk_iter(&loc, data, selector).min_by_key(|&location| FloatOrd(origin.dist2(location)))
         } else {
             None
         }
-
     }
 
     pub fn closest(&'a self, origin: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> Option<BlockLocation> {
@@ -315,6 +313,12 @@ impl WorldBlocks {
 
 #[cfg(test)]
 mod tests {
+    use std::fs::OpenOptions;
+    use test::{Bencher, black_box};
+
+    use rand::Rng;
+
+    use crate::schematic::Schematic;
     use crate::storage::block::{BlockApprox, BlockLocation, BlockState};
     use crate::storage::blocks::WorldBlocks;
 
@@ -348,5 +352,42 @@ mod tests {
             let got = world.get_block(loc);
             assert_matches!(got , Some(BlockApprox::Realized(BlockState::AIR)));
         }
+    }
+
+    #[bench]
+    fn bench_pow(b: &mut Bencher) {
+        let mut world = WorldBlocks::default();
+
+        let schematic = {
+            let mut spawn_2b2t = OpenOptions::new()
+                .read(true)
+                .open("test-data/2b2t.schematic")
+                .unwrap();
+
+            Schematic::load(&mut spawn_2b2t)
+        };
+
+
+        world.paste(&schematic);
+
+        let origin = schematic.origin().unwrap();
+
+
+        let mut rand = rand::thread_rng();
+
+        b.iter(|| {
+            // Inner closure, the actual test
+            let center_x = origin.x + rand.gen_range(3..(schematic.width - 3)) as i32;
+            let center_z = origin.z + rand.gen_range(3..(schematic.length - 3)) as i32;
+
+            for x in -3..=3 {
+                for z in -3..=3 {
+                    for y in 0..256 {
+                        let loc = BlockLocation::new(center_x + x, y, center_z + z);
+                        black_box(world.get_block(loc));
+                    }
+                }
+            }
+        });
     }
 }

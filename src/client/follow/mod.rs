@@ -261,7 +261,7 @@ mod tests {
         let mut local_state = LocalState::mock();
         let mut global_state = GlobalState::init();
 
-        global_state.blocks.load(&course);
+        global_state.blocks.paste(&course);
 
         let start = BlockLocation::new(-162, 82, -357);
         let end = BlockLocation::new(-152, 80, -338);

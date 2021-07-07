@@ -15,9 +15,9 @@ use crate::storage::block::{BlockLocation, BlockState};
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Schematic {
-    width: i16,
-    height: i16,
-    length: i16,
+    pub width: i16,
+    pub height: i16,
+    pub length: i16,
     materials: String,
     blocks: Vec<i8>,
     add_blocks: Option<Vec<i8>>,

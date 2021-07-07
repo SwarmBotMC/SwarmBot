@@ -16,6 +16,7 @@
 #![feature(step_trait)]
 #![feature(option_get_or_insert_default)]
 #![feature(array_zip)]
+#![feature(test)]
 #![feature(box_syntax)]
 #![feature(default_free_fn)]
 #![feature(assert_matches)]
@@ -39,6 +40,8 @@ extern crate enum_dispatch;
 extern crate thiserror;
 
 extern crate serde;
+
+extern crate test;
 
 #[macro_use]
 extern crate packets;
