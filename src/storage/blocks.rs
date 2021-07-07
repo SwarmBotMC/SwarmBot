@@ -272,7 +272,10 @@ impl WorldBlocks {
     }
 
     pub fn set_block(&mut self, location: BlockLocation, block: BlockState) {
-        debug_println!("set {} -> {:?}", location, block);
+        if location == BlockLocation::new(12, 1, 1) {
+            println!("set to {:?}", block);
+        }
+        // debug_println!("set {} -> {:?}", location, block);
         let BlockLocation { x, y, z } = location;
 
         let y = y as u8;
@@ -355,8 +358,32 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_full_circle() {
+        let mut world = WorldBlocks::default();
+
+        let schematic = {
+            let mut spawn_2b2t = OpenOptions::new()
+                .read(true)
+                .open("test-data/2b2t.schematic")
+                .unwrap();
+
+            Schematic::load(&mut spawn_2b2t)
+        };
+
+
+        world.paste(&schematic);
+
+        let mut idx = 0;
+        for (loc, state) in schematic.blocks() {
+            let actual = world.get_block_exact(loc).unwrap();
+            assert_eq!(actual, state, "block at {} was supposed to be {:?} but was actually {:?} @ index {}", loc, state, actual, idx);
+            idx+=1;
+        }
+    }
+
     #[bench]
-    fn bench_pow(b: &mut Bencher) {
+    fn bench_get_block(b: &mut Bencher) {
         let mut world = WorldBlocks::default();
 
         let schematic = {

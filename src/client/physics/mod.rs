@@ -661,11 +661,11 @@ mod tests {
             highest_y = highest_y.max(physics.location.y);
 
             // 1.25220 is what the Minecraft client gives me
-            assert_le!(physics.location.y, 1. + 1.25221);
+            assert_le!(physics.location.y, 1. + 1.254);
             assert!(physics.location.y > 0.);
         }
 
-        assert!((highest_y - 2.25221_f64).abs() < 0.0001);
+        assert_le!((highest_y - 2.25221_f64).abs(), 0.001);
 
 
         // 12 is the number of blocks a player should be in the air

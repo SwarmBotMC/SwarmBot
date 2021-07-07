@@ -31,8 +31,8 @@ pub struct Schematic {
 }
 
 impl Schematic {
-    pub fn volume(&self) -> i16 {
-        self.width * self.height * self.length
+    pub fn volume(&self) -> u64 {
+        (self.width as u64) * (self.height as u64) * (self.length as u64)
     }
 
     pub fn load(reader: &mut impl Read) -> Schematic {
@@ -41,7 +41,7 @@ impl Schematic {
     }
 
     pub fn is_valid(&self) -> bool {
-        self.volume() == self.blocks.len() as i16
+        self.volume() == self.blocks.len() as u64
     }
 
     pub fn origin(&self) -> Option<BlockLocation> {
@@ -62,19 +62,31 @@ impl Schematic {
         }
     }
 
+    pub fn width(&self) -> u64 {
+        self.width as u64
+    }
+
+    pub fn height(&self) -> u64 {
+        self.height as u64
+    }
+    pub fn length(&self) -> u64 {
+        self.length as u64
+    }
+
+
     pub fn blocks(&self) -> impl Iterator<Item=(BlockLocation, BlockState)> + '_ {
-        let d_loc = self.origin().unwrap_or_default();
+        let origin = self.origin().unwrap_or_default();
 
         (0..self.volume())
             .map(move |idx| {
-                let x = idx % self.width;
+                let x = idx % self.width();
 
-                let leftover = idx / self.width;
-                let z = leftover % self.length;
+                let leftover = idx / self.width();
+                let z = leftover % self.length();
 
-                let y = leftover / self.length;
+                let y = leftover / self.length();
 
-                let location = BlockLocation::new(x as i32, y, z as i32) + d_loc;
+                let location = BlockLocation::new(x as i32, y as i16, z as i32) + origin;
 
                 let id = self.blocks[idx as usize];
                 let data = self.data[idx as usize];

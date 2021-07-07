@@ -224,20 +224,21 @@ impl Palette {
     pub fn set_block(&mut self, x: u8, y: u8, z: u8, state: BlockState) {
         let value = match self.id_to_state.as_mut() {
             None => state.0,
-            Some(map) => {
+            Some(id_to_state) => {
 
                 // we only have to modify the map if we do not have the state
-                let value = map.iter().position(|&r| r == state);
+                let value = id_to_state.iter().position(|&r| r == state);
+
                 match value {
                     None => {
-                        let new_len = map.len() + 1;
+                        let new_len = id_to_state.len() + 1;
                         let required_bits = bits_needed(new_len);
 
-                        map.push(state);
+                        id_to_state.push(state);
 
                         if required_bits > self.bits_per_block {
                             let (required_bits, reverse_map) = if required_bits <= 8 {
-                                let reverse_map: HashMap<_, _> = map.iter().enumerate().map(|(k, v)| (*v, k)).collect();
+                                let reverse_map: HashMap<_, _> = id_to_state.iter().enumerate().map(|(k, v)| (*v, k)).collect();
 
                                 (required_bits.max(4), Some(reverse_map))
                             } else {
@@ -246,8 +247,11 @@ impl Palette {
                                 (13, None)
                             };
 
+                            // debug_println!("expand bits {} -> {} ... reverse_map {:?}", self.bits_per_block, required_bits, reverse_map);
 
                             // we have to recreate the palette
+
+                            // TODO: we could modify states with new block id and instantly return
                             let states = self.all_states();
 
                             // update bits per block
@@ -281,9 +285,8 @@ impl Palette {
                                 }
                             }
 
-                            // TODO: culprit?
                             self.storage = storage;
-                            return;
+                            (new_len - 1) as u32
                         } else {
                             (new_len - 1) as u32
                         }
@@ -435,7 +438,12 @@ impl ChunkColumn {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::chunk::bits_needed;
+    use std::collections::HashMap;
+
+    use itertools::Itertools;
+
+    use crate::storage::block::BlockState;
+    use crate::storage::chunk::{bits_needed, Palette};
 
     #[test]
     fn test_bits_needed() {
@@ -444,5 +452,75 @@ mod tests {
         assert_eq!(2, bits_needed(3)); // 010
         assert_eq!(2, bits_needed(4)); // 011
         assert_eq!(3, bits_needed(5)); // 100
+    }
+
+    #[test]
+    fn test_palette_expand() {
+        let mut palette = Palette::default();
+
+        // test empty palette is all iar
+        for ((x, y), z) in (0..16).cartesian_product(0..16).cartesian_product(0..16) {
+            assert_eq!(palette.get_block(x, y, z), BlockState::AIR);
+        }
+
+        // test adding stone is correct
+        for ((x, y), z) in (0..16).cartesian_product(0..16).cartesian_product(0..16) {
+            let sum = x + y + z;
+            if sum % 2 == 0 {
+                palette.set_block(x, y, z, BlockState(9));
+            } else if sum % 3 == 0 {
+                palette.set_block(x, y, z, BlockState(37));
+            }
+        }
+        for ((x, y), z) in (0..16).cartesian_product(0..16).cartesian_product(0..16) {
+            let sum = x + y + z;
+            let block = palette.get_block(x, y, z);
+            if sum % 2 == 0 {
+                assert_eq!(block, BlockState(9));
+            } else if sum % 3 == 0{
+                assert_eq!(block, BlockState(37));
+            } else {
+                assert_eq!(block, BlockState(0));
+            }
+        }
+
+        let mut index = 0;
+        let mut map = HashMap::new();
+
+        // test adding other blocks is correct
+        for ((x, y), z) in (0..16).cartesian_product(0..16).cartesian_product(0..16) {
+            let sum = x + y + z;
+
+            println!("x,y,z, sum {} {} {} {}", x, y, z, sum);
+
+            let block_state = if primes::is_prime(sum) {
+                let idx = map.entry(sum).or_insert_with(|| {
+                    println!("inc index");
+                    index += 1;
+                    index
+                });
+
+                BlockState(*idx)
+            } else {
+                BlockState::AIR
+            };
+            palette.set_block(x as u8, y as u8, z as u8, block_state);
+        }
+
+        debug_println!("total blocks {}", index);
+
+        // test adding other blocks is correct
+        for ((x, y), z) in (0..16).cartesian_product(0..16).cartesian_product(0..16) {
+            let sum = x + y + z;
+
+            let block_state = if primes::is_prime(sum) {
+                let idx = map[&sum];
+                BlockState(idx)
+            } else {
+                BlockState::AIR
+            };
+
+            assert_eq!(palette.get_block(x as u8, y as u8, z as u8), block_state, "not eq at {} {} {}", x, y, z);
+        }
     }
 }

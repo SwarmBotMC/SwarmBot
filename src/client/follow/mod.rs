@@ -59,7 +59,6 @@ impl Follower {
         &self.xs
     }
     pub fn new(path_result: PathResult<MoveRecord>) -> Option<Follower> {
-        dbg!(&path_result);
         let path = path_result.value;
         if path.len() <= 1 { return None; }
 
