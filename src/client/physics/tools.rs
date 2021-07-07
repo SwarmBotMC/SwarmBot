@@ -6,9 +6,9 @@
  */
 
 use crate::bootstrap::blocks::{BlockData, Material};
-use crate::client::state::inventory::ItemStack;
 use crate::storage::block::BlockKind;
 use crate::types::Enchantment;
+use crate::client::state::local::inventory::ItemStack;
 
 #[derive(Copy, Clone, Debug)]
 pub enum ToolMat {

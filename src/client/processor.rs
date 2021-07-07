@@ -13,7 +13,7 @@ use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
 use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
-use crate::client::state::inventory::ItemStack;
+use crate::client::state::local::inventory::ItemStack;
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);

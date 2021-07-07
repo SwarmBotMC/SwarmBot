@@ -17,7 +17,6 @@ use crate::bootstrap::{Address, Connection};
 use crate::bootstrap::mojang::calc_hash;
 use crate::bootstrap::storage::ValidUser;
 use crate::client::processor::InterfaceIn;
-use crate::client::state::inventory::ItemStack;
 use crate::error::{err, Res};
 use crate::error::Error::WrongPacket;
 use crate::protocol::{ClientInfo, EventQueue, Face, InterfaceOut, InvAction, Login, Mine, Minecraft};
@@ -26,7 +25,7 @@ use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState};
-use crate::storage::block::{BlockKind, BlockLocation, BlockState};
+use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Dimension, Direction, Location, PacketData, Slot};
 

@@ -549,7 +549,6 @@ impl Physics {
 
 #[cfg(test)]
 mod tests {
-    use std::lazy::SyncLazy;
 
     use more_asserts::*;
 

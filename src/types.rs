@@ -20,9 +20,9 @@ use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
 use crate::client::pathfind::moves::Change;
-use crate::client::state::inventory::ItemStack;
 use crate::storage::block::{BlockLocation, BlockKind};
 use crate::types::Origin::{Abs, Rel};
+use crate::client::state::local::inventory::ItemStack;
 
 #[derive(Clone)]
 pub struct PacketData {

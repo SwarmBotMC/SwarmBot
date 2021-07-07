@@ -72,6 +72,12 @@ pub struct BlockData {
     lookup: HashMap<u32, Block>,
 }
 
+impl Default for BlockData {
+    fn default() -> Self {
+        Self::read().unwrap()
+    }
+}
+
 impl BlockData {
     pub fn by_id(&self, id: u32) -> Option<&Block> {
         self.lookup.get(&id)

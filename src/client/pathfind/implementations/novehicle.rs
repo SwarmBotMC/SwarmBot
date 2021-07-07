@@ -7,9 +7,9 @@
 
 
 use crate::client::pathfind::context::MoveNode;
-use crate::client::pathfind::implementations::{PlayerProblem, Problem};
+use crate::client::pathfind::implementations::{PlayerProblem};
 use crate::client::pathfind::traits::{GoalCheck, Heuristic};
-use crate::storage::block::BlockLocation;
+use crate::storage::block::{BlockLocation, BlockLocation2D};
 use crate::storage::blocks::ChunkLocation;
 
 pub struct BlockGoalCheck {
@@ -17,22 +17,23 @@ pub struct BlockGoalCheck {
 }
 
 pub struct BlockNearGoalCheck {
-    goal: BlockLocation,
+    goal: BlockLocation2D,
     dist2: f64,
     must_not_hit: bool
 }
 
 impl BlockNearGoalCheck {
-    fn new(goal: BlockLocation, dist2: f64, must_not_hit: bool) -> Self {
+    fn new(goal: BlockLocation2D, dist2: f64, must_not_hit: bool) -> Self {
         Self{goal, dist2 ,must_not_hit}
     }
 }
 
 impl GoalCheck for BlockNearGoalCheck {
     fn is_goal(&self, input: &MoveNode) -> bool {
-        let dist2 = input.location.dist2(self.goal) as f64;
+        let input = BlockLocation2D::from(input.location);
+        let dist2 = input.dist2(self.goal) as f64;
         let same = if self.must_not_hit {
-            self.goal.x == input.location.x && self.goal.z == input.location.z
+            self.goal.x == input.x && self.goal.z == input.z
         } else {
             false
         };
@@ -141,14 +142,15 @@ pub type TravelChunkCenterProblem = PlayerProblem<ChunkHeuristic, CenterChunkGoa
 
 impl TravelProblem {
     pub fn navigate_block(start: BlockLocation, goal: BlockLocation) -> TravelBlockProblem {
+
         let heuristic = BlockHeuristic { move_cost: 1.0, goal };
         let start_node = MoveNode::simple(start);
         let goal_checker = BlockGoalCheck::new(goal);
         PlayerProblem::new(start_node, heuristic, goal_checker)
     }
 
-    pub fn navigate_near_block(start: BlockLocation, goal: BlockLocation, dist2: f64, must_not_hit: bool) -> TravelNearProblem {
-        let heuristic = BlockHeuristic { move_cost: 1.0, goal };
+    pub fn navigate_near_block(start: BlockLocation, goal: BlockLocation2D, dist2: f64, must_not_hit: bool) -> TravelNearProblem {
+        let heuristic = BlockHeuristic { move_cost: 1.0, goal: goal.into() };
         let start_node = MoveNode::simple(start);
         let goal_checker = BlockNearGoalCheck::new(goal, dist2, must_not_hit);
         PlayerProblem::new(start_node, heuristic, goal_checker)

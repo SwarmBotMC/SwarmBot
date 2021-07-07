@@ -38,7 +38,6 @@ extern crate enum_dispatch;
 #[macro_use]
 extern crate thiserror;
 
-#[macro_use]
 extern crate serde;
 
 #[macro_use]

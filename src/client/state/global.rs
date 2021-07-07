@@ -9,9 +9,14 @@ use crate::bootstrap::blocks::BlockData;
 use crate::client::pathfind::context::PathConfig;
 use crate::storage::blocks::WorldBlocks;
 use crate::storage::entities::WorldEntities;
+use crate::client::state::global::mine_alloc::MineAlloc;
 
+pub mod mine_alloc;
+
+#[derive(Default)]
 pub struct GlobalState {
     pub blocks: WorldBlocks,
+    pub mine: MineAlloc,
     pub block_data: BlockData,
     pub entities: WorldEntities,
     pub ticks: usize,
@@ -19,19 +24,11 @@ pub struct GlobalState {
 }
 
 impl GlobalState {
+
     pub fn init() -> GlobalState {
-        use std::default::default;
-
-        let block_data = BlockData::read().unwrap();
-
-        GlobalState {
-            blocks: default(),
-            block_data,
-            entities: default(),
-            ticks: 0,
-            travel_config: default(),
-        }
+        GlobalState::default()
     }
+
     /// # Goal
     /// we want to assign regions to explore for each bot
     /// we want to explore in rings

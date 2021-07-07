@@ -184,6 +184,42 @@ pub struct BlockLocation {
     pub z: i32,
 }
 
+impl From<BlockLocation> for BlockLocation2D {
+    fn from(loc: BlockLocation) -> Self {
+        Self {
+            x: loc.x,
+            z: loc.z
+        }
+    }
+}
+
+impl From<BlockLocation2D> for BlockLocation {
+    fn from(loc: BlockLocation2D) -> Self {
+        Self {
+            x: loc.x,
+            y: 0,
+            z: loc.z
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct BlockLocation2D {
+    pub x: i32,
+    pub z: i32,
+}
+
+impl BlockLocation2D {
+    pub fn new(x: i32, z: i32) -> Self {
+        Self {x,z}
+    }
+    pub fn dist2(self, other: BlockLocation2D) -> u64 {
+        let dx = (self.x - other.x).abs() as u64;
+        let dz = (self.z - other.z).abs() as u64;
+        dx*dx + dz*dz
+    }
+}
+
 impl From<Change> for BlockLocation {
     fn from(change: Change) -> Self {
         Self {

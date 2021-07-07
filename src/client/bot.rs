@@ -5,23 +5,33 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::cmp::max;
-use std::convert::TryFrom;
 use std::num::ParseIntError;
 use std::time::Instant;
 
 use float_ord::FloatOrd;
-use itertools::Itertools;
+use itertools::{Itertools, min};
 
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask, PillarAndMineTask, MineLayerTask, MineLayer, MineColumn, LazyStream};
 use crate::protocol::{EventQueue, Face, InterfaceOut};
-use crate::storage::block::{BlockKind, BlockLocation};
+use crate::storage::block::{BlockKind, BlockLocation, BlockLocation2D};
 use crate::storage::blocks::ChunkLocation;
 use crate::types::{Displacement};
 use std::fmt::{Display, Formatter};
 use crate::client::pathfind::moves::CardinalDirection;
+use crate::client::state::global::mine_alloc::{MinePreference};
+use crate::client::tasks::{Task, TaskTrait, MineRegionTask};
+use crate::client::tasks::pillar::PillarTask;
+use crate::client::tasks::bridge::BridgeTask;
+use crate::client::tasks::mine_column::MineColumn;
+use crate::client::tasks::navigate::{ChunkTravelTask, BlockTravelTask};
+use crate::client::tasks::eat::EatTask;
+use crate::client::tasks::mine::MineTask;
+use crate::client::tasks::fall_bucket::FallBucketTask;
+use crate::client::tasks::compound::CompoundTask;
+use crate::client::tasks::lazy_stream::LazyStream;
+use crate::client::tasks::mine_region::MineRegion;
+use crate::client::tasks::lazy::LazyTask;
 
 #[derive(Default)]
 pub struct ActionState {
@@ -46,10 +56,6 @@ pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
-
-
-
-
         match self.actions.task.as_mut() {
             None => {}
             Some(task) => {
@@ -174,9 +180,47 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         //     actions.schedule(task);
         // }
         "minec" => {
-            let mine_layer = MineColumn::new(local);
+            let mine_layer = MineColumn::default();
             let task = LazyStream::from(mine_layer);
             actions.schedule(task);
+        }
+        "mine" => {
+            let mine_region =LazyStream::from(MineRegion{});
+            actions.schedule(mine_region);
+        }
+        "rg" => {
+            match args {
+                [a,b,c,d] => {
+                    let from = {
+                        let x = a.parse()?;
+                        let z = b.parse()?;
+
+                        BlockLocation2D::new(x,z)
+                    };
+
+                    let to = {
+                        let x = c.parse()?;
+                        let z = d.parse()?;
+
+                        BlockLocation2D::new(x,z)
+                    };
+
+                    global.mine.mine(from, to, Some(MinePreference::FromDist));
+                }
+
+                [a,b] => {
+                    let loc = {
+                        let x = a.parse()?;
+                        let z = b.parse()?;
+
+                        BlockLocation2D::new(x,z)
+                    };
+
+                    global.mine.mine(loc, loc, Some(MinePreference::FromDist));
+
+                }
+                _ => {}
+            }
         }
         "block" => {
             local.inventory.switch_block(out);

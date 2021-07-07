@@ -13,7 +13,7 @@ use crate::error::Res;
 use crate::storage::block::BlockLocation;
 use crate::types::{Direction, Location};
 use crate::client::pathfind::moves::CardinalDirection;
-use crate::client::state::inventory::ItemStack;
+use crate::client::state::local::inventory::ItemStack;
 
 pub mod v340;
 
