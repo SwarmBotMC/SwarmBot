@@ -17,6 +17,8 @@ use crate::client::tasks::delay::DelayTask;
 use crate::client::tasks::compound::CompoundTask;
 use crate::client::tasks::mine_layer::MineLayer;
 use crate::client::tasks::Task;
+use crate::client::tasks::mine_goto::GoMineTop;
+use crate::client::tasks::lazy::LazyTask;
 
 #[derive(Default)]
 pub struct MineColumn {
@@ -35,7 +37,7 @@ impl TaskStream for MineColumn {
                 .add(task)
                 .add(DelayTask(5))
                 .add(FallBucketTask::default())
-                .add(PillarTask::new(on_loc.y as u32));
+                .add(LazyTask::from(GoMineTop));
 
             on_loc.y -= 1;
 

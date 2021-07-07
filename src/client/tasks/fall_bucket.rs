@@ -22,7 +22,7 @@ pub struct FallBucketTask {
 
 impl TaskTrait for FallBucketTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-        const BUCKET_LEAVE_TICKS: u32 = 5;
+        const BUCKET_LEAVE_TICKS: u32 = 10;
 
         if self.placed {
             self.ticks_since_place += 1;

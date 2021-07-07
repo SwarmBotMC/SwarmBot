@@ -19,7 +19,7 @@ use crate::storage::blocks::ChunkLocation;
 use crate::types::{Displacement};
 use std::fmt::{Display, Formatter};
 use crate::client::pathfind::moves::CardinalDirection;
-use crate::client::state::global::mine_alloc::{MinePreference};
+use crate::client::state::global::mine_alloc::{MinePreference, MineAlloc};
 use crate::client::tasks::{Task, TaskTrait, MineRegionTask};
 use crate::client::tasks::pillar::PillarTask;
 use crate::client::tasks::bridge::BridgeTask;
@@ -185,7 +185,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             actions.schedule(task);
         }
         "mine" => {
-            let mine_region =LazyStream::from(MineRegion{});
+            let mine_region =LazyStream::from(MineRegion);
             actions.schedule(mine_region);
         }
         "rg" => {
@@ -210,10 +210,10 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
                 [a,b] => {
                     let loc = {
-                        let x = a.parse()?;
-                        let z = b.parse()?;
+                        let x: i32 = a.parse()?;
+                        let z: i32 = b.parse()?;
 
-                        BlockLocation2D::new(x,z)
+                        BlockLocation2D::new(x - MineAlloc::REGION_R,z - MineAlloc::REGION_R)
                     };
 
                     global.mine.mine(loc, loc, Some(MinePreference::FromDist));

@@ -16,11 +16,10 @@ use crate::types::{Displacement, Location};
 use crate::client::tasks::TaskTrait;
 
 pub struct MineTask {
-    pub ticks: usize,
-    pub first: bool,
-    pub location: BlockLocation,
-    pub face: Face,
-    pub look_location: Location,
+    ticks: usize,
+    first: bool,
+    location: BlockLocation,
+    face: Face,
 }
 
 impl MineTask {
@@ -30,35 +29,34 @@ impl MineTask {
 
         let ticks = tool.wait_time(kind, false, true, &global.block_data) + 1;
 
-        let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
-        let faces = location.faces();
-        let min_position = faces.iter().position_min_by_key(|loc| FloatOrd(loc.dist2(eye_loc))).unwrap();
-        let look_location = faces[min_position];
-        let face = Face::from(min_position as u8);
-
         Self {
             ticks,
             location,
-            face,
+            face: Face::PosY,
             first: true,
-            look_location,
         }
+    }
+
+    pub fn set_face(&mut self, face: Face){
+        self.face = face;
     }
 }
 
 impl TaskTrait for MineTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-        local.physics.look_at(self.look_location);
+
+        let look_loc = self.location.faces()[self.face as usize];
+        local.physics.look_at(look_loc);
 
         if self.first {
             out.swing_arm();
             self.first = false;
-            out.mine(self.location, Mine::Start, Face::PosY);
+            out.mine(self.location, Mine::Start, self.face);
         }
 
         out.swing_arm();
         if self.ticks == 0 {
-            out.mine(self.location, Mine::Finished, Face::PosY);
+            out.mine(self.location, Mine::Finished, self.face);
             global.blocks.set_block(self.location, BlockState::AIR);
             true
         } else {

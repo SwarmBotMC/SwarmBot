@@ -59,6 +59,9 @@ pub mod mine_goto;
 pub mod mine_region;
 pub mod bridge;
 pub mod fall_bucket;
+pub mod center;
+
+use center::CenterTask;
 
 #[enum_dispatch]
 pub trait TaskTrait {
@@ -94,6 +97,7 @@ pub enum Task {
     CompoundTask,
     EatTask,
     MineRegionTask,
+    CenterTask,
     BridgeTask,
     GoMineTopTask,
     MineColumnTask,

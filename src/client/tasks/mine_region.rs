@@ -19,8 +19,9 @@ use crate::client::tasks::Task;
 use crate::protocol::InterfaceOut;
 use crate::storage::block::{BlockLocation, BlockLocation2D};
 use crate::client::tasks::lazy_stream::LazyStream;
+use crate::client::tasks::center::CenterTask;
 
-pub struct MineRegion {}
+pub struct MineRegion;
 
 impl TaskStream for MineRegion {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
@@ -31,6 +32,7 @@ impl TaskStream for MineRegion {
         let problem = TravelProblem::navigate_near_block(start.into(), goal, 0.0, false);
         let nav = NavigateProblem::from(problem);
         compound.add(nav)
+            .add(CenterTask)
             .add(LazyTask::from(GoMineTop))
             .add(LazyStream::from(MineColumn::default()));
 
