@@ -118,7 +118,11 @@ impl Tool {
 
     fn strength_against_block(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> f64 {
         let block = kind.data(data);
-        let can_harvest = block.harvest_tools.contains(&self.id) || block.material == Material::Generic;
+
+        let can_harvest = match block.material {
+            Material::Web | Material::Generic | Material::Plant | Material::Dirt | Material::Wool | Material::Wood => true,
+            Material::Rock => block.harvest_tools.contains(&self.id)
+        };
 
         let best_tool = match (block.material, self.kind) {
             (Material::Rock, ToolKind::Pickaxe) => true,
@@ -181,6 +185,9 @@ mod tests {
         let mut diamond_pick = Tool::simple(ToolKind::Pickaxe, ToolMat::Diamond);
         diamond_pick.id = 278;
 
+        let mut diamond_shovel = Tool::simple(ToolKind::Shovel, ToolMat::Diamond);
+        diamond_shovel.id = 277;
+
         let hand = Tool::simple(ToolKind::Generic, ToolMat::Hand);
 
         let time = |tool: &Tool, kind: BlockKind| tool.wait_time(kind, false, true, &data);
@@ -188,10 +195,17 @@ mod tests {
         // glass
         assert_eq!(9, time(&hand, BlockKind::GLASS));
         assert_eq!(9, time(&diamond_pick, BlockKind::GLASS));
+        assert_eq!(9, time(&diamond_shovel, BlockKind::GLASS));
 
 
         // stone
         assert_eq!(150, time(&hand, BlockKind::STONE));
         assert_eq!(6, time(&diamond_pick, BlockKind::STONE));
+        assert_eq!(150, time(&diamond_shovel, BlockKind::STONE));
+
+        // dirt
+        assert_eq!(15, time(&hand, BlockKind::DIRT));
+        assert_eq!(15, time(&diamond_pick, BlockKind::DIRT));
+        assert_eq!(2, time(&diamond_shovel, BlockKind::DIRT));
     }
 }

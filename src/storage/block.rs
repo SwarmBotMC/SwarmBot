@@ -26,6 +26,7 @@ impl BlockKind {
     pub const DEFAULT_SLIP: f64 = 0.6;
     pub const LADDER: BlockKind = BlockKind(65);
     pub const STONE: BlockKind = BlockKind(1);
+    pub const DIRT: BlockKind = BlockKind(3);
     pub const GLASS: BlockKind = BlockKind(20);
 
     #[inline]

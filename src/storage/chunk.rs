@@ -507,8 +507,6 @@ mod tests {
             palette.set_block(x as u8, y as u8, z as u8, block_state);
         }
 
-        debug_println!("total blocks {}", index);
-
         // test adding other blocks is correct
         for ((x, y), z) in (0..16).cartesian_product(0..16).cartesian_product(0..16) {
             let sum = x + y + z;
