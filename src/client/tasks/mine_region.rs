@@ -11,20 +11,20 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::tasks::compound::CompoundTask;
 use crate::client::tasks::lazy::LazyTask;
-use crate::client::tasks::mine_column::{MineColumn, MineColumnTask};
+use crate::client::tasks::mine_column::{MineColumn};
 use crate::client::tasks::mine_goto::GoMineTop;
-use crate::client::tasks::navigate::{BlockTravelNearTask, NavigateProblem};
+use crate::client::tasks::navigate::{NavigateProblem};
 use crate::client::tasks::stream::TaskStream;
 use crate::client::tasks::Task;
 use crate::protocol::InterfaceOut;
-use crate::storage::block::{BlockLocation, BlockLocation2D};
+
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::center::CenterTask;
 
 pub struct MineRegion;
 
 impl TaskStream for MineRegion {
-    fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
+    fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
         let goal = global.mine.obtain_region()?;
         let start = local.physics.location();
 

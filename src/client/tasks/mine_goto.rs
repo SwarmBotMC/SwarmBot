@@ -12,7 +12,7 @@ use crate::client::state::local::LocalState;
 use crate::client::tasks::lazy::Lazy;
 use crate::client::tasks::Task;
 use crate::storage::block::{BlockLocation, SimpleType};
-use crate::client::tasks::pillar_and_mine::{PillarOrMine, PillarAndMineTask};
+use crate::client::tasks::pillar_and_mine::{PillarAndMineTask};
 
 pub struct GoMineTop;
 

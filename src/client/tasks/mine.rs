@@ -5,14 +5,14 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 7/7/21, 12:15 AM
  */
 
-use float_ord::FloatOrd;
-use itertools::Itertools;
+
+
 
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::{Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState};
-use crate::types::{Displacement, Location};
+
 use crate::client::tasks::TaskTrait;
 
 pub struct MineTask {

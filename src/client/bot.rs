@@ -9,7 +9,7 @@ use std::num::ParseIntError;
 use std::time::Instant;
 
 use float_ord::FloatOrd;
-use itertools::{Itertools, min};
+use itertools::{Itertools};
 
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
@@ -20,7 +20,7 @@ use crate::types::{Displacement};
 use std::fmt::{Display, Formatter};
 use crate::client::pathfind::moves::CardinalDirection;
 use crate::client::state::global::mine_alloc::{MinePreference, MineAlloc};
-use crate::client::tasks::{Task, TaskTrait, MineRegionTask};
+use crate::client::tasks::{Task, TaskTrait};
 use crate::client::tasks::pillar::PillarTask;
 use crate::client::tasks::bridge::BridgeTask;
 use crate::client::tasks::mine_column::MineColumn;
@@ -31,7 +31,7 @@ use crate::client::tasks::fall_bucket::FallBucketTask;
 use crate::client::tasks::compound::CompoundTask;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_region::MineRegion;
-use crate::client::tasks::lazy::LazyTask;
+
 
 #[derive(Default)]
 pub struct ActionState {

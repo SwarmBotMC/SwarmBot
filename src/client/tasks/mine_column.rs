@@ -12,7 +12,7 @@ use crate::client::tasks::stream::TaskStream;
 use crate::protocol::InterfaceOut;
 use crate::client::state::global::GlobalState;
 use crate::client::tasks::fall_bucket::FallBucketTask;
-use crate::client::tasks::pillar::PillarTask;
+
 use crate::client::tasks::delay::DelayTask;
 use crate::client::tasks::compound::CompoundTask;
 use crate::client::tasks::mine_layer::MineLayer;
@@ -26,7 +26,7 @@ pub struct MineColumn {
 }
 
 impl TaskStream for MineColumn {
-    fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
+    fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
         let on_loc = self.on_loc.get_or_insert_with(||BlockLocation::from(local.physics.location()).below());
         if on_loc.y > 5 {
             let mine_task = MineLayer::new(*on_loc, global)?;

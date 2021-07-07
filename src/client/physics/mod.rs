@@ -223,7 +223,7 @@ impl Physics {
 
     pub fn place_hand_face(&mut self, against: BlockLocation, face: Face) {
 
-        let current_loc = self.location;
+        let _current_loc = self.location;
         let locations = against.faces();
         let face_idx = face as usize;
         let place_loc = locations[face_idx];

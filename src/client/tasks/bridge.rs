@@ -29,7 +29,7 @@ impl BridgeTask {
 }
 
 impl TaskTrait for BridgeTask {
-    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+    fn tick(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, _global: &mut GlobalState) -> bool {
         let displacement = Displacement::from(self.direction.unit_change());
 
         let direction = Direction::from(-displacement);

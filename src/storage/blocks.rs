@@ -247,7 +247,7 @@ impl WorldBlocks {
             })
     }
 
-    pub fn select(&'a self, around: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
+    pub fn select(&'a self, _around: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
         self.real_chunks()
             .take(max_chunks)
             .flat_map(move |(loc, column)| {

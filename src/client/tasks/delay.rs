@@ -19,7 +19,7 @@ impl DelayTask {
 }
 
 impl TaskTrait for DelayTask {
-    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+    fn tick(&mut self, _out: &mut impl InterfaceOut, _local: &mut LocalState, _global: &mut GlobalState) -> bool {
         let ticks_left = self.0;
         if ticks_left == 0 {
             true

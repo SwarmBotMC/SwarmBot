@@ -181,7 +181,7 @@ mod tests {
         let mut diamond_pick = Tool::simple(ToolKind::Pickaxe, ToolMat::Diamond);
         diamond_pick.id = 278;
 
-        let mut hand = Tool::simple(ToolKind::Generic, ToolMat::Hand);
+        let hand = Tool::simple(ToolKind::Generic, ToolMat::Hand);
 
         let time = |tool: &Tool, kind: BlockKind| tool.wait_time(kind, false, true, &data);
 

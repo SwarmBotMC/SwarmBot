@@ -8,13 +8,13 @@
 use std::f32::consts::PI;
 use std::fmt::{Display, Formatter};
 use std::lazy::SyncLazy;
-use std::ops::{Add, AddAssign, Deref, Index, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub};
 
 use ansi_term::Style;
 use itertools::Itertools;
 use packets::*;
 use packets::read::{ByteReadable, ByteReader};
-use packets::types::VarInt;
+
 use packets::write::{ByteWritable, ByteWriter};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
