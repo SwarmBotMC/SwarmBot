@@ -41,8 +41,7 @@ extern crate thiserror;
 
 extern crate serde;
 
-#[macro_use]
-extern crate debug_print;
+// extern crate debug_print;
 
 extern crate test;
 

@@ -57,11 +57,13 @@ pub mod pillar;
 pub mod pillar_and_mine;
 pub mod mine_goto;
 pub mod mine_region;
+pub mod safe_mine_coord;
 pub mod bridge;
 pub mod fall_bucket;
 pub mod center;
 
 use center::CenterTask;
+use crate::client::tasks::safe_mine_coord::SafeMineRegion;
 
 #[enum_dispatch]
 pub trait TaskTrait {
@@ -76,20 +78,9 @@ pub trait TaskTrait {
     fn expensive(&mut self, _end_by: Instant, _local: &mut LocalState, _global: &GlobalState) {}
 }
 
-// use eat::EatTask;
-// use bridge::BridgeTask;
-// use mine_column::MineColumnTask;
-// use mine::MineTask;
-// use navigate::*;
-// use pillar::PillarTask;
-// use delay::DelayTask;
-// use pillar_and_mine::PillarAndMineTask;
-// use mine_layer::MineLayerTask;
-// use fall_bucket::FallBucketTask;
-// use compound::CompoundTask;
-
 pub type GoMineTopTask = LazyTask<GoMineTop>;
 pub type MineRegionTask = LazyStream<MineRegion>;
+pub type SafeMineRegionTask = LazyTask<SafeMineRegion>;
 
 #[allow(clippy::enum_variant_names)]
 #[enum_dispatch(TaskTrait)]
@@ -97,6 +88,7 @@ pub enum Task {
     CompoundTask,
     EatTask,
     MineRegionTask,
+    SafeMineRegionTask,
     CenterTask,
     BridgeTask,
     GoMineTopTask,

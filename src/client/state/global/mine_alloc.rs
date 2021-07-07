@@ -8,9 +8,10 @@
 
 use std::collections::VecDeque;
 
+use itertools::Itertools;
 use rayon::prelude::ParallelSliceMut;
 
-use crate::storage::block::BlockLocation2D;
+use crate::storage::block::{BlockLocation, BlockLocation2D};
 
 /// Represents the bottom left corner of a region
 #[derive(Debug)]
@@ -39,6 +40,11 @@ impl MineAlloc {
         let BlockLocation2D { x, z } = self.regions.pop_front()?.0;
         let centered = BlockLocation2D::new(x + Self::REGION_WIDTH / 2, z + Self::REGION_WIDTH / 2);
         Some(centered)
+    }
+
+    pub fn locations(center: BlockLocation2D) -> impl Iterator<Item=BlockLocation> {
+        (0..256).cartesian_product(-Self::REGION_R..=Self::REGION_R).cartesian_product(-Self::REGION_R..=Self::REGION_R)
+            .map(move |((y, z), x)| BlockLocation::new(center.x + x, y as i16, center.z + z))
     }
 
     pub fn mine(&mut self, from: BlockLocation2D, to: BlockLocation2D, preference: Option<MinePreference>) {

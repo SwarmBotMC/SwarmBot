@@ -97,7 +97,7 @@ enum_dispatch = "0.3"
 # for errors
 thiserror = "1.0"
 
-debug_print = "1.0"
+#debug_print = "1.0"
 
 [dev-dependencies]
 more-asserts = "0.2"

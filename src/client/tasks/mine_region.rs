@@ -15,11 +15,12 @@ use crate::client::tasks::mine_column::{MineColumn};
 use crate::client::tasks::mine_goto::GoMineTop;
 use crate::client::tasks::navigate::{NavigateProblem};
 use crate::client::tasks::stream::TaskStream;
-use crate::client::tasks::Task;
+use crate::client::tasks::{Task, SafeMineRegionTask};
 use crate::protocol::InterfaceOut;
 
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::center::CenterTask;
+use crate::client::tasks::safe_mine_coord::SafeMineRegion;
 
 pub struct MineRegion;
 
@@ -31,10 +32,9 @@ impl TaskStream for MineRegion {
         let mut compound = CompoundTask::default();
         let problem = TravelProblem::navigate_near_block(start.into(), goal, 0.0, false);
         let nav = NavigateProblem::from(problem);
+
         compound.add(nav)
-            .add(CenterTask)
-            .add(LazyTask::from(GoMineTop))
-            .add(LazyStream::from(MineColumn::default()));
+            .add(LazyTask::from(SafeMineRegion));
 
         Some(compound.into())
     }

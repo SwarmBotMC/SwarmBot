@@ -8,7 +8,7 @@
 
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::client::tasks::TaskTrait;
-use crate::protocol::{InterfaceOut, Face};
+use crate::protocol::{InterfaceOut};
 use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
 
