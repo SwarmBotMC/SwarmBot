@@ -25,17 +25,23 @@ impl TaskTrait for FallBucketTask {
         const BUCKET_LEAVE_TICKS: u32 = 10;
 
         if self.placed {
+
+            let place_loc = self.place_loc.unwrap();
+            local.physics.look_at(place_loc.center_bottom());
             self.ticks_since_place += 1;
-            if self.ticks_since_place > BUCKET_LEAVE_TICKS {
+
+            // we msut wait or else a) anti cheat might be flagged b) we might remove the water before we land
+            if self.ticks_since_place == BUCKET_LEAVE_TICKS {
                 out.use_item();
-                let place_loc = self.place_loc.unwrap();
                 // out.place_block(place_loc, Face::PosY);
                 global.blocks.set_block(place_loc.above(), BlockState::AIR);
             }
 
+            // this is so we don't have any conflicts with other tasks placing stuff and potentially triggering anti-cheat
             if self.ticks_since_place > BUCKET_LEAVE_TICKS + 1 {
                 return true;
             }
+
             return false;
         }
 

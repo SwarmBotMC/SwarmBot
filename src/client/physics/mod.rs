@@ -326,7 +326,9 @@ impl Physics {
 
         if world.get_block_simple(in_block_loc) == Some(SimpleType::Solid) {
             println!("was in block at {} of type {:?}", in_block_loc, world.get_block(in_block_loc));
-            // self.location.y = in_block_loc.y as f64 + 1.0;
+            if self.location.y.ceil() - self.location.y < 0.5 {
+                self.location.y = self.location.y.ceil();
+            }
         }
 
         let below_loc = self.location - EPSILON_Y;
