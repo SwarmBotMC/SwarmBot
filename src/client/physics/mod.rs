@@ -185,6 +185,9 @@ impl Physics {
 
         // sometimes the server tells us that should be in a block *_*
         self.location = location;
+
+        // so we don't glitch into ground
+        self.location.y += 0.001;
         self.prev = MovementState::default();
         self.prev.falling = true;
     }

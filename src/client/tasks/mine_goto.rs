@@ -25,12 +25,16 @@ impl Lazy for GoMineTop {
             for on_x in (x - MineAlloc::REGION_R)..=(x + MineAlloc::REGION_R) {
                 for on_z in (z - MineAlloc::REGION_R)..=(z + MineAlloc::REGION_R) {
                     let location = BlockLocation::new(on_x, on_y, on_z);
-                    if global.blocks.get_block_simple(location) == Some(SimpleType::Solid)  {
-                        highest_y = on_y;
+                    if let Some(block) = global.blocks.get_block_exact(location) {
+                        if block.kind().mineable(&global.block_data) {
+                            highest_y = on_y;
+                        }
                     }
                 }
             }
         }
+
+        println!("highest y {}", highest_y);
 
         PillarAndMineTask::pillar_and_mine(highest_y as u32).into()
     }

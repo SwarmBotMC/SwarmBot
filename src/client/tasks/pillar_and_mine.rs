@@ -32,7 +32,7 @@ pub struct PillarOrMine {
 impl TaskStream for PillarOrMine {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
 
-        let current_height = local.physics.location().y as u32;
+        let current_height = (local.physics.location().y).floor() as u32;
 
         // -1 because we are considering block height
         if current_height - 1 >= self.height {

@@ -12,6 +12,7 @@ use std::time::Instant;
 use crate::client::pathfind::MinHeapNode;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
 use crate::client::timing::Increment;
+use std::fmt::{Debug, Formatter};
 
 /// credit baritone
 const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
@@ -106,6 +107,12 @@ fn reconstruct_path<T: Clone>(vec: Vec<T>, goal_idx: usize, parent_map: &HashMap
 pub struct PathResult<T> {
     pub complete: bool,
     pub value: Vec<T>,
+}
+
+impl <T: Debug> Debug for PathResult<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("PathResult{{complete: {:?}, value: {:?}}}", self.complete, self.value))
+    }
 }
 
 impl<T> PathResult<T> {

@@ -21,15 +21,13 @@ use crate::client::tasks::mine_goto::GoMineTop;
 use crate::client::tasks::lazy::LazyTask;
 
 #[derive(Default)]
-pub struct MineColumn {
-    on_loc: Option<BlockLocation>,
-}
+pub struct MineColumn;
 
 impl TaskStream for MineColumn {
     fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
-        let on_loc = self.on_loc.get_or_insert_with(||BlockLocation::from(local.physics.location()).below());
-        if on_loc.y > 5 {
-            let mine_task = MineLayer::new(*on_loc, global)?;
+        let mine_loc = BlockLocation::from(local.physics.location()).below();
+        if mine_loc.y > 5 {
+            let mine_task = MineLayer::new(mine_loc, global)?;
             let task = LazyStream::from(mine_task);
             let mut compound = CompoundTask::default();
 
@@ -38,8 +36,6 @@ impl TaskStream for MineColumn {
                 .add(DelayTask(5))
                 .add(FallBucketTask::default())
                 .add(LazyTask::from(GoMineTop));
-
-            on_loc.y -= 1;
 
             Some(compound.into())
         } else {

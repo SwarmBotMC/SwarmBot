@@ -31,6 +31,9 @@ impl TaskTrait for FallBucketTask {
                 let place_loc = self.place_loc.unwrap();
                 out.place_block(place_loc, Face::PosY);
                 global.blocks.set_block(place_loc.above(), BlockState::AIR);
+            }
+
+            if self.ticks_since_place > BUCKET_LEAVE_TICKS + 1 {
                 return true;
             }
             return false;

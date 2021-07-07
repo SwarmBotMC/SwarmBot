@@ -127,13 +127,13 @@ pub enum Action {
     Change(BlockLocation, BlockState),
 }
 
-#[derive(Hash, Eq, PartialEq, Clone)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct MoveState {
     pub location: BlockLocation,
     pub throwaway_block_count: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MoveRecord {
     pub state: MoveState,
     pub action_to_obtain: Option<Action>,
