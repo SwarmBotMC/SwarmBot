@@ -5,13 +5,13 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use crate::bootstrap::blocks::BlockData;
+use crate::bootstrap::blocks::{BlockData, Material};
 use crate::client::state::inventory::ItemStack;
 use crate::storage::block::BlockKind;
 use crate::types::Enchantment;
 
-#[derive(Copy, Clone)]
-pub enum Material {
+#[derive(Copy, Clone, Debug)]
+pub enum ToolMat {
     Hand,
     Wood,
     Stone,
@@ -21,7 +21,7 @@ pub enum Material {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum ToolKind {
     Generic,
     Pickaxe,
@@ -32,30 +32,32 @@ pub enum ToolKind {
 }
 
 
-impl Material {
+impl ToolMat {
     pub fn strength(self) -> f64 {
         match self {
-            Material::Hand => 1.0,
-            Material::Wood => 2.0,
-            Material::Stone => 4.0,
-            Material::Iron => 6.0,
-            Material::Diamond => 8.0,
-            Material::Gold => 12.0,
+            ToolMat::Hand => 1.0,
+            ToolMat::Wood => 2.0,
+            ToolMat::Stone => 4.0,
+            ToolMat::Iron => 6.0,
+            ToolMat::Diamond => 8.0,
+            ToolMat::Gold => 12.0,
         }
     }
 }
 
+#[derive(Debug)]
 pub struct Tool {
-    pub material: Material,
+    pub material: ToolMat,
     pub kind: ToolKind,
-    pub enchantments: Vec<Enchantment>
+    pub id: u32,
+    pub enchantments: Vec<Enchantment>,
 }
 
 
 impl From<&ItemStack> for Tool {
     fn from(stack: &ItemStack) -> Self {
         use crate::client::physics::tools::ToolKind::*;
-        use crate::client::physics::tools::Material::*;
+        use crate::client::physics::tools::ToolMat::*;
 
         let id = stack.kind.id();
 
@@ -83,6 +85,8 @@ impl From<&ItemStack> for Tool {
             _ => Tool::simple(Generic, Hand)
         };
 
+        simple_tool.id = id;
+
         if let Some(nbt) = stack.nbt.as_ref() {
             simple_tool.enchantments = nbt.ench.clone()
         }
@@ -94,16 +98,17 @@ impl From<&ItemStack> for Tool {
 impl Default for Tool {
     fn default() -> Self {
         Self {
-            material: Material::Hand,
+            material: ToolMat::Hand,
             kind: ToolKind::Generic,
-            enchantments: vec![]
+            enchantments: vec![],
+            id: 0,
         }
     }
 }
 
 impl Tool {
-    pub fn simple(kind: ToolKind, material: Material) -> Self {
-        Self { material, kind, enchantments: Vec::new() }
+    pub fn simple(kind: ToolKind, material: ToolMat) -> Self {
+        Self { material, kind, enchantments: Vec::new(), id: 0 }
     }
 
     pub fn efficiency(&self) -> Option<u16> {
@@ -112,27 +117,81 @@ impl Tool {
     }
 
     fn strength_against_block(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> f64 {
+        let block = kind.data(data);
+        let can_harvest = block.harvest_tools.contains(&self.id) || block.material == Material::Generic;
 
-        let hardness = kind.hardness(data).unwrap_or(f64::INFINITY);
-        if hardness < 0.0 { return 0.0; }
+        let best_tool = match (block.material, self.kind) {
+            (Material::Rock, ToolKind::Pickaxe) => true,
+            (Material::Wood, ToolKind::Axe) => true,
+            (Material::Dirt, ToolKind::Shovel) => true,
+            (Material::Web, ToolKind::Sword) => true,
+            (Material::Plant, _) => true,
+            (Material::Generic, _) => false,
+            _ => false
+        };
 
-        let mut d = self.material.strength();
+        let hardness = block.hardness.unwrap_or(f64::INFINITY).max(0.0);
 
-        let efficiency = self.efficiency().unwrap_or(0);
+        let mut d = 1.0;
 
-        if efficiency > 0 {
-            d += (efficiency.pow(2) + 1) as f64
+
+        if best_tool {
+            if can_harvest {
+                d *= self.material.strength()
+            }
+
+            let efficiency = self.efficiency().unwrap_or(0);
+
+            if efficiency > 0 {
+                d += (efficiency.pow(2) + 1) as f64
+            }
         }
 
         if underwater { d /= 5.0; }
         if !on_ground { d /= 5.0; }
 
-        d / hardness / 30.0
+
+        let res = d / hardness;
+
+        if can_harvest {
+            res / 30.
+        } else {
+            res / 100.
+        }
     }
 
     /// https://minecraft.fandom.com/wiki/Breaking#Speed
     pub fn wait_time(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> usize {
         let strength = self.strength_against_block(kind, underwater, on_ground, data);
         (1.0 / strength).round() as usize
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::bootstrap::blocks::BlockData;
+    use crate::client::physics::tools::{Tool, ToolKind, ToolMat};
+    use crate::storage::block::BlockKind;
+
+    #[test]
+    fn test_break_time() {
+        let data = BlockData::read().unwrap();
+
+        let mut diamond_pick = Tool::simple(ToolKind::Pickaxe, ToolMat::Diamond);
+        diamond_pick.id = 278;
+
+        let mut hand = Tool::simple(ToolKind::Generic, ToolMat::Hand);
+
+        let time = |tool: &Tool, kind: BlockKind| tool.wait_time(kind, false, true, &data);
+
+        // glass
+        assert_eq!(9, time(&hand, BlockKind::GLASS));
+        assert_eq!(9, time(&diamond_pick, BlockKind::GLASS));
+
+
+        // stone
+        assert_eq!(150, time(&hand, BlockKind::STONE));
+        assert_eq!(6, time(&diamond_pick, BlockKind::STONE));
     }
 }

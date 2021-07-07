@@ -15,7 +15,7 @@ use itertools::Itertools;
 
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
-use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask, PillarAndMineTask, MineLayerTask, MineLayer};
+use crate::client::tasks::{BlockTravelTask, ChunkTravelTask, CompoundTask, EatTask, FallBucketTask, MineTask, PillarTask, Task, TaskTrait, DelayTask, BridgeTask, PillarAndMineTask, MineLayerTask, MineLayer, MineColumn, LazyStream};
 use crate::protocol::{EventQueue, Face, InterfaceOut};
 use crate::storage::block::{BlockKind, BlockLocation};
 use crate::storage::blocks::ChunkLocation;
@@ -46,6 +46,10 @@ pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
 
 impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     pub fn run_sync(&mut self, global: &mut GlobalState) {
+
+
+
+
         match self.actions.task.as_mut() {
             None => {}
             Some(task) => {
@@ -54,24 +58,22 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
                 }
             }
         }
-
-        if self.actions.task.is_none() {
-            // let mut vel = self.state.physics.velocity();
-            // vel.dy = 0.;
-            // if vel.mag2() > 0.01 {
-            //     vel *= -1.;
-            //     self.state.physics.look(Direction::from(vel));
-            //     self.state.physics.speed(Speed::SPRINT);
-            //     self.state.physics.line(Line::Forward);
-            // }
-        }
-
         let actions = self.state.physics.tick(&mut global.blocks);
-
         let physics = &self.state.physics;
-
         self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 
+        // if self.actions.task.is_none() {
+        //     // let mut vel = self.state.physics.velocity();
+        //     // vel.dy = 0.;
+        //     // if vel.mag2() > 0.01 {
+        //     //     vel *= -1.;
+        //     //     self.state.physics.look(Direction::from(vel));
+        //     //     self.state.physics.speed(Speed::SPRINT);
+        //     //     self.state.physics.line(Line::Forward);
+        //     // }
+        // }
+        //
+        //
         if let Some(place) = actions.block_placed.as_ref() {
             self.out.swing_arm();
             self.out.place_block(place.location, place.face);
@@ -140,8 +142,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
     match name {
         "pillar" => {
             if let [a] = args {
-                let amount = a.parse()?;
-                actions.schedule(PillarTask::new(amount, local));
+                let y = a.parse()?;
+                actions.schedule(PillarTask::new(y));
             }
         }
         "bridge" => {
@@ -150,40 +152,30 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 actions.schedule(BridgeTask::new(amount, CardinalDirection::North, local));
             }
         }
-        "pillarc" => {
-            let goal = ChunkLocation::try_from(args)?;
-            let mut task = CompoundTask::default();
-
-            task
-                .add(ChunkTravelTask::new(goal, local))
-                .add(DelayTask::new(10))
-                .add_lazy(move |local, global| {
-                    let column = global.blocks.get_real_column(goal).unwrap();
-                    let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
-                    let highest_block = column.block_location(goal, highest_block);
-
-                    let current_loc = BlockLocation::from(local.physics.location()).below();
-                    let diff_y = max(highest_block.y - current_loc.y, 0) as u32;
-
-                    PillarAndMineTask::pillar_and_mine(diff_y)
-                });
-
-            println!("scheduled");
-            actions.schedule(task);
-        }
-        "minel" => {
-            let mine_layer = MineLayer::new(local, global).unwrap();
-            let task = MineLayerTask::from(mine_layer);
-            actions.schedule(task);
-        }
+        // "pillarc" => {
+        //     let goal = ChunkLocation::try_from(args)?;
+        //     let mut task = CompoundTask::default();
+        //
+        //     task
+        //         .add(ChunkTravelTask::new(goal, local))
+        //         .add(DelayTask::new(10))
+        //         .add_lazy(move |local, global| {
+        //             let column = global.blocks.get_real_column(goal).unwrap();
+        //             let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
+        //             let highest_block = column.block_location(goal, highest_block);
+        //
+        //             let current_loc = BlockLocation::from(local.physics.location()).below();
+        //             let diff_y = max(highest_block.y - current_loc.y, 0) as u32;
+        //
+        //             PillarAndMineTask::pillar_and_mine(diff_y)
+        //         });
+        //
+        //     println!("scheduled");
+        //     actions.schedule(task);
+        // }
         "minec" => {
-            let goal = ChunkLocation::try_from(args)?;
-            let eye_loc = local.physics.location() + Displacement::EYE_HEIGHT;
-            let column = global.blocks.get_real_column(goal).unwrap();
-            let blocks = column.select_locs(goal, |state| state.kind().mineable(&global.block_data))
-                .filter(|loc| loc.true_center().dist2(eye_loc) < 3.5*3.5);
-
-            let task = CompoundTask::mine_all(blocks, local, global);
+            let mine_layer = MineColumn::new(local);
+            let task = LazyStream::from(mine_layer);
             actions.schedule(task);
         }
         "block" => {
@@ -225,7 +217,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         "fall" => {
             let below = BlockLocation::from(local.physics.location()).below();
 
-            let mine = MineTask::new(below, local, global);
+            let mine = MineTask::new(below, out, local, global);
             let fall = FallBucketTask::default();
             let mut compound = CompoundTask::default();
             compound.add(mine).add(fall);
@@ -305,16 +297,16 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
                 out.place_block(location, Face::from(best_loc_idx as u8));
             }
         }
-        "mine" => {
-            let origin = local.physics.location() + Displacement::EYE_HEIGHT;
-
-            let closest = global.blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
-
-            if let Some(closest) = closest {
-                let mine_task = MineTask::new(closest, local, global);
-                actions.schedule(mine_task);
-            }
-        }
+        // "mine" => {
+        //     let origin = local.physics.location() + Displacement::EYE_HEIGHT;
+        //
+        //     let closest = global.blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
+        //
+        //     if let Some(closest) = closest {
+        //         let mine_task = MineTask::new(closest, local, global);
+        //         actions.schedule(mine_task);
+        //     }
+        // }
         _ => {}
     }
 

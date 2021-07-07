@@ -118,13 +118,17 @@ impl<T> ChunkData<T> {
 }
 
 impl ChunkData<HighMemoryChunkSection> {
-    pub fn all_at(&self, y: u8) -> Option<[BlockState; 256]> {
+    pub fn all_at(&self, y: u8) -> [BlockState; 256] {
         let section_idx = y >> 4;
 
         let chunk_y = y - (section_idx << 4);
-        let section = self.sections[section_idx as usize].as_ref()?;
 
         let mut res = [BlockState::AIR; 16 * 16];
+        let section = match self.sections[section_idx as usize].as_ref() {
+            Some(inner) => inner,
+            None => return res
+        };
+
 
         let mut idx = 0;
 
@@ -136,7 +140,7 @@ impl ChunkData<HighMemoryChunkSection> {
             }
         }
 
-        Some(res)
+        res
     }
     pub fn select_up(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
         self.sections.iter().enumerate()

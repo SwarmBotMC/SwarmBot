@@ -226,7 +226,7 @@ impl Physics {
         let current_loc = self.location;
         let locations = against.faces();
         let face_idx = face as usize;
-        let mut place_loc = locations[face_idx];
+        let place_loc = locations[face_idx];
 
         const EPSILON: f64 = 0.4;
 
@@ -322,8 +322,8 @@ impl Physics {
         let in_block_loc = BlockLocation::from(self.location);
 
         if world.get_block_simple(in_block_loc) == Some(SimpleType::Solid) {
-            println!("was in block");
-            self.location.y = in_block_loc.y as f64 + 1.0;
+            println!("was in block at {} of type {:?}", in_block_loc, world.get_block(in_block_loc));
+            // self.location.y = in_block_loc.y as f64 + 1.0;
         }
 
         let below_loc = self.location - EPSILON_Y;

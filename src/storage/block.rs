@@ -5,10 +5,10 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Debug};
 use std::ops::Add;
 
-use crate::bootstrap::blocks::{BlockData};
+use crate::bootstrap::blocks::{BlockData, Block};
 use crate::types::{Displacement, Location};
 use crate::client::pathfind::moves::Change;
 
@@ -25,6 +25,8 @@ impl From<u32> for BlockKind {
 impl BlockKind {
     pub const DEFAULT_SLIP: f64 = 0.6;
     pub const LADDER: BlockKind = BlockKind(65);
+    pub const STONE: BlockKind = BlockKind(1);
+    pub const GLASS: BlockKind = BlockKind(20);
 
     #[inline]
     pub fn id(self) -> u32 {
@@ -34,6 +36,10 @@ impl BlockKind {
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
         let block = blocks.by_id(self.0).unwrap_or_else(||panic!("no block for id {}", self.0));
         block.hardness
+    }
+
+    pub fn data(&self, blocks: &'a BlockData) -> &'a Block {
+        blocks.by_id(self.0).unwrap_or_else(||panic!("no block for id {}", self.0))
     }
 
     pub fn throw_away_block(self) -> bool {
@@ -66,12 +72,19 @@ impl BlockKind {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Default)]
 #[repr(transparent)]
 pub struct BlockState(pub u32);
 
+impl Debug for BlockState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}:{}", self.0 >> 4, self.0 % 16))
+    }
+}
+
 impl BlockState {
     pub const AIR: BlockState = BlockState(0);
+    pub const WATER: BlockState = BlockState(9);
     pub const STONE: BlockState = BlockState(16);
 
     pub fn from(id: u32, data: u32) -> BlockState {

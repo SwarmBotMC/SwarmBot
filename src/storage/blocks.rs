@@ -125,6 +125,52 @@ impl WorldBlocks {
         self.set_block(BlockLocation::new(950, 0, 950), BlockState::STONE);
     }
 
+    pub fn y_slice(&self, origin: BlockLocation, radius: u8, mut selector: impl FnMut(BlockState) -> bool) -> Option<Vec<BlockLocation>>{
+
+        let BlockLocation{x, y, z} = origin;
+
+        let radius = radius as i32;
+
+        let start_x = (x - radius) >> 4;
+        let end_x = (x + radius) >> 4;
+
+        let start_z = (z - radius) >> 4;
+        let end_z = (z + radius) >> 4;
+
+        let mut res = Vec::new();
+
+        for cx in start_x..=end_x {
+            for cz in start_z..=end_z {
+                let chunk_loc = ChunkLocation(cx, cz);
+                let column = self.get_real_column(chunk_loc)?;
+                let states = column.all_at(y as u8);
+
+                let chunk_start_x = cx << 4;
+                let chunk_start_z = cz << 4;
+
+                let iter = IntoIterator::into_iter(states)
+                    .enumerate()
+                    .map(|(idx, state)| {
+                        let dx = (idx % 16) as i32;
+                        let dz = (idx / 16) as i32;
+                        (BlockLocation::new(chunk_start_x + dx, y as i16, chunk_start_z + dz), state)
+                    })
+                    .filter(|(loc, _)| {
+                        let dx = (x - loc.x).abs();
+                        let dz = (z - loc.z).abs();
+                        let r = dx.max(dz);
+                        r <= radius
+                    })
+                    .filter(|(_,state)| selector(*state))
+                    .map(|(loc, _)| loc);
+
+                res.extend(iter);
+            }
+        }
+
+        Some(res)
+    }
+
     pub fn load(&mut self, schematic: &Schematic) {
         for (location, state) in schematic.blocks() {
             self.set_block(location, state)

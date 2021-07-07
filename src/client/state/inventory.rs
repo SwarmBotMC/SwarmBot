@@ -66,22 +66,18 @@ impl PlayerInventory {
     }
 
     pub fn change_slot(&mut self, idx: u8, out: &mut impl InterfaceOut){
-        self.selected = idx;
-        out.change_slot(idx);
+        if self.selected != idx {
+            self.selected = idx;
+            out.change_slot(idx);
+        }
     }
 
     pub fn switch_block(&mut self, out: &mut impl InterfaceOut){
-        let block_idx = self.hotbar().iter()
-            .enumerate()
-            .filter_map(|(idx, item_stack)| {
-                let item_stack = item_stack.as_ref()?;
-                item_stack.kind.throw_away_block().then(||idx)
-            })
-            .next();
+        self.switch_selector(out, |kind| kind.throw_away_block());
+    }
 
-        if let Some(idx) = block_idx {
-            self.change_slot(idx as u8, out);
-        }
+    pub fn switch_bucket(&mut self, out: &mut impl InterfaceOut){
+        self.switch_selector(out, |kind| kind.id() == 325 || kind.id() == 326);
     }
 
     pub fn switch_tool(&mut self, out: &mut impl InterfaceOut) -> Tool{
@@ -99,6 +95,20 @@ impl PlayerInventory {
                 self.change_slot(idx as u8, out);
                 tool
             }
+        }
+    }
+
+    pub fn switch_selector(&mut self, out: &mut impl InterfaceOut, mut block: impl FnMut(BlockKind) -> bool){
+        let block_idx = self.hotbar().iter()
+            .enumerate()
+            .filter_map(|(idx, item_stack)| {
+                let item_stack = item_stack.as_ref()?;
+                block(item_stack.kind).then(||idx)
+            })
+            .next();
+
+        if let Some(idx) = block_idx {
+            self.change_slot(idx as u8, out);
         }
     }
 
