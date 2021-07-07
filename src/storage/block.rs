@@ -303,7 +303,7 @@ impl BlockLocation {
 
     pub fn from_flts(x: impl num::Float, y: impl num::Float, z: impl num::Float) -> BlockLocation {
         let x = num::cast(x.floor()).unwrap();
-        let y = num::cast(y.floor()).unwrap();
+        let y = num::cast(y.floor()).unwrap_or(-100); // TODO: change.. however, this is the best for an invalid number right now.
         let z = num::cast(z.floor()).unwrap();
         BlockLocation::new(x, y, z)
     }
