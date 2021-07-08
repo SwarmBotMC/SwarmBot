@@ -20,7 +20,7 @@ use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
 use crate::client::pathfind::moves::Change;
-use crate::storage::block::{BlockLocation, BlockKind};
+use crate::storage::block::{BlockLocation};
 use crate::types::Origin::{Abs, Rel};
 use crate::client::state::local::inventory::ItemStack;
 
@@ -315,8 +315,8 @@ impl ByteReadable for ItemNbt {
 }
 
 impl ByteWritable for ItemNbt {
-    fn write_to_bytes(mut self, writer: &mut ByteWriter) {
-        nbt::to_writer(writer, &mut self, None).unwrap();
+    fn write_to_bytes(self, writer: &mut ByteWriter) {
+        nbt::to_writer(writer, &self, None).unwrap();
     }
 }
 
@@ -342,19 +342,6 @@ pub struct Slot {
     pub item_count: Option<u8>,
     pub item_damage: Option<u16>,
     pub nbt: Option<ItemNbt>,
-}
-
-impl Into<Option<ItemStack>> for Slot {
-    fn into(self) -> Option<ItemStack> {
-        if self.present() {
-            let count = self.item_count.unwrap();
-            let id = self.block_id;
-            let kind = BlockKind(id as u32);
-            Some(ItemStack::new(kind, count, self.item_damage.unwrap(), self.nbt))
-        } else {
-            None
-        }
-    }
 }
 
 impl From<ItemStack> for Slot {

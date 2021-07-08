@@ -124,6 +124,7 @@ impl Display for WrongArgCount {
 }
 
 /// Always returns None.
+#[allow(clippy::many_single_char_names)]
 pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, actions: &mut ActionState, out: &mut impl InterfaceOut) -> Result<(), ProcessError> {
 
     // println! but bold

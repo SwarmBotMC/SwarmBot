@@ -98,9 +98,9 @@ pub enum MouseButton {
     Right
 }
 
-impl Into<u8> for MouseButton {
-    fn into(self) -> u8 {
-        match self {
+impl From<MouseButton> for u8 {
+    fn from(button: MouseButton) -> Self {
+        match button {
             MouseButton::Left => 0,
             MouseButton::Right => 1
         }

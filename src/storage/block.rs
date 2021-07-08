@@ -5,12 +5,12 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::fmt::{Display, Formatter, Debug};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::Add;
 
-use crate::bootstrap::blocks::{BlockData, Block};
-use crate::types::{Displacement, Location};
+use crate::bootstrap::blocks::{Block, BlockData};
 use crate::client::pathfind::moves::Change;
+use crate::types::{Displacement, Location};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -35,19 +35,17 @@ impl BlockKind {
     }
 
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
-        let block = blocks.by_id(self.0).unwrap_or_else(||panic!("no block for id {}", self.0));
+        let block = blocks.by_id(self.0).unwrap_or_else(|| panic!("no block for id {}", self.0));
         block.hardness
     }
 
     pub fn data(&self, blocks: &'a BlockData) -> &'a Block {
-        blocks.by_id(self.0).unwrap_or_else(||panic!("no block for id {}", self.0))
+        blocks.by_id(self.0).unwrap_or_else(|| panic!("no block for id {}", self.0))
     }
 
     pub fn throw_away_block(self) -> bool {
-        match self.id() {
-            4 | 3 => true,
-            _ => false
-        }
+        // cobblestone
+        matches!(self.id(), 4)
     }
 
     pub fn mineable(&self, blocks: &BlockData) -> bool {
@@ -58,7 +56,7 @@ impl BlockKind {
         }
 
         match self.hardness(blocks) {
-            None =>  false,
+            None => false,
             Some(val) => val < 100.0,
         }
     }
@@ -189,7 +187,7 @@ impl From<BlockLocation> for BlockLocation2D {
     fn from(loc: BlockLocation) -> Self {
         Self {
             x: loc.x,
-            z: loc.z
+            z: loc.z,
         }
     }
 }
@@ -199,7 +197,7 @@ impl From<BlockLocation2D> for BlockLocation {
         Self {
             x: loc.x,
             y: 0,
-            z: loc.z
+            z: loc.z,
         }
     }
 }
@@ -212,12 +210,12 @@ pub struct BlockLocation2D {
 
 impl BlockLocation2D {
     pub fn new(x: i32, z: i32) -> Self {
-        Self {x,z}
+        Self { x, z }
     }
     pub fn dist2(self, other: BlockLocation2D) -> u64 {
         let dx = (self.x - other.x).abs() as u64;
         let dz = (self.z - other.z).abs() as u64;
-        dx*dx + dz*dz
+        dx * dx + dz * dz
     }
 }
 
@@ -226,7 +224,7 @@ impl From<Change> for BlockLocation {
         Self {
             x: change.dx,
             y: change.dy,
-            z: change.dz
+            z: change.dz,
         }
     }
 }

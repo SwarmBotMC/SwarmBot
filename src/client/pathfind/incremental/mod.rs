@@ -275,6 +275,7 @@ impl<T: Node> AStar<T> {
                 let h_score = heuristic.heuristic(&neighbor.value);
                 let f_score = tentative_g_score + h_score;
 
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..state.meta_heuristics.len() {
                     let meta_heuristic = h_score + tentative_g_score / COEFFICIENTS[i];
                     let current = state.meta_heuristics[i];

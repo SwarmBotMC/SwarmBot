@@ -52,15 +52,15 @@ pub struct BitField {
     pub values: [bool; 8],
 }
 
-impl Into<u32> for VarInt {
-    fn into(self) -> u32 {
-        self.0 as u32
+impl From<VarInt> for u32 {
+    fn from(elem: VarInt) -> Self {
+        elem.0 as u32
     }
 }
 
-impl Into<i32> for VarInt {
-    fn into(self) -> i32 {
-        self.0 as i32
+impl From<VarInt> for i32 {
+    fn from(elem: VarInt) -> Self {
+        elem.0
     }
 }
 

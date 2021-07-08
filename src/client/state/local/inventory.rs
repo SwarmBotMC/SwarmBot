@@ -6,7 +6,7 @@
  */
 
 use crate::storage::block::{BlockKind};
-use crate::types::{ItemNbt};
+use crate::types::{ItemNbt, Slot};
 use crate::protocol::{InterfaceOut, InvAction};
 use crate::client::physics::tools::{Tool, ToolMat};
 use crate::bootstrap::blocks::BlockData;
@@ -17,6 +17,19 @@ pub struct ItemStack {
     pub count: u8,
     pub damage: u16,
     pub nbt: Option<ItemNbt>
+}
+
+impl From<Slot> for Option<ItemStack> {
+    fn from(slot: Slot) -> Self {
+        if slot.present() {
+            let count = slot.item_count.unwrap();
+            let id = slot.block_id;
+            let kind = BlockKind(id as u32);
+            Some(ItemStack::new(kind, count, slot.item_damage.unwrap(), slot.nbt))
+        } else {
+            None
+        }
+    }
 }
 
 impl ItemStack {

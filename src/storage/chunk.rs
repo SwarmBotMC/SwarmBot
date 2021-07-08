@@ -286,10 +286,8 @@ impl Palette {
                             }
 
                             self.storage = storage;
-                            (new_len - 1) as u32
-                        } else {
-                            (new_len - 1) as u32
                         }
+                        (new_len - 1) as u32
                     }
                     Some(value) => {
                         value as u32
@@ -477,7 +475,7 @@ mod tests {
             let block = palette.get_block(x, y, z);
             if sum % 2 == 0 {
                 assert_eq!(block, BlockState(9));
-            } else if sum % 3 == 0{
+            } else if sum % 3 == 0 {
                 assert_eq!(block, BlockState(37));
             } else {
                 assert_eq!(block, BlockState(0));
