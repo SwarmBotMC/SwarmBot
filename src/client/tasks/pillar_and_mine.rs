@@ -35,7 +35,7 @@ impl TaskStream for PillarOrMine {
 
         let current_height = (local.physics.location().y).floor() as u32;
 
-        // -1 because we are considering block height
+        // > not >= because we are considering block height
         if current_height > self.height {
             return None;
         }

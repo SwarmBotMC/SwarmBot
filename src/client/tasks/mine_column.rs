@@ -26,11 +26,10 @@ impl TaskStream for MineColumn {
     fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, _global: &mut GlobalState) -> Option<Task> {
         let mine_loc = BlockLocation::from(local.physics.location()).below();
         if mine_loc.y >= 5 {
-            let task = LazyStream::from(MineLayer);
             let mut compound = CompoundTask::default();
 
             compound
-                .add(task)
+                .add(LazyStream::from(MineLayer))
                 .add(DelayTask(5))
                 .add(FallBucketTask::default())
                 .add(LazyTask::from(GoMineTop));

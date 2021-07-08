@@ -6,7 +6,7 @@
  */
 
 
-use crate::storage::block::{BlockLocation, BlockState};
+use crate::storage::block::{BlockLocation, BlockState, SimpleType};
 use crate::client::tasks::TaskTrait;
 use crate::protocol::{InterfaceOut};
 use crate::client::state::local::LocalState;
@@ -62,6 +62,12 @@ impl TaskTrait for FallBucketTask {
                 local.physics.look_at(location.center_bottom());
                 let dy = current_loc.y - (location.y as f64 + 1.0);
                 if dy < 3.4 {
+
+                    // we don't have to place when going into water
+                    if global.blocks.get_block_simple(location) == Some(SimpleType::Water) {
+                        return true;
+                    }
+
                     out.use_item();
                     // out.place_block(location, Face::PosY);
                     global.blocks.set_block(location.above(), BlockState::WATER);

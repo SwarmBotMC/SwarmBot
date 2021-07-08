@@ -13,11 +13,11 @@ use itertools::Itertools;
 use num::traits::Pow;
 
 use crate::client::physics::speed::Speed;
+use crate::client::state::local::inventory::PlayerInventory;
 use crate::protocol::Face;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
-use crate::client::state::local::inventory::PlayerInventory;
 
 pub mod tools;
 pub mod speed;
@@ -67,8 +67,6 @@ struct Pending {
 fn effects_multiplier(speed: f64, slowness: f64) -> f64 {
     (1.0 + 0.2 * speed) * (1. - 0.15 * slowness)
 }
-
-// fn slipperiness_multiplier()
 
 fn initial_ver(jump_boost: usize) -> f64 {
     0.42 + 0.1 * (jump_boost as f64)
@@ -226,7 +224,6 @@ impl Physics {
     }
 
     pub fn place_hand_face(&mut self, against: BlockLocation, face: Face) {
-
         let _current_loc = self.location;
         let locations = against.faces();
         let face_idx = face as usize;
@@ -338,7 +335,7 @@ impl Physics {
         let below_loc = self.location - EPSILON_Y;
         let below_block_loc = BlockLocation::from(below_loc);
 
-        let current_block_loc = BlockLocation::from(self.location+ EPSILON_Y);
+        let current_block_loc = BlockLocation::from(self.location + EPSILON_Y);
 
         // first check is because we can be counted as falling if we are inside a block (Minecraft is weird)
         let mut falling = below_block_loc.y == current_block_loc.y || self.cross_section_empty(below_loc, world);
@@ -426,7 +423,18 @@ impl Physics {
                 speeds[i] = momentum + acc
             }
 
-            let res = self.prev.y_vel * WATER_SLOW_DOWN - 0.02 + if self.pending.jump { 0.04 } else { 0. };
+            let feet_loc = BlockLocation::from(self.location);
+            let head_loc = BlockLocation::from(self.location + PLAYER_HEIGHT_Y);
+
+            let feet_flowing = world.get_block_kind(feet_loc) == Some(BlockKind::FLOWING_WATER);
+            let head_flowing = world.get_block_kind(head_loc) == Some(BlockKind::FLOWING_WATER);
+
+            let downwards_force = feet_flowing || head_flowing;
+
+            // TODO: remove 0.014
+            let res = self.prev.y_vel * WATER_SLOW_DOWN - 0.02
+                + if self.pending.jump { 0.04 } else { 0. }
+                - if downwards_force { 0.014 } else { 0. };
 
             if falling {
                 res
@@ -562,14 +570,13 @@ impl Physics {
 
 #[cfg(test)]
 mod tests {
-
     use more_asserts::*;
 
     use crate::client::physics::{Line, Physics};
     use crate::client::physics::speed::Speed;
+    use crate::client::state::local::inventory::PlayerInventory;
     use crate::storage::blocks::WorldBlocks;
     use crate::types::{Direction, Displacement, Location};
-    use crate::client::state::local::inventory::PlayerInventory;
 
     #[test]
     fn test_run() {

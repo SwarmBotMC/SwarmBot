@@ -724,6 +724,12 @@ pub struct Direction {
 }
 
 impl Direction {
+
+    pub const DOWN: Direction = Direction {
+        yaw: 90.,
+        pitch: 90.,
+    };
+
     pub fn unit_vector(&self) -> Displacement {
         let pitch = self.pitch.to_radians();
         let yaw = self.yaw.to_radians();
