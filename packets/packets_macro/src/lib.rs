@@ -194,9 +194,7 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
 
     let name = input.ident;
 
-    // let mut discriminants = input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
-
-    let idents: Vec<_> = input.variants.clone().iter().map(|x| x.ident.clone()).collect();
+    let idents: Vec<_> = input.variants.iter().map(|x| x.ident.clone()).collect();
 
     let discriminants = input.variants.iter()
         .enumerate()
@@ -205,7 +203,7 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
     let mut variants_ts = Vec::new();
     for variant in input.variants.clone() {
         let var_ident = variant.ident;
-        let var_fields: Vec<_> = variant.fields.iter().map(|x| x.ident.clone().unwrap().clone()).collect();
+        let var_fields: Vec<_> = variant.fields.iter().map(|x| x.ident.clone().unwrap()).collect();
         let variant_ts = quote! {
             #name::#var_ident { #(#var_fields),* }=> {
                 #(writer.write(#var_fields));*;

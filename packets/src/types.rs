@@ -100,6 +100,10 @@ impl<T> RawVec<T> {
         self.0.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.len() == 0
+    }
+
     // TODO: how does ownership inference work here
     #[inline]
     pub fn inner(self) -> Vec<T> {

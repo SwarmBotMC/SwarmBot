@@ -25,7 +25,8 @@ pub struct MineTask {
 impl MineTask {
     pub fn new(location: BlockLocation, out: &mut impl InterfaceOut, local: &mut LocalState, global: &GlobalState) -> MineTask {
         let kind = global.blocks.get_block_kind(location).unwrap();
-        let tool = local.inventory.switch_tool(out);
+
+        let tool = local.inventory.switch_tool(kind, &global.block_data, out);
 
         let ticks = tool.wait_time(kind, false, true, &global.block_data) + 1;
 

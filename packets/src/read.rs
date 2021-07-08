@@ -55,6 +55,10 @@ impl ByteReader {
         self.bytes.remaining()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn new(vec: Vec<u8>) -> ByteReader {
         let bytes = Cursor::new(vec);
         Self {
@@ -132,8 +136,8 @@ impl ByteReadable for u64 {
 impl<const T: usize> ByteReadable for [u8; T] {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let mut bytes = [0; T];
-        for i in 0..T {
-            bytes[i] = byte_reader.read();
+        for item in bytes.iter_mut() {
+            *item = byte_reader.read();
         }
         bytes
     }

@@ -10,7 +10,7 @@ use crate::storage::block::BlockKind;
 use crate::types::Enchantment;
 use crate::client::state::local::inventory::ItemStack;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ToolMat {
     Hand,
     Wood,

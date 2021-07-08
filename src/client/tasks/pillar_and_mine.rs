@@ -15,6 +15,7 @@ use crate::types::Displacement;
 use std::collections::HashSet;
 use crate::client::tasks::mine::MineTask;
 use crate::client::tasks::pillar::PillarTask;
+use crate::storage::block::BlockLocation;
 
 pub type PillarAndMineTask = LazyStream<PillarOrMine>;
 
@@ -35,28 +36,29 @@ impl TaskStream for PillarOrMine {
         let current_height = (local.physics.location().y).floor() as u32;
 
         // -1 because we are considering block height
-        if current_height - 1 >= self.height {
+        if current_height > self.height {
             return None;
         }
 
         let above1 = local.physics.location() + Displacement::new(0., 2.5, 0.);
         let mut set = HashSet::new();
         local.physics.in_cross_section(above1, &global.blocks, &mut set);
-        if let Some(position) = set.iter().next() {
-            local.inventory.switch_tool(out);
-            println!("mining {}", position);
-            let mut task = MineTask::new(*position, out, local, global);
-            task.set_face(Face::NegY);
-            Some(task.into())
+
+        macro_rules! mine_task {
+            ($position:expr) => {{
+                let mut task = MineTask::new($position, out, local, global);
+                task.set_face(Face::NegY);
+                Some(task.into())
+            }};
+        }
+
+        if let Some(&position) = set.iter().next() {
+            mine_task!(position)
         } else {
             let above2 = local.physics.location() + Displacement::new(0., 3.5, 0.);
             local.physics.in_cross_section(above2, &global.blocks, &mut set);
-            if let Some(position) = set.iter().next() {
-                local.inventory.switch_tool(out);
-                println!("mining {}", position);
-                let mut task = MineTask::new(*position, out, local, global);
-                task.set_face(Face::NegY);
-                Some(task.into())
+            if let Some(&position) = set.iter().next() {
+                mine_task!(position)
             } else {
                 local.inventory.switch_block(out);
                 Some(PillarTask::new(current_height + 1).into())

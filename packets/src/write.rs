@@ -10,6 +10,7 @@ use bytes::{BufMut, BytesMut};
 use crate::types::VarInt;
 use std::io::Write;
 
+#[derive(Default)]
 pub struct ByteWriter {
     bytes: BytesMut,
 }

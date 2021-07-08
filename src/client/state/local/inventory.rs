@@ -8,8 +8,8 @@
 use crate::storage::block::{BlockKind};
 use crate::types::{ItemNbt};
 use crate::protocol::{InterfaceOut, InvAction};
-use crate::client::physics::tools::Tool;
-use float_ord::FloatOrd;
+use crate::client::physics::tools::{Tool, ToolMat};
+use crate::bootstrap::blocks::BlockData;
 
 #[derive(Debug)]
 pub struct ItemStack {
@@ -80,7 +80,7 @@ impl PlayerInventory {
         self.switch_selector(out, |kind| kind.id() == 325 || kind.id() == 326);
     }
 
-    pub fn switch_tool(&mut self, out: &mut impl InterfaceOut) -> Tool{
+    pub fn switch_tool(&mut self, kind: BlockKind, data: &BlockData, out: &mut impl InterfaceOut) -> Tool{
         let tools = self.hotbar().iter()
             .enumerate()
             .filter_map(|(idx, item_stack)| {
@@ -89,8 +89,20 @@ impl PlayerInventory {
                 Some((idx, tool))
             });
 
-        match tools.max_by_key(move |(_, tool)| FloatOrd(tool.material.strength())) {
-            None => Tool::default(),
+        let min_tool = tools.min_by_key(move|(_,tool)| {
+            let wait_time = tool.wait_time(kind, false, false, data);
+
+            // bias towards a hand (so we do not lose durability)
+            if tool.material == ToolMat::Hand {
+                wait_time
+            } else {
+                wait_time + 1
+            }
+
+        });
+
+        match min_tool {
+            None => Tool::default(), // no need to switch slots everything is air
             Some((idx, tool)) => {
                 self.change_slot(idx as u8, out);
                 tool
