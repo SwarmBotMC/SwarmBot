@@ -5,7 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use crate::bootstrap::blocks::{BlockData, Material};
+use crate::bootstrap::block_data::{BlockData, Material};
 use crate::storage::block::BlockKind;
 use crate::types::Enchantment;
 use crate::client::state::local::inventory::ItemStack;
@@ -174,7 +174,7 @@ impl Tool {
 
 #[cfg(test)]
 mod tests {
-    use crate::bootstrap::blocks::BlockData;
+    use crate::bootstrap::block_data::BlockData;
     use crate::client::physics::tools::{Tool, ToolKind, ToolMat};
     use crate::storage::block::BlockKind;
 

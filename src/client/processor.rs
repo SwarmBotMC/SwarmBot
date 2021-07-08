@@ -5,15 +5,16 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use crate::client::bot::{process_command, ActionState};
+use crate::client::bot::{ActionState, process_command};
 use crate::client::state::global::GlobalState;
+use crate::client::state::local::inventory::ItemStack;
 use crate::client::state::local::LocalState;
+use crate::client::tasks::eat::EatTask;
 use crate::protocol::InterfaceOut;
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
 use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
-use crate::client::state::local::inventory::ItemStack;
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -46,7 +47,7 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
             local,
             global,
             out,
-            actions
+            actions,
         }
     }
 }
@@ -54,7 +55,6 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
 
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
-
         println!("{}", message.clone().colorize());
 
         let mut process = |msg: PlayerMessage| {
@@ -91,7 +91,16 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_update_health(&mut self, health: f32, food: u8) {
         self.local.health = health;
         self.local.food = food;
+
         println!("updated health {} food is {}", health, food);
+
+        // we should probably eat something
+        if food < 10 {
+            // if we could switch to food
+            if self.local.inventory.switch_food(&self.global.block_data, self.out) {
+                self.actions.schedule(EatTask::default());
+            }
+        }
     }
 
     fn on_dimension_change(&mut self, dimension: Dimension) {

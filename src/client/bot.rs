@@ -5,34 +5,33 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
+use std::fmt::{Display, Formatter};
 use std::num::ParseIntError;
 use std::time::Instant;
 
 use float_ord::FloatOrd;
-use itertools::{Itertools};
+use itertools::Itertools;
 
+use crate::client::pathfind::moves::CardinalDirection;
 use crate::client::state::global::GlobalState;
+use crate::client::state::global::mine_alloc::{MineAlloc, MinePreference};
 use crate::client::state::local::LocalState;
+use crate::client::tasks::{Task, TaskTrait};
+use crate::client::tasks::bridge::BridgeTask;
+use crate::client::tasks::compound::CompoundTask;
+use crate::client::tasks::eat::EatTask;
+use crate::client::tasks::fall_bucket::FallBucketTask;
+use crate::client::tasks::lazy_stream::LazyStream;
+use crate::client::tasks::mine::MineTask;
+use crate::client::tasks::mine_column::MineColumn;
+use crate::client::tasks::mine_layer::MineLayer;
+use crate::client::tasks::mine_region::MineRegion;
+use crate::client::tasks::navigate::{BlockTravelTask, ChunkTravelTask};
+use crate::client::tasks::pillar::PillarTask;
 use crate::protocol::{EventQueue, Face, InterfaceOut};
 use crate::storage::block::{BlockKind, BlockLocation, BlockLocation2D};
 use crate::storage::blocks::ChunkLocation;
-use crate::types::{Displacement};
-use std::fmt::{Display, Formatter};
-use crate::client::pathfind::moves::CardinalDirection;
-use crate::client::state::global::mine_alloc::{MinePreference, MineAlloc};
-use crate::client::tasks::{Task, TaskTrait};
-use crate::client::tasks::pillar::PillarTask;
-use crate::client::tasks::bridge::BridgeTask;
-use crate::client::tasks::mine_column::MineColumn;
-use crate::client::tasks::navigate::{ChunkTravelTask, BlockTravelTask};
-use crate::client::tasks::eat::EatTask;
-use crate::client::tasks::mine::MineTask;
-use crate::client::tasks::fall_bucket::FallBucketTask;
-use crate::client::tasks::compound::CompoundTask;
-use crate::client::tasks::lazy_stream::LazyStream;
-use crate::client::tasks::mine_region::MineRegion;
-use crate::client::tasks::mine_layer::MineLayer;
-
+use crate::types::Displacement;
 
 #[derive(Default)]
 pub struct ActionState {
@@ -95,7 +94,6 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
 
 #[derive(Error, Debug)]
 pub enum ProcessError {
-
     #[error(transparent)]
     Parse(#[from] ParseIntError),
 
@@ -105,10 +103,10 @@ pub enum ProcessError {
 
 #[derive(Debug)]
 pub struct WrongArgCount {
-    required: u32
+    required: u32,
 }
 
-impl std::error::Error for WrongArgCount{}
+impl std::error::Error for WrongArgCount {}
 
 impl WrongArgCount {
     pub fn new(required: u32) -> Self {
@@ -187,39 +185,38 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         }
         "mine" => {
             match args {
-                [a,b,c,d] => {
+                [a, b, c, d] => {
                     let from = {
                         let x = a.parse()?;
                         let z = b.parse()?;
 
-                        BlockLocation2D::new(x,z)
+                        BlockLocation2D::new(x, z)
                     };
 
                     let to = {
                         let x = c.parse()?;
                         let z = d.parse()?;
 
-                        BlockLocation2D::new(x,z)
+                        BlockLocation2D::new(x, z)
                     };
 
                     global.mine.mine(from, to, Some(MinePreference::FromDist));
                 }
 
-                [a,b] => {
+                [a, b] => {
                     let loc = {
                         let x: i32 = a.parse()?;
                         let z: i32 = b.parse()?;
 
-                        BlockLocation2D::new(x - MineAlloc::REGION_R,z - MineAlloc::REGION_R)
+                        BlockLocation2D::new(x - MineAlloc::REGION_R, z - MineAlloc::REGION_R)
                     };
 
                     global.mine.mine(loc, loc, Some(MinePreference::FromDist));
-
                 }
                 _ => {}
             }
 
-            let mine_region =LazyStream::from(MineRegion);
+            let mine_region = LazyStream::from(MineRegion);
             actions.schedule(mine_region);
         }
         "block" => {
@@ -237,7 +234,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             local.physics.jump();
         }
         "health" => {
-            chat!("/msg RevolutionNow Health: {}, Food: {}", local.health, local.food);
+            println!("Health: {}, Food: {}", local.health, local.food);
         }
         "follow" => {
             local.follow_closest = true;
@@ -246,16 +243,13 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             // TODO: try to kill themself by fall damage/lava/etc
         }
         "eat" => {
-            out.use_item();
-
-            // shouldn't need to be 40 (32... but because of lag I guess it sometimes does)
-            let eat_task = EatTask { ticks: 40 };
+            let eat_task = EatTask::default();
             actions.task = Some(eat_task.into());
         }
         "slot" => {
             if let [number] = args {
                 let number: u8 = number.parse().unwrap();
-                out.change_slot(number);
+                local.inventory.change_slot(number, out);
             }
         }
         "fall" => {

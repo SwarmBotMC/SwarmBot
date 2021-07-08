@@ -8,7 +8,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Add;
 
-use crate::bootstrap::blocks::{Block, BlockData};
+use crate::bootstrap::block_data::{Block, BlockData};
 use crate::client::pathfind::moves::Change;
 use crate::types::{Displacement, Location};
 

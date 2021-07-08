@@ -15,7 +15,7 @@ use crate::bootstrap::storage::{ProxyUser, ValidUser};
 
 pub mod opts;
 pub mod csv;
-pub mod blocks;
+pub mod block_data;
 pub mod dns;
 pub mod storage;
 pub mod mojang;

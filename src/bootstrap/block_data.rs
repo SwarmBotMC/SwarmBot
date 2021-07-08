@@ -5,7 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::OpenOptions;
 
 use serde::{Deserialize, Serialize};
@@ -48,6 +48,13 @@ pub struct RawBlock {
     // pub resistance: f64
 }
 
+/// Uses prismarine.js food data. We comment out the fields that we do not use
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RawFood {
+    pub id: u32,
+}
+
 pub struct Block {
     pub id: u32,
     pub hardness: Option<f64>,
@@ -56,20 +63,21 @@ pub struct Block {
 }
 
 impl From<RawBlock> for Block {
-    fn from(raw: RawBlock) -> Self {
+    fn from(block: RawBlock) -> Self {
         Self {
-            id: raw.id,
-            hardness: raw.hardness,
-            harvest_tools: raw.harvest_tools.unwrap_or_default().into_iter()
+            id: block.id,
+            hardness: block.hardness,
+            harvest_tools: block.harvest_tools.unwrap_or_default().into_iter()
                 .filter_map(|(k,v)| v.then(||k)).collect(),
-            material: raw.material.unwrap_or_default()
+            material: block.material.unwrap_or_default()
         }
     }
 }
 
 pub struct BlockData {
     // lookup by id
-    lookup: HashMap<u32, Block>,
+    block_lookup: HashMap<u32, Block>,
+    food_lookup: HashSet<u32>,
 }
 
 impl Default for BlockData {
@@ -80,22 +88,38 @@ impl Default for BlockData {
 
 impl BlockData {
     pub fn by_id(&self, id: u32) -> Option<&Block> {
-        self.lookup.get(&id)
+        self.block_lookup.get(&id)
     }
 
-    pub fn read() -> Result<BlockData, serde_json::Error> {
-        let reader = OpenOptions::new().read(true).open("blocks.json").unwrap();
+    pub fn is_food(&self, id: u32) -> bool {
+        self.food_lookup.contains(&id)
+    }
 
-        let blocks: Vec<RawBlock> = serde_json::from_reader(reader)?;
+
+    pub fn read() -> Result<BlockData, serde_json::Error> {
+        let blocks: Vec<RawBlock> = {
+            let reader = OpenOptions::new().read(true).open("blocks.json").unwrap();
+            serde_json::from_reader(reader)?
+        };
+
+        let foods: Vec<RawFood> = {
+            let reader = OpenOptions::new().read(true).open("foods.json").unwrap();
+            serde_json::from_reader(reader)?
+        };
+
+        let food_lookup: HashSet<_> = foods.into_iter().map(|food| food.id).collect();
 
         let blocks = blocks.into_iter().map(Block::from);
 
-        let lookup = blocks
+        let block_lookup = blocks
             .map(|elem| (elem.id, elem))
             .collect();
 
+
+
         Ok(BlockData {
-            lookup
+            block_lookup,
+            food_lookup
         })
     }
 }

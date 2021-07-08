@@ -5,7 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 7/6/21, 11:46 PM
  */
 
-use crate::bootstrap::blocks::BlockData;
+use crate::bootstrap::block_data::BlockData;
 use crate::client::physics::tools::{Tool, ToolMat};
 use crate::protocol::{InterfaceOut, InvAction};
 use crate::storage::block::BlockKind;
@@ -101,6 +101,11 @@ impl PlayerInventory {
         self.switch_selector(out, |kind| kind.throw_away_block());
     }
 
+    /// true if successful
+    pub fn switch_food(&mut self, data: &BlockData, out: &mut impl InterfaceOut) -> bool {
+        self.switch_selector(out, |kind| data.is_food(kind.id()))
+    }
+
     pub fn switch_bucket(&mut self, out: &mut impl InterfaceOut) {
         self.switch_selector(out, |kind| kind.id() == 325 || kind.id() == 326);
     }
@@ -134,7 +139,7 @@ impl PlayerInventory {
         }
     }
 
-    pub fn switch_selector(&mut self, out: &mut impl InterfaceOut, mut block: impl FnMut(BlockKind) -> bool) {
+    pub fn switch_selector(&mut self, out: &mut impl InterfaceOut, mut block: impl FnMut(BlockKind) -> bool) -> bool {
         let block_idx = self.hotbar().iter()
             .enumerate()
             .filter_map(|(idx, item_stack)| {
@@ -145,6 +150,9 @@ impl PlayerInventory {
 
         if let Some(idx) = block_idx {
             self.change_slot(idx as u8, out);
+            true
+        } else {
+            false
         }
     }
 

@@ -5,7 +5,7 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 6/29/21, 8:41 PM
  */
 
-use crate::bootstrap::blocks::BlockData;
+use crate::bootstrap::block_data::BlockData;
 use crate::client::pathfind::context::PathConfig;
 use crate::storage::blocks::WorldBlocks;
 use crate::storage::entities::WorldEntities;
