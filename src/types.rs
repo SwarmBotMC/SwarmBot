@@ -119,7 +119,7 @@ pub struct PlayerMessage {
 impl PlayerMessage {
     pub fn into_cmd(self) -> Option<Command> {
         static RE: SyncLazy<Regex> = SyncLazy::new(|| {
-            Regex::new(r"#(\S+)\s?(.*)").unwrap()
+            Regex::new(r"^#(\S+)\s?(.*)").unwrap()
         });
         let capture = RE.captures(&self.message)?;
 
