@@ -324,20 +324,21 @@ impl Physics {
 
         let in_block_loc = BlockLocation::from(self.location);
 
-        if world.get_block_simple(in_block_loc) == Some(SimpleType::Solid) {
+        let in_block = world.get_block_simple(in_block_loc) == Some(SimpleType::Solid);
+        if in_block {
             println!("was in block at {} of type {:?}", in_block_loc, world.get_block(in_block_loc));
-            if self.location.y.ceil() - self.location.y < 0.05 {
-                self.location.y = self.location.y.ceil();
-            }
 
             // auto jump if we are stuck in a block
             self.pending.jump = true;
-
-        }
+        };
 
         let below_loc = self.location - EPSILON_Y;
-        let mut falling = self.cross_section_empty(below_loc, world);
         let below_block_loc = BlockLocation::from(below_loc);
+
+        let current_block_loc = BlockLocation::from(self.location+ EPSILON_Y);
+
+        // first check is because we can be counted as falling if we are inside a block (Minecraft is weird)
+        let mut falling = below_block_loc.y == current_block_loc.y || self.cross_section_empty(below_loc, world);
 
         let mut just_hit_ground = false;
 
