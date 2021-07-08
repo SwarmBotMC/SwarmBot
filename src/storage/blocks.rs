@@ -272,10 +272,6 @@ impl WorldBlocks {
     }
 
     pub fn set_block(&mut self, location: BlockLocation, block: BlockState) {
-        if location == BlockLocation::new(12, 1, 1) {
-            println!("set to {:?}", block);
-        }
-        // debug_println!("set {} -> {:?}", location, block);
         let BlockLocation { x, y, z } = location;
 
         let y = y as u8;

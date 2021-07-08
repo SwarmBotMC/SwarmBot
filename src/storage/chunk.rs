@@ -489,11 +489,8 @@ mod tests {
         for ((x, y), z) in (0..16).cartesian_product(0..16).cartesian_product(0..16) {
             let sum = x + y + z;
 
-            println!("x,y,z, sum {} {} {} {}", x, y, z, sum);
-
             let block_state = if primes::is_prime(sum) {
                 let idx = map.entry(sum).or_insert_with(|| {
-                    println!("inc index");
                     index += 1;
                     index
                 });

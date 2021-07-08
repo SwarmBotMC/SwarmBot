@@ -15,10 +15,10 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::types::{Direction, Location};
 
-const PROGRESS_THRESHOLD: f64 = 0.2;
+const PROGRESS_THRESHOLD: f64 = 0.3;
 const PROGRESS_THRESHOLD_Y: f64 = 0.48;
 
-const EPSILON: f64 = 0.0001;
+const EPSILON: f64 = 0.001;
 
 const MIN_JUMP_DIST: f64 = 1.2;
 const MIN_SPRINT_DIST: f64 = 3.0;
