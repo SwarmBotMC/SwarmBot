@@ -24,7 +24,7 @@ use crate::client::tasks::fall_bucket::FallBucketTask;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine::MineTask;
 use crate::client::tasks::mine_column::MineColumn;
-use crate::client::tasks::mine_layer::MineLayer;
+
 use crate::client::tasks::mine_region::MineRegion;
 use crate::client::tasks::navigate::{BlockTravelTask, ChunkTravelTask};
 use crate::client::tasks::pillar::PillarTask;
@@ -128,22 +128,15 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
     // println! but bold
     macro_rules! msg {
-            () => {{
-                println!();
-            }};
-            ($($msg: expr),*) => {{
-                let to_print_raw = format!($($msg),*);
-                let to_print = ansi_term::Color::Black.bold().paint(to_print_raw).to_string();
-                println!("{}", to_print);
-            }};
-        }
-
-    macro_rules! chat {
-            ($($msg: expr),*) => {{
-                let to_print_raw = format!($($msg),*);
-                out.send_chat(&to_print_raw);
-            }};
-        }
+        () => {{
+            println!();
+        }};
+        ($($msg: expr),*) => {{
+            let to_print_raw = format!($($msg),*);
+            let to_print = ansi_term::Color::Black.bold().paint(to_print_raw).to_string();
+            println!("{}", to_print);
+        }};
+    }
 
     match name {
         "pillar" => {

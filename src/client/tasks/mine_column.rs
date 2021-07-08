@@ -23,7 +23,7 @@ use crate::client::tasks::lazy::LazyTask;
 pub struct MineColumn;
 
 impl TaskStream for MineColumn {
-    fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
+    fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, _global: &mut GlobalState) -> Option<Task> {
         let mine_loc = BlockLocation::from(local.physics.location()).below();
         if mine_loc.y >= 5 {
             let task = LazyStream::from(MineLayer);
