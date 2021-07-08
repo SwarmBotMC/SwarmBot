@@ -113,13 +113,15 @@ impl PlayerInventory {
     pub fn switch_tool(&mut self, kind: BlockKind, data: &BlockData, out: &mut impl InterfaceOut) -> Tool {
         let tools = self.hotbar().iter()
             .enumerate()
-            .filter_map(|(idx, item_stack)| {
-                let item_stack = item_stack.as_ref()?;
-                let tool = Tool::from(item_stack);
-                Some((idx, tool))
+            .map(|(idx, item_stack)| {
+                let tool = match item_stack.as_ref() {
+                    Some(stack) => Tool::from(stack),
+                    None => Tool::default()
+                };
+                (idx, tool)
             });
 
-        let min_tool = tools.min_by_key(move |(_, tool)| {
+        let (best_idx, best_tool) = tools.min_by_key(move |(_, tool)| {
             let wait_time = tool.wait_time(kind, false, false, data);
 
             // bias towards a hand (so we do not lose durability)
@@ -128,15 +130,10 @@ impl PlayerInventory {
             } else {
                 wait_time + 1
             }
-        });
+        }).unwrap();
 
-        match min_tool {
-            None => Tool::default(), // no need to switch slots everything is air
-            Some((idx, tool)) => {
-                self.change_slot(idx as u8, out);
-                tool
-            }
-        }
+        self.change_slot(best_idx as u8, out);
+        best_tool
     }
 
     pub fn switch_selector(&mut self, out: &mut impl InterfaceOut, mut block: impl FnMut(BlockKind) -> bool) -> bool {

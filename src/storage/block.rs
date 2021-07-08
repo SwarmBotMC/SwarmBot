@@ -25,6 +25,7 @@ impl From<u32> for BlockKind {
 impl BlockKind {
     pub const DEFAULT_SLIP: f64 = 0.6;
     pub const LADDER: BlockKind = BlockKind(65);
+    pub const LEAVES: BlockKind = BlockKind(18);
     pub const FLOWING_WATER: BlockKind = BlockKind(8);
     pub const STONE: BlockKind = BlockKind(1);
     pub const DIRT: BlockKind = BlockKind(3);

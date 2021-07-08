@@ -129,8 +129,9 @@ impl Tool {
             (Material::Wood, ToolKind::Axe) => true,
             (Material::Dirt, ToolKind::Shovel) => true,
             (Material::Web, ToolKind::Sword) => true,
-            (Material::Plant, _) => true,
-            (Material::Generic, _) => false,
+            (Material::Plant, _) => false, // need sheers
+            (Material::Generic, _) => false, // i.e., glass
+
             _ => false
         };
 
@@ -207,5 +208,10 @@ mod tests {
         assert_eq!(15, time(&hand, BlockKind::DIRT));
         assert_eq!(15, time(&diamond_pick, BlockKind::DIRT));
         assert_eq!(2, time(&diamond_shovel, BlockKind::DIRT));
+
+        // leaves
+        assert_eq!(6, time(&hand, BlockKind::LEAVES));
+        assert_eq!(6, time(&diamond_pick, BlockKind::LEAVES));
+        assert_eq!(6, time(&diamond_shovel, BlockKind::LEAVES));
     }
 }
