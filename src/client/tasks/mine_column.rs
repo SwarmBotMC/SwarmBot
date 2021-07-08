@@ -20,13 +20,12 @@ use crate::client::tasks::Task;
 use crate::client::tasks::mine_goto::GoMineTop;
 use crate::client::tasks::lazy::LazyTask;
 
-#[derive(Default)]
 pub struct MineColumn;
 
 impl TaskStream for MineColumn {
     fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
         let mine_loc = BlockLocation::from(local.physics.location()).below();
-        if mine_loc.y > 5 {
+        if mine_loc.y >= 5 {
             let task = LazyStream::from(MineLayer);
             let mut compound = CompoundTask::default();
 

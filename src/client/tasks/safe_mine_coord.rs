@@ -36,7 +36,7 @@ impl Lazy for SafeMineRegion {
 
             compound.add(CenterTask)
                 .add(LazyTask::from(GoMineTop))
-                .add(LazyStream::from(MineColumn::default()));
+                .add(LazyStream::from(MineColumn));
 
             compound.into()
 

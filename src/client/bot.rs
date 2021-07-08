@@ -31,6 +31,7 @@ use crate::client::tasks::fall_bucket::FallBucketTask;
 use crate::client::tasks::compound::CompoundTask;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_region::MineRegion;
+use crate::client::tasks::mine_layer::MineLayer;
 
 
 #[derive(Default)]
@@ -181,8 +182,7 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         //     actions.schedule(task);
         // }
         "minec" => {
-            let mine_layer = MineColumn::default();
-            let task = LazyStream::from(mine_layer);
+            let task = LazyStream::from(MineColumn);
             actions.schedule(task);
         }
         "mine" => {
