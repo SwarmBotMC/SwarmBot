@@ -44,6 +44,10 @@ impl<H: Heuristic<MoveNode> + Send + Sync, G: GoalCheck<MoveNode> + Send + Sync>
             goal_checker,
         }
     }
+
+    pub fn set_max_millis(&mut self, value: u128){
+        self.a_star.set_max_millis(value);
+    }
 }
 
 

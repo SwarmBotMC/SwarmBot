@@ -19,8 +19,6 @@ const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
 const MIN_DIST: f64 = 5.0;
 const MIN_DIST2: f64 = MIN_DIST * MIN_DIST;
 
-const MAX_DURATION_MS: u128 = 5000;
-
 /// An A-star Node
 pub trait Node: Clone {
     /// # Purpose
@@ -77,6 +75,8 @@ struct AStarState<T: Node> {
 
     /// the total amount of time we have spent on the problem
     total_duration_ms: u128,
+
+    max_duration_ms: u128,
 
     meta_heuristics: [f64; 7],
     meta_heuristics_ids: [usize; 7],
@@ -158,11 +158,16 @@ impl<T: Node> AStar<T> {
             parent_map: Default::default(),
             valid: false,
             meta_heuristics_ids: [0; 7],
+            max_duration_ms: 5000
         });
 
         AStar {
             state
         }
+    }
+
+    pub fn set_max_millis(&mut self, value: u128){
+        self.state.as_mut().unwrap().max_duration_ms = value;
     }
 
     pub fn select_best(&mut self) -> Increment<PathResult<T::Record>> {
@@ -194,9 +199,10 @@ impl<T: Node> AStar<T> {
 
             if now >= end_at {
                 let iter_duration = now.duration_since(iter_start);
-                let dur = &mut self.state.as_mut().unwrap().total_duration_ms;
+                let state = self.state.as_mut().unwrap();
+                let dur = &mut state.total_duration_ms;
                 *dur += iter_duration.as_millis();
-                return if *dur > MAX_DURATION_MS {
+                return if *dur > state.max_duration_ms {
                     println!("reached maxed duration");
                     return self.select_best();
                 } else {

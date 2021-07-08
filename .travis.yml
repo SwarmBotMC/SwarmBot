@@ -4,3 +4,5 @@ rust:
   - nightly
 jobs:
   fast_finish: true
+script:
+  - cargo test --verbose --release

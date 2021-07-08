@@ -314,6 +314,9 @@ mod tests {
 
         let mut problem = TravelProblem::navigate_block(start, end);
 
+        // so we can get determininistic tests
+        problem.set_max_millis(u128::MAX);
+
         let increment = problem.iterate_until(Instant::now() + Duration::from_secs(20), &mut local_state, &global_state);
 
         let result = match increment {
@@ -321,7 +324,7 @@ mod tests {
             Increment::Finished(res) => res
         };
 
-        assert!(result.complete, "result is not complete. length was {}", result.value.len());
+        assert!(result.complete, "result is not complete (took too much time?). length was {}. player loc was {}", result.value.len(), local_state.physics.location());
 
         let mut follower = Follower::new(result).unwrap();
 
