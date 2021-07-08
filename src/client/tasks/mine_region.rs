@@ -11,15 +11,15 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::tasks::compound::CompoundTask;
 use crate::client::tasks::lazy::LazyTask;
-use crate::client::tasks::mine_column::{MineColumn};
-use crate::client::tasks::mine_goto::GoMineTop;
+
+
 use crate::client::tasks::navigate::{NavigateProblem};
 use crate::client::tasks::stream::TaskStream;
-use crate::client::tasks::{Task, SafeMineRegionTask};
+use crate::client::tasks::{Task};
 use crate::protocol::InterfaceOut;
 
-use crate::client::tasks::lazy_stream::LazyStream;
-use crate::client::tasks::center::CenterTask;
+
+
 use crate::client::tasks::safe_mine_coord::SafeMineRegion;
 
 pub struct MineRegion;

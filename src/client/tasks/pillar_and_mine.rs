@@ -15,7 +15,7 @@ use crate::types::Displacement;
 use std::collections::HashSet;
 use crate::client::tasks::mine::MineTask;
 use crate::client::tasks::pillar::PillarTask;
-use crate::storage::block::BlockLocation;
+
 
 pub type PillarAndMineTask = LazyStream<PillarOrMine>;
 

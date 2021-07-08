@@ -88,7 +88,7 @@ impl BlockData {
 
         let blocks: Vec<RawBlock> = serde_json::from_reader(reader)?;
 
-        let blocks = blocks.into_iter().map(|raw| Block::from(raw));
+        let blocks = blocks.into_iter().map(Block::from);
 
         let lookup = blocks
             .map(|elem| (elem.id, elem))

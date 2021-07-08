@@ -60,7 +60,7 @@ impl Follower {
     }
     pub fn new(path_result: PathResult<MoveRecord>) -> Option<Follower> {
         let path = path_result.value;
-        if path.len() == 0 { return None; }
+        if path.is_empty() { return None; }
 
         let initial = path.len();
         let xs = path.into_iter().map(|ctx| {

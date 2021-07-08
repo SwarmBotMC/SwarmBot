@@ -535,7 +535,7 @@ impl Physics {
             falling,
         };
 
-        return actions;
+        actions
     }
 
     pub fn on_ground(&self) -> bool {
