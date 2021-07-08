@@ -109,6 +109,8 @@ impl From<MouseButton> for u8 {
 
 pub enum InvAction {
     Q(u16),
+    // drop full stack
+    CtrlQ(u16),
     Click(u16, MouseButton, ItemStack),
     ShiftClick(u16, MouseButton, ItemStack),
 }

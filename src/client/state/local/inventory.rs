@@ -5,18 +5,18 @@
  * Written by Andrew Gazelka <andrew.gazelka@gmail.com>, 7/6/21, 11:46 PM
  */
 
-use crate::storage::block::{BlockKind};
-use crate::types::{ItemNbt, Slot};
-use crate::protocol::{InterfaceOut, InvAction};
-use crate::client::physics::tools::{Tool, ToolMat};
 use crate::bootstrap::blocks::BlockData;
+use crate::client::physics::tools::{Tool, ToolMat};
+use crate::protocol::{InterfaceOut, InvAction};
+use crate::storage::block::BlockKind;
+use crate::types::{ItemNbt, Slot};
 
 #[derive(Debug)]
 pub struct ItemStack {
     pub kind: BlockKind,
     pub count: u8,
     pub damage: u16,
-    pub nbt: Option<ItemNbt>
+    pub nbt: Option<ItemNbt>,
 }
 
 impl From<Slot> for Option<ItemStack> {
@@ -34,7 +34,7 @@ impl From<Slot> for Option<ItemStack> {
 
 impl ItemStack {
     pub fn new(kind: BlockKind, count: u8, damage: u16, nbt: Option<ItemNbt>) -> ItemStack {
-        Self {kind, count, damage, nbt}
+        Self { kind, count, damage, nbt }
     }
 }
 
@@ -49,7 +49,7 @@ impl Default for PlayerInventory {
         const NONE: Option<ItemStack> = None;
         Self {
             slots: [NONE; 46],
-            selected: 0
+            selected: 0,
         }
     }
 }
@@ -63,11 +63,19 @@ impl PlayerInventory {
         &mut self.slots[36..45]
     }
 
-    pub fn drop_hotbar(&mut self, out: &mut impl InterfaceOut){
-        for idx in 36..45 {
-            if self.slots[idx].take().is_some() {
-                out.inventory_action(InvAction::Q(idx as u16))
-            }
+    /// drop a single item in the hotbar (not multiple because anti cheat does not like this)
+    /// returns if dropped all
+    pub fn drop_hotbar(&mut self, out: &mut impl InterfaceOut) -> bool{
+        let idx = (36..45).filter_map(|idx| {
+            self.slots[idx].take()?;
+            Some(idx)
+        }).next();
+
+        if let Some(idx) = idx {
+            out.inventory_action(InvAction::CtrlQ(idx as u16));
+            false
+        } else {
+            true
         }
     }
 
@@ -78,22 +86,22 @@ impl PlayerInventory {
         }
     }
 
-    pub fn change_slot(&mut self, idx: u8, out: &mut impl InterfaceOut){
+    pub fn change_slot(&mut self, idx: u8, out: &mut impl InterfaceOut) {
         if self.selected != idx {
             self.selected = idx;
             out.change_slot(idx);
         }
     }
 
-    pub fn switch_block(&mut self, out: &mut impl InterfaceOut){
+    pub fn switch_block(&mut self, out: &mut impl InterfaceOut) {
         self.switch_selector(out, |kind| kind.throw_away_block());
     }
 
-    pub fn switch_bucket(&mut self, out: &mut impl InterfaceOut){
+    pub fn switch_bucket(&mut self, out: &mut impl InterfaceOut) {
         self.switch_selector(out, |kind| kind.id() == 325 || kind.id() == 326);
     }
 
-    pub fn switch_tool(&mut self, kind: BlockKind, data: &BlockData, out: &mut impl InterfaceOut) -> Tool{
+    pub fn switch_tool(&mut self, kind: BlockKind, data: &BlockData, out: &mut impl InterfaceOut) -> Tool {
         let tools = self.hotbar().iter()
             .enumerate()
             .filter_map(|(idx, item_stack)| {
@@ -102,7 +110,7 @@ impl PlayerInventory {
                 Some((idx, tool))
             });
 
-        let min_tool = tools.min_by_key(move|(_,tool)| {
+        let min_tool = tools.min_by_key(move |(_, tool)| {
             let wait_time = tool.wait_time(kind, false, false, data);
 
             // bias towards a hand (so we do not lose durability)
@@ -111,7 +119,6 @@ impl PlayerInventory {
             } else {
                 wait_time + 1
             }
-
         });
 
         match min_tool {
@@ -123,12 +130,12 @@ impl PlayerInventory {
         }
     }
 
-    pub fn switch_selector(&mut self, out: &mut impl InterfaceOut, mut block: impl FnMut(BlockKind) -> bool){
+    pub fn switch_selector(&mut self, out: &mut impl InterfaceOut, mut block: impl FnMut(BlockKind) -> bool) {
         let block_idx = self.hotbar().iter()
             .enumerate()
             .filter_map(|(idx, item_stack)| {
                 let item_stack = item_stack.as_ref()?;
-                block(item_stack.kind).then(||idx)
+                block(item_stack.kind).then(|| idx)
             })
             .next();
 
@@ -137,11 +144,11 @@ impl PlayerInventory {
         }
     }
 
-    pub fn remove(&mut self, idx: usize){
+    pub fn remove(&mut self, idx: usize) {
         self.slots[idx] = None;
     }
 
-    pub fn add(&mut self, idx: usize, stack: ItemStack){
+    pub fn add(&mut self, idx: usize, stack: ItemStack) {
         self.slots[idx] = Some(stack);
     }
 }

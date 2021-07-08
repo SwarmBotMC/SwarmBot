@@ -260,15 +260,10 @@ impl InterfaceOut for Interface340 {
 
     fn inventory_action(&mut self, action: InvAction) {
         match action {
-            InvAction::Q(slot) => {
-                self.click(slot, 0, 4, Slot::EMPTY)
-            },
-            InvAction::Click(slot, button, clicked) => {
-                self.click(slot, button, 0, clicked)
-            },
-            InvAction::ShiftClick(slot, button, clicked) => {
-                self.click(slot, button, 1, clicked)
-            }
+            InvAction::Q(slot) => self.click(slot, 0, 4, Slot::EMPTY),
+            InvAction::CtrlQ(slot) => self.click(slot, 1, 4, Slot::EMPTY),
+            InvAction::Click(slot, button, clicked) => self.click(slot, button, 0, clicked),
+            InvAction::ShiftClick(slot, button, clicked) => self.click(slot, button, 1, clicked),
         }
     }
 
