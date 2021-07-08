@@ -64,7 +64,7 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
                 }
             }
         }
-        let actions = self.state.physics.tick(&mut global.blocks);
+        let actions = self.state.physics.tick(&mut global.blocks, &self.state.inventory);
         let physics = &self.state.physics;
         self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 

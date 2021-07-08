@@ -90,7 +90,7 @@ impl Schematic {
 
                 let id = self.blocks[idx as usize];
                 let data = self.data[idx as usize];
-                let state = BlockState::from(id as u32, data as u32);
+                let state = BlockState::from(id as u32, data as u16);
 
                 (location, state)
             })

@@ -17,6 +17,7 @@ use crate::protocol::Face;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::WorldBlocks;
 use crate::types::{Direction, Displacement, Location};
+use crate::client::state::local::inventory::PlayerInventory;
 
 pub mod tools;
 pub mod speed;
@@ -313,12 +314,14 @@ impl Physics {
         true
     }
 
-    pub fn tick(&mut self, world: &mut WorldBlocks) -> Actions {
+    pub fn tick(&mut self, world: &mut WorldBlocks, inventory: &PlayerInventory) -> Actions {
         if let Some(place) = self.pending.place.as_ref() {
             let against = place.location;
             let actual_loc = against + place.face.change();
-            // TODO: change this to the right block when inventory is supported
-            world.set_block(actual_loc, BlockState::STONE);
+
+            let current = inventory.current().expect("tried to place air");
+
+            world.set_block(actual_loc, BlockState::from(current.kind.id(), current.damage));
         }
 
 
@@ -566,6 +569,7 @@ mod tests {
     use crate::client::physics::speed::Speed;
     use crate::storage::blocks::WorldBlocks;
     use crate::types::{Direction, Displacement, Location};
+    use crate::client::state::local::inventory::PlayerInventory;
 
     #[test]
     fn test_run() {
@@ -583,7 +587,7 @@ mod tests {
         loop {
             physics.line(Line::Forward);
             physics.speed(Speed::SPRINT);
-            physics.tick(&mut world);
+            physics.tick(&mut world, &PlayerInventory::default());
 
             ticks += 1;
 
@@ -614,7 +618,7 @@ mod tests {
             physics.line(Line::Forward);
             physics.speed(Speed::SPRINT);
             physics.jump();
-            physics.tick(&mut world);
+            physics.tick(&mut world, &PlayerInventory::default());
 
             ticks += 1;
 
@@ -636,7 +640,7 @@ mod tests {
         let mut zero_count = 0;
         for _ in 0..12 * 10 {
             physics.jump();
-            physics.tick(&mut world);
+            physics.tick(&mut world, &PlayerInventory::default());
             if physics.location.y == 0.0 {
                 zero_count += 1;
             }
@@ -657,7 +661,7 @@ mod tests {
         let mut ticks_in_air = 0;
         let mut highest_y = 0_f64;
         loop {
-            physics.tick(&mut world);
+            physics.tick(&mut world, &PlayerInventory::default());
             ticks_in_air += 1;
             if physics.on_ground() {
                 break;

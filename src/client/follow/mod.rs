@@ -247,6 +247,7 @@ mod tests {
     use crate::client::timing::Increment;
     use crate::schematic::Schematic;
     use crate::storage::block::BlockLocation;
+    use crate::client::state::local::inventory::PlayerInventory;
 
     #[test]
     fn test_parkour_course() {
@@ -291,7 +292,7 @@ mod tests {
         local_state.physics.teleport(start.center_bottom());
 
         while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
-            local_state.physics.tick(&mut global_state.blocks);
+            local_state.physics.tick(&mut global_state.blocks, &PlayerInventory::default());
             assert!(local_state.physics.location().y > 79.0, "the player fell... location was {}", local_state.physics.location());
         }
 
@@ -327,7 +328,7 @@ mod tests {
         local_state.physics.teleport(start.center_bottom());
 
         while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
-            local_state.physics.tick(&mut global_state.blocks);
+            local_state.physics.tick(&mut global_state.blocks, &local_state.inventory);
             assert!(local_state.physics.location().y >= 0.0, "the player fell... location was {} front was {:?} left {}", local_state.physics.location(), follower.xs.front(), follower.xs.len());
         }
 

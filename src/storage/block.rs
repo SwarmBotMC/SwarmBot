@@ -86,8 +86,8 @@ impl BlockState {
     pub const WATER: BlockState = BlockState(9);
     pub const STONE: BlockState = BlockState(16);
 
-    pub fn from(id: u32, data: u32) -> BlockState {
-        BlockState((id << 4) + data)
+    pub fn from(id: u32, data: u16) -> BlockState {
+        BlockState((id << 4) + data as u32)
     }
 
     pub fn id(&self) -> u32 {

@@ -86,6 +86,10 @@ impl PlayerInventory {
         }
     }
 
+    pub fn current(&self) -> Option<&ItemStack> {
+        self.hotbar()[self.selected as usize].as_ref()
+    }
+
     pub fn change_slot(&mut self, idx: u8, out: &mut impl InterfaceOut) {
         if self.selected != idx {
             self.selected = idx;
