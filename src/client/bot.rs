@@ -151,30 +151,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         //         actions.schedule(BridgeTask::new(amount, CardinalDirection::North, local));
         //     }
         // }
-        "mine" => {
-            match args {
-                [a, b, c, d] => {
-                }
-
-                [a, b] => {
-                    let loc = {
-                        let x: i32 = a.parse()?;
-                        let z: i32 = b.parse()?;
-
-                        BlockLocation2D::new(x - MineAlloc::REGION_R, z - MineAlloc::REGION_R)
-                    };
-
-                    global.mine.mine(loc, loc, Some(MinePreference::FromDist));
-                }
-                _ => {}
-            }
-
-            let mine_region = LazyStream::from(MineRegion);
-            actions.schedule(mine_region);
-        }
-        "block" => {
-            local.inventory.switch_block(out);
-        }
+        // "block" => {
+        //     local.inventory.switch_block(out);
+        // }
         // "gotoc" => { // goto chunk
         //     if let [a, b] = args {
         //         let x = a.parse()?;
@@ -183,9 +162,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         //         actions.schedule(ChunkTravelTask::new(goal, local));
         //     }
         // }
-        "jump" => {
-            local.physics.jump();
-        }
+        // "jump" => {
+        //     local.physics.jump();
+        // }
         "health" => {
             println!("Health: {}, Food: {}", local.health, local.food);
         }

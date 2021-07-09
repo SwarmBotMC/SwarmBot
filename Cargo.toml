@@ -99,7 +99,12 @@ thiserror = "1.0"
 
 #debug_print = "1.0"
 
-hyper = { version = "0.14", features = ["full"] }
+#hyper = { version = "0.14", features = ["full"] }
+
+tokio-tungstenite = "0.14"
+
+futures = "0.3"
+#futures-util = "0.3"
 
 [dev-dependencies]
 more-asserts = "0.2"

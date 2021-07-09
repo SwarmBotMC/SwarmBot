@@ -45,11 +45,11 @@ pub struct Connection {
 impl Connection {
     pub fn stream(address: Address, mut users: tokio::sync::mpsc::Receiver<ProxyUser>) -> Receiver<Connection> {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
-        tokio::spawn(async move {
+        tokio::task::spawn_local(async move {
             while let Some(user) = users.recv().await {
                 let tx = tx.clone();
                 let address = address.clone();
-                tokio::spawn(async move {
+                tokio::task::spawn_local(async move {
                     let ProxyUser { proxy, user, mojang } = user;
                     let target = String::from(&address);
                     let conn = Socks5Stream::connect_with_password(proxy.address().as_str(), target.as_str(), &proxy.user, &proxy.pass).await.unwrap();

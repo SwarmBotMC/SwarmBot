@@ -12,10 +12,12 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Receiver;
 
-use hyper::{Body, Error, Method, Request, Response, Server, StatusCode};
-use hyper::service::{make_service_fn, service_fn};
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tokio::net::{TcpListener, TcpSocket};
+use tokio_tungstenite::tungstenite::error::Error;
+use tokio_tungstenite::tungstenite::Message;
 
 use crate::error::Res;
 use crate::storage::block::BlockLocation2D;
@@ -55,58 +57,60 @@ pub enum Command {
 }
 
 
-async fn process(tx: Arc<Mutex<std::sync::mpsc::Sender<Command>>>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    match (req.method(), req.uri().path()) {
-        (&Method::POST, "/mine") => {
-            let (_, body) = req.into_parts();
-            let bytes = hyper::body::to_bytes(body).await?;
-            let mine: Mine = serde_json::from_slice(&bytes).unwrap();
-
-            tx.lock().unwrap().send(Command::Mine(mine)).unwrap();
-
-            Ok(Response::default())
+fn process(path: &str, value: Value) -> Option<Command> {
+    match path {
+        "mine" => {
+            let mine: Mine = serde_json::from_value(value).unwrap();
+            Some(Command::Mine(mine))
         }
-        (_, path) => {
-            println!("path {} does not exist", path);
-            let mut not_found = Response::default();
-            *not_found.status_mut() = StatusCode::NOT_FOUND;
-            Ok(not_found)
+        path => {
+            println!("invalid {}", path);
+            None
         }
     }
 }
 
 
 impl Commands {
-    pub fn init() -> Res<Self> {
+    pub async fn init() -> Res<Self> {
         let (tx, rx) = std::sync::mpsc::channel();
-        let addr = "127.0.0.1:8080".parse().unwrap();
 
-
-        let tx = Arc::new(Mutex::new(tx));
-
-        let service = make_service_fn(move |_| {
-            let tx = tx.clone();
-
-            // shouldn't be a requirement for 'async move' but Server takes in an async closure so we need an async block
-            async move {
-
-                // show that it is moved
-                let tx = tx.clone();
-
-                Ok::<_, hyper::Error>({
-                    service_fn(move |req: Request<Body>| {
-                        process(tx.clone(), req)
-                    })
-                })
-            }
-        });
-
-        let server = Server::bind(&addr).serve(service);
-
-        println!("starting http service on {}", addr);
+        let server = TcpListener::bind("127.0.0.1:8080").await?;
 
         tokio::task::spawn_local(async move {
-            server.await.unwrap();
+            loop {
+                let (stream, _) = server.accept().await.unwrap();
+                let mut ws = tokio_tungstenite::accept_async(stream).await.unwrap();
+
+                let tx = tx.clone();
+
+                tokio::task::spawn_local(async move {
+                    'wloop:
+                    while let Some(msg) = ws.next().await {
+                        let msg = msg.unwrap();
+
+                        let text = msg.into_text().unwrap();
+
+                        let mut v: Value = match serde_json::from_str(&text) {
+                            Ok(v) => v,
+                            Err(e) => continue 'wloop,
+                        };
+
+                        let mut map = match &mut v {
+                            Value::Object(map) => map,
+                            _ => panic!("invalid value"),
+                        };
+
+                        let path = match map.remove("path").expect("no path elem") {
+                            Value::String(path) => path,
+                            _ => panic!("invalid path")
+                        };
+
+                        let command = process(&path, v).expect("invalid command");
+                        tx.send(command).unwrap();
+                    }
+                });
+            }
         });
 
         Ok(Self {

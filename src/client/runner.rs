@@ -69,16 +69,16 @@ pub struct RunnerOptions {
 impl<T: Minecraft + 'static> Runner<T> {
     /// Start the runner process
     pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res {
-        let mut runner = Runner::<T>::init(connections, opts)?;
+        let mut runner = Runner::<T>::init(connections, opts).await?;
         runner.game_loop().await;
         Ok(())
     }
 
 
     /// Initialize the runner. Go through the handshake process for each [`Connection`]
-    fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res<Runner<T>> {
+    async fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res<Runner<T>> {
 
-        let commands = Commands::init()?;
+        let commands = Commands::init().await?;
 
         let RunnerOptions { delay_millis } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
