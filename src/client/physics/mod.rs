@@ -286,7 +286,8 @@ impl Physics {
             for dz in dif_z {
                 let test_loc = loc + Displacement::new(dx, 0., dz);
                 let test_block_loc = BlockLocation::from(test_loc);
-                let solid = matches!(world.get_block_simple(test_block_loc), Some(SimpleType::Solid));
+                // let's also count avoid as most avoid blocks are semi-full
+                let solid = matches!(world.get_block_simple(test_block_loc), Some(SimpleType::Solid | SimpleType::Avoid));
                 if solid {
                     set.insert(test_block_loc);
                 }
