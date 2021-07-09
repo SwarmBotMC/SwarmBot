@@ -19,7 +19,8 @@ use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
-use crate::client::commands::Commands;
+use crate::client::commands::{Commands, Command};
+use crate::error::Res;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -44,6 +45,8 @@ pub struct Runner<T: Minecraft> {
     /// the global state of the program containing chunks and global config
     global_state: GlobalState,
 
+    commands: Commands,
+
     /// the bots created by pending logins
     bots: Vec<Bot<T::Queue, T::Interface>>,
 
@@ -59,16 +62,17 @@ pub struct RunnerOptions {
 
 impl<T: Minecraft + 'static> Runner<T> {
     /// Start the runner process
-    pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) {
-        let mut runner = Runner::<T>::init(connections, opts);
+    pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res {
+        let mut runner = Runner::<T>::init(connections, opts)?;
         runner.game_loop().await;
+        Ok(())
     }
 
 
     /// Initialize the runner. Go through the handshake process for each [`Connection`]
-    fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
+    fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res<Runner<T>> {
 
-        Commands::init().unwrap();
+        let commands = Commands::init()?;
 
         let RunnerOptions { delay_millis } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
@@ -104,12 +108,13 @@ impl<T: Minecraft + 'static> Runner<T> {
             });
         }
 
-        Runner {
+        Ok(Runner {
             pending_logins,
             global_state: GlobalState::init(),
+            commands,
             bots: Vec::new(),
             id_on: 0,
-        }
+        })
     }
 
 
@@ -167,8 +172,14 @@ impl<T: Minecraft + 'static> Runner<T> {
             println!("{} clients", new_count);
         }
 
+        // process pending commands (from forge mod)
+        while let Ok(command) = self.commands.pending.try_recv() {
+            process_command(&mut self.global_state, command);
+        }
+
         // fourth step: process packets from game loop
         for bot in &mut self.bots {
+
             let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut bot.actions, &mut self.global_state, &mut bot.out);
 
             // protocol-specific logic. Translates input packets and sends to processor
@@ -216,5 +227,14 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // wait until all threaded activities have finished
         thread_loop_end.notified().await;
+    }
+}
+
+
+fn process_command(global: &mut GlobalState, command: Command){
+    match command {
+        Command::Mine(mine) => {
+            println!("selected 2d {:?}", mine)
+        }
     }
 }

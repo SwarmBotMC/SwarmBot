@@ -107,7 +107,7 @@ async fn run() -> ResContext<()> {
         let opts = RunnerOptions { delay_millis: delay };
 
         match version {
-            340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await, // 1.12
+            340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await.context_str("Error starting up 1.12")?, // 1.12
             _ => { panic!("version {} does not exist", version) }
         }
     }
