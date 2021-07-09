@@ -815,6 +815,7 @@ dependencies = [
  "flate2",
  "float-ord",
  "hematite-nbt",
+ "hyper",
  "indexmap",
  "itertools",
  "more-asserts",

@@ -19,6 +19,7 @@ use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
+use crate::client::commands::Commands;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -66,6 +67,9 @@ impl<T: Minecraft + 'static> Runner<T> {
 
     /// Initialize the runner. Go through the handshake process for each [`Connection`]
     fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Runner<T> {
+
+        Commands::init().unwrap();
+
         let RunnerOptions { delay_millis } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
 

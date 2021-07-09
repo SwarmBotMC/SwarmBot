@@ -139,43 +139,18 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
     }
 
     match name {
-        "pillar" => {
-            if let [a] = args {
-                let y = a.parse()?;
-                actions.schedule(PillarTask::new(y));
-            }
-        }
-        "bridge" => {
-            if let [a] = args {
-                let amount = a.parse()?;
-                actions.schedule(BridgeTask::new(amount, CardinalDirection::North, local));
-            }
-        }
-        // "pillarc" => {
-        //     let goal = ChunkLocation::try_from(args)?;
-        //     let mut task = CompoundTask::default();
-        //
-        //     task
-        //         .add(ChunkTravelTask::new(goal, local))
-        //         .add(DelayTask::new(10))
-        //         .add_lazy(move |local, global| {
-        //             let column = global.blocks.get_real_column(goal).unwrap();
-        //             let highest_block = column.select_down(|x| x.kind() != BlockKind(0)).next().unwrap();
-        //             let highest_block = column.block_location(goal, highest_block);
-        //
-        //             let current_loc = BlockLocation::from(local.physics.location()).below();
-        //             let diff_y = max(highest_block.y - current_loc.y, 0) as u32;
-        //
-        //             PillarAndMineTask::pillar_and_mine(diff_y)
-        //         });
-        //
-        //     println!("scheduled");
-        //     actions.schedule(task);
+        // "pillar" => {
+        //     if let [a] = args {
+        //         let y = a.parse()?;
+        //         actions.schedule(PillarTask::new(y));
+        //     }
         // }
-        "minec" => {
-            let task = LazyStream::from(MineColumn);
-            actions.schedule(task);
-        }
+        // "bridge" => {
+        //     if let [a] = args {
+        //         let amount = a.parse()?;
+        //         actions.schedule(BridgeTask::new(amount, CardinalDirection::North, local));
+        //     }
+        // }
         "mine" => {
             match args {
                 [a, b, c, d] => {
@@ -215,14 +190,14 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         "block" => {
             local.inventory.switch_block(out);
         }
-        "gotoc" => { // goto chunk
-            if let [a, b] = args {
-                let x = a.parse()?;
-                let z = b.parse()?;
-                let goal = ChunkLocation(x, z);
-                actions.schedule(ChunkTravelTask::new(goal, local));
-            }
-        }
+        // "gotoc" => { // goto chunk
+        //     if let [a, b] = args {
+        //         let x = a.parse()?;
+        //         let z = b.parse()?;
+        //         let goal = ChunkLocation(x, z);
+        //         actions.schedule(ChunkTravelTask::new(goal, local));
+        //     }
+        // }
         "jump" => {
             local.physics.jump();
         }

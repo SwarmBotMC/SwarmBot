@@ -12,6 +12,8 @@ use crate::bootstrap::block_data::{Block, BlockData};
 use crate::client::pathfind::moves::Change;
 use crate::types::{Displacement, Location};
 
+use serde::{Deserialize, Serialize};
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
 pub struct BlockKind(pub u32);
@@ -204,7 +206,7 @@ impl From<BlockLocation2D> for BlockLocation {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct BlockLocation2D {
     pub x: i32,
     pub z: i32,

@@ -99,6 +99,8 @@ thiserror = "1.0"
 
 #debug_print = "1.0"
 
+hyper = { version = "0.14", features = ["full"] }
+
 [dev-dependencies]
 more-asserts = "0.2"
 primes = "0.3"
