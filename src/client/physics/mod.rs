@@ -13,7 +13,7 @@ use itertools::Itertools;
 use num::traits::Pow;
 
 use crate::client::physics::speed::Speed;
-use crate::client::state::local::inventory::PlayerInventory;
+use crate::client::state::local::inventory::{PlayerInventory, ItemStack};
 use crate::protocol::Face;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::WorldBlocks;
@@ -317,9 +317,16 @@ impl Physics {
             let against = place.location;
             let actual_loc = against + place.face.change();
 
-            let current = inventory.current().expect("tried to place air");
+            match inventory.current() {
+                Some(current) => {
+                    world.set_block(actual_loc, BlockState::from(current.kind.id(), current.damage));
+                }
+                None => {
+                    eprintln!("tried to place air");
+                    self.pending.place = None;
+                },
+            };
 
-            world.set_block(actual_loc, BlockState::from(current.kind.id(), current.damage));
         }
 
 
