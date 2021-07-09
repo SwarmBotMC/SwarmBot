@@ -29,11 +29,18 @@ impl Lazy for SafeMineRegion {
         // if we should skip this region. For example, if there is water or lava we will want to avoid it
         let avoid = MineAlloc::locations_extra(center)
             .any(|loc| {
-                match global.blocks.get_block_simple(loc) {
-                    Some(SimpleType::Avoid) | Some(SimpleType::Water) => {
+
+                // there is often lava under bedrock that we don't really care about
+                if loc.y < 4 {
+                    return false;
+                }
+
+                match global.blocks.get_block_exact(loc).map(|x| x.kind().id()) {
+                    // water or lava
+                    Some(8..=11) => {
                         println!("skipping region {}, {} because of {:?} at {}", center.x, center.z, global.blocks.get_block_exact(loc), loc);
                         true
-                    },
+                    }
                     _ => false
                 }
             });
