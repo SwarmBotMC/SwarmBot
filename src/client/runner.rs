@@ -19,8 +19,14 @@ use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
-use crate::client::commands::{Commands, Command};
+use crate::client::commands::{Commands, Command, Selection2D};
 use crate::error::Res;
+use crate::storage::block::BlockLocation2D;
+use crate::client::state::global::mine_alloc::MinePreference;
+use crate::client::tasks::mine::MineTask;
+use crate::client::tasks::MineRegionTask;
+use crate::client::tasks::lazy_stream::LazyStream;
+use crate::client::tasks::mine_region::MineRegion;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -174,7 +180,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // process pending commands (from forge mod)
         while let Ok(command) = self.commands.pending.try_recv() {
-            process_command(&mut self.global_state, command);
+            self.process_command(command);
         }
 
         // fourth step: process packets from game loop
@@ -228,13 +234,20 @@ impl<T: Minecraft + 'static> Runner<T> {
         // wait until all threaded activities have finished
         thread_loop_end.notified().await;
     }
-}
 
 
-fn process_command(global: &mut GlobalState, command: Command){
-    match command {
-        Command::Mine(mine) => {
-            println!("selected 2d {:?}", mine)
+    fn process_command(&mut self, command: Command){
+        let global = &mut self.global_state;
+        let bots = &mut self.bots;
+        match command {
+            Command::Mine(mine) => {
+                let Selection2D {from, to} = mine.sel.normalize();
+                global.mine.mine(from, to, Some(MinePreference::FromDist));
+
+                for bot in bots {
+                    bot.actions.schedule(LazyStream::from(MineRegion))
+                }
+            }
         }
     }
 }

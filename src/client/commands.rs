@@ -30,6 +30,21 @@ pub struct Selection2D {
     pub to: BlockLocation2D,
 }
 
+impl Selection2D {
+    pub fn normalize(self) -> Self {
+        let min_x = self.from.x.min(self.to.x);
+        let min_z = self.from.z.min(self.to.z);
+
+        let max_x = self.from.x.max(self.to.x);
+        let max_z = self.from.z.max(self.to.z);
+
+        Selection2D {
+            from: BlockLocation2D::new(min_x, min_z),
+            to: BlockLocation2D::new(max_x, max_z),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Mine {
     pub sel: Selection2D,

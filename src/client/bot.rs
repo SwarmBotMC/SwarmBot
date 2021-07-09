@@ -154,21 +154,6 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         "mine" => {
             match args {
                 [a, b, c, d] => {
-                    let from = {
-                        let x = a.parse()?;
-                        let z = b.parse()?;
-
-                        BlockLocation2D::new(x, z)
-                    };
-
-                    let to = {
-                        let x = c.parse()?;
-                        let z = d.parse()?;
-
-                        BlockLocation2D::new(x, z)
-                    };
-
-                    global.mine.mine(from, to, Some(MinePreference::FromDist));
                 }
 
                 [a, b] => {
