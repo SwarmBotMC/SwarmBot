@@ -5,7 +5,7 @@ A bot launcher for Minecraft written in Rust.
 ## What makes this unique?
 
 - **Performant**. I am able to run hundreds of bots off of my 2015 laptop with under 10% CPU. This is because MineBot does not depend on the default Minecraft client. Instead, it completely re-implements physics and the Minecraft protocol in Rust which allows for increadibly fast speeds.
-- **Easy**. It is very easy to launch as many bots as you want. Simply do `./minebot -c {number} {server ip}
+- **Easy**. It is very easy to launch as many bots as you want. Simply do `./minebot -c {number} {server ip}`,
 
 ## Features
 - Incremental path navigation ✅ — `#goto`
