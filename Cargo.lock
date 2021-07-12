@@ -864,48 +864,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 
 [[package]]
-name = "mc_bot"
-version = "0.1.0"
-dependencies = [
- "aes",
- "ansi_term",
- "async-trait",
- "bincode",
- "bytes",
- "cfb8",
- "clap",
- "crossterm",
- "csv",
- "enum_dispatch",
- "flate2",
- "float-ord",
- "futures",
- "hematite-nbt",
- "indexmap",
- "itertools",
- "more-asserts",
- "num",
- "num-bigint 0.4.0",
- "packets",
- "primes",
- "rand",
- "rayon",
- "regex",
- "reqwest",
- "rsa",
- "rsa-der",
- "serde",
- "serde_json",
- "sha1",
- "smallvec",
- "thiserror",
- "tokio",
- "tokio-socks",
- "tokio-tungstenite",
- "trust-dns-resolver",
-]
-
-[[package]]
 name = "memchr"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1719,6 +1677,48 @@ name = "subtle"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e81da0851ada1f3e9d4312c704aa4f8806f0f9d69faaf8df2f3464b4a9437c2"
+
+[[package]]
+name = "swarm_bot"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "ansi_term",
+ "async-trait",
+ "bincode",
+ "bytes",
+ "cfb8",
+ "clap",
+ "crossterm",
+ "csv",
+ "enum_dispatch",
+ "flate2",
+ "float-ord",
+ "futures",
+ "hematite-nbt",
+ "indexmap",
+ "itertools",
+ "more-asserts",
+ "num",
+ "num-bigint 0.4.0",
+ "packets",
+ "primes",
+ "rand",
+ "rayon",
+ "regex",
+ "reqwest",
+ "rsa",
+ "rsa-der",
+ "serde",
+ "serde_json",
+ "sha1",
+ "smallvec",
+ "thiserror",
+ "tokio",
+ "tokio-socks",
+ "tokio-tungstenite",
+ "trust-dns-resolver",
+]
 
 [[package]]
 name = "syn"

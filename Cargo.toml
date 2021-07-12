@@ -1,5 +1,5 @@
 [package]
-name = "mc_bot"
+name = "swarm_bot"
 version = "0.1.0"
 edition = "2018"
 
