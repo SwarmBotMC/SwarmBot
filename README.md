@@ -1,4 +1,4 @@
-# MineBot
+# SwarmBot
 
 A bot launcher for Minecraft written in Rust. 
 
