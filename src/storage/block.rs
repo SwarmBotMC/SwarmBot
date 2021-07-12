@@ -180,7 +180,7 @@ impl BlockState {
 
 /// A block location stored by (x,z) = i32, y = i16. y is signed to preserve compatibility with 1.17, where the world
 /// height can be much higher and goes to negative values.
-#[derive(Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default)]
+#[derive(Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default, Serialize, Deserialize)]
 pub struct BlockLocation {
     pub x: i32,
     pub y: i16,

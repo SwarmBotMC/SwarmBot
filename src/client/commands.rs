@@ -20,7 +20,7 @@ use tokio_tungstenite::tungstenite::error::Error;
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::error::Res;
-use crate::storage::block::BlockLocation2D;
+use crate::storage::block::{BlockLocation2D, BlockLocation};
 
 pub struct Commands {
     pub pending: Receiver<Command>,
@@ -52,16 +52,27 @@ pub struct Mine {
     pub sel: Selection2D,
 }
 
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GoTo {
+    pub location: BlockLocation
+}
+
 pub enum Command {
-    Mine(Mine)
+    Mine(Mine),
+    GoTo(GoTo)
 }
 
 
 fn process(path: &str, value: Value) -> Option<Command> {
     match path {
         "mine" => {
-            let mine: Mine = serde_json::from_value(value).unwrap();
+            let mine = serde_json::from_value(value).unwrap();
             Some(Command::Mine(mine))
+        }
+        "goto" => {
+            let goto = serde_json::from_value(value).unwrap();
+            Some(Command::GoTo(goto))
         }
         path => {
             println!("invalid {}", path);

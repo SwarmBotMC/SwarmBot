@@ -305,7 +305,7 @@ impl Enchantment {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ItemNbt {
-    pub ench: Vec<Enchantment>
+    pub ench: Option<Vec<Enchantment>>
 }
 
 impl ByteReadable for ItemNbt {

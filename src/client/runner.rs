@@ -27,6 +27,7 @@ use crate::client::tasks::mine::MineTask;
 use crate::client::tasks::MineRegionTask;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_region::MineRegion;
+use crate::client::tasks::navigate::BlockTravelTask;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -246,6 +247,11 @@ impl<T: Minecraft + 'static> Runner<T> {
 
                 for bot in bots {
                     bot.actions.schedule(LazyStream::from(MineRegion))
+                }
+            }
+            Command::GoTo(goto) => {
+                for bot in bots {
+                    bot.actions.schedule(BlockTravelTask::new(goto.location, &bot.state));
                 }
             }
         }

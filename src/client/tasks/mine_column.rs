@@ -22,10 +22,14 @@ use crate::client::tasks::lazy::LazyTask;
 
 pub struct MineColumn;
 
+impl MineColumn {
+    pub const MIN_MINE_LOC: i16 = 11;
+}
+
 impl TaskStream for MineColumn {
     fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, _global: &mut GlobalState) -> Option<Task> {
         let mine_loc = BlockLocation::from(local.physics.location()).below();
-        if mine_loc.y >= 5 {
+        if mine_loc.y >= Self::MIN_MINE_LOC {
             let mut compound = CompoundTask::default();
 
             compound

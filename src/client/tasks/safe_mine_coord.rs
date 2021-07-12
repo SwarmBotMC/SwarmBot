@@ -31,7 +31,7 @@ impl Lazy for SafeMineRegion {
             .any(|loc| {
 
                 // there is often lava under bedrock that we don't really care about
-                if loc.y < 4 {
+                if loc.y < MineColumn::MIN_MINE_LOC {
                     return false;
                 }
 

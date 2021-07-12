@@ -197,20 +197,20 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             local.inventory.drop_hotbar(out);
         }
         "goto" => {
-            if let [id] = args {
-                let id: u32 = id.parse().unwrap();
-                let kind = BlockKind::from(id);
-
-                let loc = BlockLocation::from(local.physics.location());
-
-                let closest = global.blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
-
-                if let Some(closest) = closest {
-                    actions.schedule(BlockTravelTask::new(closest, local));
-                } else {
-                    msg!("There is no block {} by me", id);
-                }
-            }
+            // if let [id] = args {
+            //     let id: u32 = id.parse().unwrap();
+            //     let kind = BlockKind::from(id);
+            //
+            //     let loc = BlockLocation::from(local.physics.location());
+            //
+            //     let closest = global.blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
+            //
+            //     if let Some(closest) = closest {
+            //         actions.schedule(BlockTravelTask::new(closest, local));
+            //     } else {
+            //         msg!("There is no block {} by me", id);
+            //     }
+            // }
 
             if let [a, b, c] = args {
                 let x = a.parse()?;
