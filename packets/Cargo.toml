@@ -1,6 +1,6 @@
 [package]
 name = "swarm-bot-packets"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 description = "The packets component of swarm bot"
 license = "GPL-2.0-or-later"

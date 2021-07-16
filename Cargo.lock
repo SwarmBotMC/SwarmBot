@@ -1704,7 +1704,7 @@ dependencies = [
 
 [[package]]
 name = "swarm-bot-packets"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytes",
  "swarm-bot-packets-macro",
@@ -1713,7 +1713,7 @@ dependencies = [
 
 [[package]]
 name = "swarm-bot-packets-macro"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "proc-macro2",
  "quote",
