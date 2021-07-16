@@ -16,7 +16,7 @@
 
 #![feature(cursor_remaining)]
 
-pub use packets_macro::*;
+pub use swarm_bot_packets_macro::*;
 
 pub mod read;
 pub mod write;
