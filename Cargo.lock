@@ -1117,24 +1117,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afb2e1c3ee07430c2cf76151675e583e0f19985fa6efae47d6848a3e2c824f85"
 
 [[package]]
-name = "packets"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "packets-macro",
- "tokio",
-]
-
-[[package]]
-name = "packets-macro"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "parking_lot"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1679,7 +1661,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e81da0851ada1f3e9d4312c704aa4f8806f0f9d69faaf8df2f3464b4a9437c2"
 
 [[package]]
-name = "swarm_bot"
+name = "swarm-bot"
 version = "0.1.0"
 dependencies = [
  "aes",
@@ -1701,7 +1683,6 @@ dependencies = [
  "more-asserts",
  "num",
  "num-bigint 0.4.0",
- "packets",
  "primes",
  "rand",
  "rayon",
@@ -1713,11 +1694,30 @@ dependencies = [
  "serde_json",
  "sha1",
  "smallvec",
+ "swarm-bot-packets",
  "thiserror",
  "tokio",
  "tokio-socks",
  "tokio-tungstenite",
  "trust-dns-resolver",
+]
+
+[[package]]
+name = "swarm-bot-packets"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "swarm-bot-packets-macro",
+ "tokio",
+]
+
+[[package]]
+name = "swarm-bot-packets-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -1,7 +1,9 @@
 [package]
-name = "swarm_bot"
+name = "swarm-bot"
 version = "0.1.0"
 edition = "2018"
+description = "A autonomous bot launcher for Minecraft"
+license = "GPL-2.0-or-later"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -89,7 +91,7 @@ smallvec = { version = "1.6", features = ["const_generics"] }
 # for parsing nbt
 hematite-nbt = "0.5"
 
-packets= {path = "packets"}
+swarm-bot-packets= {path = "packets"}
 
 # so we don't have to use v-tables
 enum_dispatch = "0.3"
