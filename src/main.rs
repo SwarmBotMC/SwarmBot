@@ -54,7 +54,7 @@ extern crate serde;
 extern crate test;
 
 #[macro_use]
-extern crate packets;
+extern crate swarm_bot_packets;
 
 mod error;
 mod bootstrap;

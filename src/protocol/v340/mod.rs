@@ -18,9 +18,9 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::TryRecvError;
 
-use swarm-bot-packets::types::{PacketState, UUID, VarInt};
-use swarm-bot-packets::types::Packet;
-use swarm-bot-packets::write::ByteWritable;
+use swarm_bot_packets::types::{PacketState, UUID, VarInt};
+use swarm_bot_packets::types::Packet;
+use swarm_bot_packets::write::ByteWritable;
 
 use crate::bootstrap::{Address, Connection};
 use crate::bootstrap::mojang::calc_hash;

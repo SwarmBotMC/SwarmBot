@@ -21,10 +21,10 @@ use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub};
 
 use ansi_term::Style;
 use itertools::Itertools;
-use swarm-bot-packets::*;
-use swarm-bot-packets::read::{ByteReadable, ByteReader};
+use swarm_bot_packets::*;
+use swarm_bot_packets::read::{ByteReadable, ByteReader};
 
-use swarm-bot-packets::write::{ByteWritable, ByteWriter};
+use swarm_bot_packets::write::{ByteWritable, ByteWriter};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 

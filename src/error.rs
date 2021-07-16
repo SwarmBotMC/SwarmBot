@@ -16,7 +16,7 @@
 
 use std::fmt::{Debug, Display, Formatter};
 
-use swarm-bot-packets::types::PacketState;
+use swarm_bot_packets::types::PacketState;
 use reqwest::StatusCode;
 
 pub type Res<T = ()> = Result<T, Error>;

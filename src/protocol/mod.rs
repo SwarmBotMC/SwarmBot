@@ -14,7 +14,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use swarm-bot-packets::types::UUID;
+use swarm_bot_packets::types::UUID;
 
 use crate::bootstrap::Connection;
 use crate::client::processor::InterfaceIn;

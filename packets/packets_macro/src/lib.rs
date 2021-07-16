@@ -50,9 +50,9 @@ pub fn packet(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
 
-        impl swarm-bot-swarm-bot-packets::types::Packet for #name {
+        impl swarm-bot-swarm_bot_packets::types::Packet for #name {
             const ID: u32 = #id;
-            const STATE: swarm-bot-packets::types::PacketState = swarm-bot-packets::types::PacketState::#kind;
+            const STATE: swarm_bot_packets::types::PacketState = swarm_bot_packets::types::PacketState::#kind;
         }
     };
 
@@ -71,8 +71,8 @@ pub fn writable(input: TokenStream) -> TokenStream {
     });
 
     let expanded = quote! {
-        impl swarm-bot-packets::write::ByteWritable for #name {
-            fn write_to_bytes(self, writer: &mut swarm-bot-packets::write::ByteWriter) {
+        impl swarm_bot_packets::write::ByteWritable for #name {
+            fn write_to_bytes(self, writer: &mut swarm_bot_packets::write::ByteWriter) {
                 writer.#(write(self.#idents)).*;
             }
         }
@@ -92,8 +92,8 @@ pub fn readable(input: TokenStream) -> TokenStream {
     });
 
     let expanded = quote! {
-        impl swarm-bot-packets::read::ByteReadable for #name {
-            fn read_from_bytes(byte_reader: &mut swarm-bot-packets::read::ByteReader) -> Self {
+        impl swarm_bot_packets::read::ByteReadable for #name {
+            fn read_from_bytes(byte_reader: &mut swarm_bot_packets::read::ByteReader) -> Self {
                 #name {
                     #(#idents: byte_reader.read()),*
                 }
@@ -136,8 +136,8 @@ pub fn enum_readable_count(input: TokenStream) -> TokenStream {
         .map(|(a, _)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
     let expanded = quote! {
-        impl swarm-bot-packets::read::ByteReadable for #name {
-            fn read_from_bytes(byte_reader: &mut swarm-bot-packets::read::ByteReader) -> Self {
+        impl swarm_bot_packets::read::ByteReadable for #name {
+            fn read_from_bytes(byte_reader: &mut swarm_bot_packets::read::ByteReader) -> Self {
                 let VarInt(inner) = byte_reader.read();
 
                 let res = match inner {
@@ -180,8 +180,8 @@ pub fn enum_readable(input: TokenStream) -> TokenStream {
 
 
     let expanded = quote! {
-        impl swarm-bot-packets::read::ByteReadable for #name {
-            fn read_from_bytes(byte_reader: &mut swarm-bot-packets::read::ByteReader) -> Self {
+        impl swarm_bot_packets::read::ByteReadable for #name {
+            fn read_from_bytes(byte_reader: &mut swarm_bot_packets::read::ByteReader) -> Self {
                 let VarInt(inner) = byte_reader.read();
 
                 let res = match inner {
@@ -223,8 +223,8 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
 
 
     let expanded = quote! {
-        impl swarm-bot-packets::write::ByteWritable for #name {
-            fn write_to_bytes(self, writer: &mut swarm-bot-packets::write::ByteWriter) {
+        impl swarm_bot_packets::write::ByteWritable for #name {
+            fn write_to_bytes(self, writer: &mut swarm_bot_packets::write::ByteWriter) {
 
                 let id = match self {
                     #(#name::#idents{..} => #discriminants),*,

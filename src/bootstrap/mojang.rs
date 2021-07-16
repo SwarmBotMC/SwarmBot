@@ -15,7 +15,7 @@
  */
 
 use num_bigint::BigInt;
-use swarm-bot-packets::types::UUID;
+use swarm_bot_packets::types::UUID;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha1::Sha1;

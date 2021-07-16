@@ -16,8 +16,8 @@
 
 
 
-use swarm-bot-packets::types::{Packet, RawVec, VarInt};
-use swarm-bot-packets::write::{ByteWritable, ByteWritableLike, ByteWriter};
+use swarm_bot_packets::types::{Packet, RawVec, VarInt};
+use swarm_bot_packets::write::{ByteWritable, ByteWritableLike, ByteWriter};
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::sync::mpsc::UnboundedSender;
