@@ -91,7 +91,7 @@ smallvec = { version = "1.6", features = ["const_generics"] }
 # for parsing nbt
 hematite-nbt = "0.5"
 
-swarm-bot-packets= {path = "packets"}
+swarm-bot-packets= {path = "packets", version = "0.1.0"}
 
 # so we don't have to use v-tables
 enum_dispatch = "0.3"

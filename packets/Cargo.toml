@@ -9,5 +9,5 @@ license = "GPL-2.0-or-later"
 
 [dependencies]
 bytes = "1.0"
-swarm-bot-packets-macro = { path = "packets_macro" } # from a path in the local filesystem
+swarm-bot-packets-macro = { path = "packets_macro" , version = "0.1.0"} # from a path in the local filesystem
 tokio = { version = "1.5.0", features = ["full"] }
