@@ -17,9 +17,9 @@
 use std::cmp::max;
 
 use itertools::Itertools;
-use packets::{Packet, Readable, Writable};
-use packets::read::{ByteReadable, ByteReadableLike, ByteReader};
-use packets::types::{BitField, Identifier, RawVec, UUIDHyphenated, VarInt, VarUInt};
+use swarm-bot-packets::{Packet, Readable, Writable};
+use swarm-bot-packets::read::{ByteReadable, ByteReadableLike, ByteReader};
+use swarm-bot-packets::types::{BitField, Identifier, RawVec, UUIDHyphenated, VarInt, VarUInt};
 
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
@@ -135,8 +135,8 @@ pub struct PlayerPositionAndLookRaw {
 }
 
 pub mod entity {
-    use packets::*;
-    use packets::types::{Angle, UUID, VarInt};
+    use swarm-bot-packets::*;
+    use swarm-bot-packets::types::{Angle, UUID, VarInt};
 
     use crate::types::{Location, ShortLoc};
 

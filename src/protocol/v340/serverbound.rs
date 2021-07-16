@@ -14,9 +14,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use packets::*;
-use packets::types::VarInt;
-use packets::write::{ByteWritable, ByteWriter};
+use swarm-bot-packets::*;
+use swarm-bot-packets::types::VarInt;
+use swarm-bot-packets::write::{ByteWritable, ByteWriter};
 
 use crate::types::{Direction, Location, Position, Slot};
 

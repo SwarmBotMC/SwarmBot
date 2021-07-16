@@ -17,8 +17,8 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use packets::read::{ByteReadable, ByteReader, LenRead};
-use packets::types::{Packet, RawVec, VarInt};
+use swarm-bot-packets::read::{ByteReadable, ByteReader, LenRead};
+use swarm-bot-packets::types::{Packet, RawVec, VarInt};
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
 
