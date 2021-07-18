@@ -26,7 +26,7 @@ use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_column::MineColumn;
 use crate::client::tasks::mine_goto::GoMineTop;
 use crate::client::tasks::Task;
-use crate::storage::block::{BlockLocation, BlockLocation2D, SimpleType};
+use crate::storage::block::{BlockLocation, BlockLocation2D};
 
 pub struct SafeMineRegion;
 

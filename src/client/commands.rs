@@ -15,18 +15,18 @@
  */
 
 
-use std::convert::TryFrom;
-use std::future::Future;
-use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+
+
+
+
 use std::sync::mpsc::Receiver;
 
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tokio::net::{TcpListener, TcpSocket};
-use tokio_tungstenite::tungstenite::error::Error;
-use tokio_tungstenite::tungstenite::Message;
+use tokio::net::{TcpListener};
+
+
 
 use crate::error::Res;
 use crate::storage::block::{BlockLocation2D, BlockLocation};
@@ -113,10 +113,10 @@ impl Commands {
 
                         let mut v: Value = match serde_json::from_str(&text) {
                             Ok(v) => v,
-                            Err(e) => continue 'wloop,
+                            Err(_e) => continue 'wloop,
                         };
 
-                        let mut map = match &mut v {
+                        let map = match &mut v {
                             Value::Object(map) => map,
                             _ => panic!("invalid value"),
                         };

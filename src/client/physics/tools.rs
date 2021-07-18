@@ -97,7 +97,7 @@ impl From<&ItemStack> for Tool {
         simple_tool.id = id;
 
         if let Some(nbt) = stack.nbt.as_ref() {
-            simple_tool.enchantments = nbt.ench.clone().unwrap_or(vec![])
+            simple_tool.enchantments = nbt.ench.clone().unwrap_or_default()
         }
 
         simple_tool

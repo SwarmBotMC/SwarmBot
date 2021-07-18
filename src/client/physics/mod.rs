@@ -22,7 +22,7 @@ use itertools::Itertools;
 use num::traits::Pow;
 
 use crate::client::physics::speed::Speed;
-use crate::client::state::local::inventory::{PlayerInventory, ItemStack};
+use crate::client::state::local::inventory::{PlayerInventory};
 use crate::protocol::Face;
 use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use crate::storage::blocks::WorldBlocks;

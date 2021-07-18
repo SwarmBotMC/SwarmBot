@@ -21,25 +21,25 @@ use std::time::Instant;
 use float_ord::FloatOrd;
 use itertools::Itertools;
 
-use crate::client::pathfind::moves::CardinalDirection;
+
 use crate::client::state::global::GlobalState;
-use crate::client::state::global::mine_alloc::{MineAlloc, MinePreference};
+
 use crate::client::state::local::LocalState;
 use crate::client::tasks::{Task, TaskTrait};
-use crate::client::tasks::bridge::BridgeTask;
+
 use crate::client::tasks::compound::CompoundTask;
 use crate::client::tasks::eat::EatTask;
 use crate::client::tasks::fall_bucket::FallBucketTask;
-use crate::client::tasks::lazy_stream::LazyStream;
-use crate::client::tasks::mine::MineTask;
-use crate::client::tasks::mine_column::MineColumn;
 
-use crate::client::tasks::mine_region::MineRegion;
-use crate::client::tasks::navigate::{BlockTravelTask, ChunkTravelTask};
-use crate::client::tasks::pillar::PillarTask;
+use crate::client::tasks::mine::MineTask;
+
+
+
+use crate::client::tasks::navigate::{BlockTravelTask};
+
 use crate::protocol::{EventQueue, Face, InterfaceOut};
-use crate::storage::block::{BlockKind, BlockLocation, BlockLocation2D};
-use crate::storage::blocks::ChunkLocation;
+use crate::storage::block::{BlockLocation};
+
 use crate::types::Displacement;
 
 #[derive(Default)]

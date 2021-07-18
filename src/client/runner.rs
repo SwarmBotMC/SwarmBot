@@ -30,10 +30,10 @@ use crate::client::state::local::LocalState;
 use crate::protocol::{EventQueue, Login, Minecraft};
 use crate::client::commands::{Commands, Command, Selection2D};
 use crate::error::Res;
-use crate::storage::block::BlockLocation2D;
+
 use crate::client::state::global::mine_alloc::MinePreference;
-use crate::client::tasks::mine::MineTask;
-use crate::client::tasks::MineRegionTask;
+
+
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_region::MineRegion;
 use crate::client::tasks::navigate::BlockTravelTask;
