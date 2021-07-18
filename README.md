@@ -3,11 +3,15 @@
 A bot launcher for Minecraft written in Rust. 
 
 ## Installation
+
+### Bot Launcher
 1. Install cargo: https://rustup.rs/
 2. Make sure you are using _nightly_ `rustup default nightly`
 3. Run `cargo install swarm-bot`
 4. You can now execute `swarm-bot` executable to launch swarm bot
 
+### Forge Mod
+A forge mod is needed to interact with the bots. Follow the instructions [here](https://github.com/andrewgazelka/SwarmBotForge)
 
 ## What makes this unique?
 
