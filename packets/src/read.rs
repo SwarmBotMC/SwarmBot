@@ -19,6 +19,7 @@ use std::io::{Cursor, Read};
 use bytes::Buf;
 
 use crate::types::{BitField, VarUInt};
+use std::convert::TryInto;
 
 #[derive(Clone)]
 pub struct ByteReader {
@@ -60,8 +61,8 @@ impl ByteReader {
         !self.bytes.has_remaining()
     }
 
-    pub fn len(&self) -> u64 {
-        self.bytes.remaining()
+    pub fn len(&self) -> usize {
+        self.bytes.remaining().try_into().unwrap()
     }
 
     pub fn is_empty(&self) -> bool {
