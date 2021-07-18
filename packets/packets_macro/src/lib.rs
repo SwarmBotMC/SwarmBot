@@ -50,7 +50,7 @@ pub fn packet(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
 
-        impl swarm-bot-swarm_bot_packets::types::Packet for #name {
+        impl swarm_bot_packets::types::Packet for #name {
             const ID: u32 = #id;
             const STATE: swarm_bot_packets::types::PacketState = swarm_bot_packets::types::PacketState::#kind;
         }

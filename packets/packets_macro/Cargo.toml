@@ -1,6 +1,6 @@
 [package]
 name = "swarm-bot-packets-macro"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 description = "Packet macros for swarm bot"
 license = "GPL-2.0-or-later"
