@@ -29,6 +29,7 @@
 #![feature(test)]
 #![feature(box_syntax)]
 #![feature(default_free_fn)]
+#![feature(bool_to_option)]
 
 #[macro_use]
 extern crate enum_dispatch;

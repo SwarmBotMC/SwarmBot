@@ -64,22 +64,31 @@ pub struct GoTo {
     pub location: BlockLocation,
 }
 
+/// Attack a given player
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Attack {
+    pub name: String,
+}
+
 pub enum Command {
     Mine(Mine),
     GoTo(GoTo),
+    Attack(Attack),
 }
 
 
 fn process(path: &str, value: Value) -> Option<Command> {
+    macro_rules! parse {
+        () => {{
+            serde_json::from_value(value).unwrap()
+        }};
+    }
+
     match path {
-        "mine" => {
-            let mine = serde_json::from_value(value).unwrap();
-            Some(Command::Mine(mine))
-        }
-        "goto" => {
-            let goto = serde_json::from_value(value).unwrap();
-            Some(Command::GoTo(goto))
-        }
+        "mine" => Some(Command::Mine(parse!())),
+        "goto" => Some(Command::GoTo(parse!())),
+        "attack" => Some(Command::Attack(parse!())),
+
         path => {
             println!("invalid {}", path);
             None

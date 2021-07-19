@@ -29,11 +29,14 @@ use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
 use crate::client::state::global::mine_alloc::MinePreference;
 use crate::client::state::local::LocalState;
+use crate::client::tasks::attack_entity::AttackEntity;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_region::MineRegion;
 use crate::client::tasks::navigate::BlockTravelTask;
-use crate::error::Res;
+use crate::client::tasks::Task;
+use crate::error::{Res, ResBox};
 use crate::protocol::{EventQueue, Login, Minecraft};
+use std::error::Error;
 
 struct SyncGlobal(*const GlobalState);
 
@@ -186,7 +189,9 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // process pending commands (from forge mod)
         while let Ok(command) = self.commands.pending.try_recv() {
-            self.process_command(command);
+            if let Err(err) = self.process_command(command) {
+                println!("Error processing command: {}", err)
+            }
         }
 
         // fourth step: process packets from game loop
@@ -240,10 +245,10 @@ impl<T: Minecraft + 'static> Runner<T> {
         thread_loop_end.notified().await;
     }
 
-
-    fn process_command(&mut self, command: Command) {
+    fn process_command(&mut self, command: Command) -> ResBox {
         let global = &mut self.global_state;
         let bots = &mut self.bots;
+
         match command {
             Command::Mine(mine) => {
                 let Selection2D { from, to } = mine.sel.normalize();
@@ -258,6 +263,17 @@ impl<T: Minecraft + 'static> Runner<T> {
                     bot.actions.schedule(BlockTravelTask::new(goto.location, &bot.state));
                 }
             }
+            Command::Attack(attack) => {
+                let player = self.global_state.players.by_name(&attack.name).ok_or_else(|| "player does not exist")?;
+                let entity_id = self.global_state.entities.by_player_uuid(player.uuid).ok_or_else(||"could not find entity id for player")?;
+
+                for bot in bots {
+                    let task = LazyStream::from(AttackEntity::new(entity_id));
+                    bot.actions.schedule(task)
+                }
+            }
         }
+
+        Ok(())
     }
 }

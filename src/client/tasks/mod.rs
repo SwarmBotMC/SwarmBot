@@ -30,6 +30,7 @@ use mine_region::*;
 use navigate::*;
 use pillar::*;
 use pillar_and_mine::*;
+use hit_entity::*;
 
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
@@ -37,6 +38,7 @@ use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::navigate::{BlockTravelTask, ChunkTravelTask};
 use crate::client::tasks::safe_mine_coord::SafeMineRegion;
 use crate::protocol::InterfaceOut;
+use crate::client::tasks::attack_entity::AttackEntity;
 
 pub mod delay;
 pub mod compound;
@@ -51,6 +53,8 @@ pub mod mine_column;
 pub mod pillar;
 pub mod pillar_and_mine;
 pub mod mine_goto;
+pub mod attack_entity;
+pub mod hit_entity;
 pub mod mine_region;
 pub mod safe_mine_coord;
 pub mod bridge;
@@ -73,11 +77,14 @@ pub trait TaskTrait {
 pub type GoMineTopTask = LazyTask<GoMineTop>;
 pub type MineRegionTask = LazyStream<MineRegion>;
 pub type SafeMineRegionTask = LazyTask<SafeMineRegion>;
+pub type AttackEntityTask = LazyStream<AttackEntity>;
 
 #[allow(clippy::enum_variant_names)]
 #[enum_dispatch(TaskTrait)]
 pub enum Task {
     CompoundTask,
+    AttackEntityTask,
+    HitEntityTask,
     EatTask,
     MineRegionTask,
     SafeMineRegionTask,

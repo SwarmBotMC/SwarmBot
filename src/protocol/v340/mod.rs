@@ -33,7 +33,7 @@ use crate::protocol::encrypt::{rand_bits, Rsa};
 use crate::protocol::io::reader::PacketReader;
 use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
 use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
-use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState};
+use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState, InteractEntityKind};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
 use crate::storage::entities::EntityKind;
@@ -275,6 +275,14 @@ impl InterfaceOut for Interface340 {
                 z: 0.5,
             },
         });
+    }
+
+    fn attack_entity(&mut self, id: u32) {
+        self.write(serverbound::InteractEntity {
+            id: id.into(),
+            kind: InteractEntityKind::Attack,
+            sneaking: false
+        })
     }
 
     fn send_chat(&mut self, message: &str) {

@@ -124,6 +124,7 @@ pub enum InvAction {
 
 pub trait InterfaceOut {
     fn place_block(&mut self, against: BlockLocation, face: Face);
+    fn attack_entity(&mut self, id: u32);
     fn send_chat(&mut self, message: &str);
     fn inventory_action(&mut self, action: InvAction);
     fn swing_arm(&mut self);

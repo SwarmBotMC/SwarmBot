@@ -53,6 +53,17 @@ impl WorldEntities {
         self.entities.iter()
     }
 
+    pub fn by_id(&self, id: u32) -> Option<&EntityData> {
+        self.entities.get(&id)
+    }
+
+    pub fn by_player_uuid(&self, uuid: u128) -> Option<u32> {
+        self.iter().find_map(|(id, data)| match data.kind {
+            EntityKind::Normal => None,
+            EntityKind::Player{ uuid: player_uuid } => (player_uuid == uuid).then_some(*id)
+        })
+    }
+
     pub fn remove_entity(&mut self, entity_id: u32, bot_id: u32) {
         let entity = self.entities.get_mut(&entity_id);
         let entity = match entity {
