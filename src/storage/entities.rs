@@ -21,7 +21,7 @@ use crate::types::{Location, LocationOrigin};
 pub enum EntityKind {
     Normal,
     Player {
-        uuid: u128
+        uuid: u128,
     }
 }
 

@@ -199,6 +199,22 @@ impl EventQueue340 {
                 let PlayDisconnect { reason } = data.read();
                 processor.on_disconnect(&reason);
             }
+            PlayerListItem::ID => {
+                let PlayerListItem { players } = data.read();
+                for Player { uuid, list_type } in players {
+                    match list_type {
+                        PlayerListType::AddPlayer(add) => {
+                            processor.on_player_join(uuid.0, add.name);
+                        }
+                        PlayerListType::UpdateGamemode(_) => {}
+                        PlayerListType::UpdateLatency(_) => {}
+                        PlayerListType::UpdateDisplayName(_) => {}
+                        PlayerListType::RemovePlayer => {
+                            processor.on_player_leave(uuid.0)
+                        }
+                    }
+                }
+            }
             // ignore
             ChatMessage::ID => {
                 let ChatMessage { chat, position: _ } = data.read();

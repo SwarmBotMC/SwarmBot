@@ -19,8 +19,10 @@ use crate::client::pathfind::context::PathConfig;
 use crate::client::state::global::mine_alloc::MineAlloc;
 use crate::storage::blocks::WorldBlocks;
 use crate::storage::entities::WorldEntities;
+use crate::client::state::global::world_players::WorldPlayers;
 
 pub mod mine_alloc;
+pub mod world_players;
 
 #[derive(Default)]
 pub struct GlobalState {
@@ -28,6 +30,7 @@ pub struct GlobalState {
     pub mine: MineAlloc,
     pub block_data: BlockData,
     pub entities: WorldEntities,
+    pub players: WorldPlayers,
     pub ticks: usize,
     pub travel_config: PathConfig,
 }

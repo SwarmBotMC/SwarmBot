@@ -25,6 +25,7 @@ use crate::storage::blocks::ChunkLocation;
 use crate::storage::chunk::ChunkColumn;
 use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
 use crate::storage::entities::EntityKind;
+use crate::client::state::global::world_players::Player;
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -40,6 +41,8 @@ pub trait InterfaceIn {
     fn on_block_change(&mut self, location: BlockLocation, state: BlockState);
     fn on_entity_destroy(&mut self, id: u32);
     fn on_entity_spawn(&mut self, id: u32, location: Location, kind: EntityKind);
+    fn on_player_join(&mut self, uuid: u128, name: String);
+    fn on_player_leave(&mut self, uuid: u128);
     fn on_disconnect(&mut self, reason: &str);
     fn on_socket_close(&mut self);
 }
@@ -150,6 +153,17 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
 
     fn on_entity_spawn(&mut self, id: u32, location: Location, kind: EntityKind) {
         self.global.entities.put_entity(id, self.local.bot_id, location, kind);
+    }
+
+    fn on_player_join(&mut self, uuid: u128, name: String) {
+       self.global.players.add(Player {
+           name,
+           uuid
+       });
+    }
+
+    fn on_player_leave(&mut self, uuid: u128) {
+       self.global.players.remove(uuid);
     }
 
     fn on_disconnect(&mut self, _reason: &str) {

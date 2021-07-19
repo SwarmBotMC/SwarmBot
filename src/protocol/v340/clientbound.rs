@@ -112,10 +112,10 @@ pub struct SetCompression {
 }
 
 #[derive(Debug)]
-struct PlayerProperty {
-    name: String,
-    value: String,
-    signature: Option<String>,
+pub struct PlayerProperty {
+    pub name: String,
+    pub value: String,
+    pub signature: Option<String>,
 }
 
 impl ByteReadable for PlayerProperty {
@@ -129,12 +129,12 @@ impl ByteReadable for PlayerProperty {
 }
 
 #[derive(Debug)]
-struct AddPlayer {
-    name: String,
-    properties: Vec<PlayerProperty>,
-    gamemode: VarInt,
-    ping: VarInt,
-    display_name: Option<Chat>,
+pub struct AddPlayer {
+    pub name: String,
+    pub properties: Vec<PlayerProperty>,
+    pub gamemode: VarInt,
+    pub ping: VarInt,
+    pub display_name: Option<Chat>,
 }
 
 impl ByteReadable for AddPlayer {
@@ -147,7 +147,7 @@ impl ByteReadable for AddPlayer {
 }
 
 #[derive(Debug)]
-enum PlayerListType {
+pub enum PlayerListType {
     AddPlayer(AddPlayer),
     UpdateGamemode(VarInt),
     UpdateLatency(VarInt),
@@ -173,9 +173,9 @@ impl ByteReadableLike for PlayerListType {
     }
 }
 #[derive(Debug)]
-struct Player {
-    uuid: UUID,
-    list_type: PlayerListType,
+pub struct Player {
+    pub uuid: UUID,
+    pub list_type: PlayerListType,
 }
 
 impl ByteReadableLike for Player {
@@ -192,7 +192,7 @@ impl ByteReadableLike for Player {
 #[derive(Debug, Packet)]
 #[packet(0x2E, Play)]
 pub struct PlayerListItem {
-    players: Vec<Player>,
+    pub players: Vec<Player>,
 }
 
 impl ByteReadable for PlayerListItem {
