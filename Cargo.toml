@@ -1,6 +1,6 @@
 [package]
 name = "swarm-bot"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 description = "A autonomous bot launcher for Minecraft"
 license = "GPL-2.0-or-later"
