@@ -15,10 +15,11 @@
  */
 
 use num_bigint::BigInt;
-use swarm_bot_packets::types::UUID;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha1::Sha1;
+
+use swarm_bot_packets::types::UUID;
 
 use crate::bootstrap::Proxy;
 use crate::error::{MojangErr, Res};

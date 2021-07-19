@@ -23,20 +23,17 @@ use std::time::{Duration, Instant};
 use tokio::sync::Notify;
 
 use crate::bootstrap::Connection;
-use crate::client::bot::{Bot, run_threaded, ActionState};
+use crate::client::bot::{ActionState, Bot, run_threaded};
+use crate::client::commands::{Command, Commands, Selection2D};
 use crate::client::processor::SimpleInterfaceIn;
 use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
-use crate::protocol::{EventQueue, Login, Minecraft};
-use crate::client::commands::{Commands, Command, Selection2D};
-use crate::error::Res;
-
 use crate::client::state::global::mine_alloc::MinePreference;
-
-
+use crate::client::state::local::LocalState;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_region::MineRegion;
 use crate::client::tasks::navigate::BlockTravelTask;
+use crate::error::Res;
+use crate::protocol::{EventQueue, Login, Minecraft};
 
 struct SyncGlobal(*const GlobalState);
 
@@ -87,7 +84,6 @@ impl<T: Minecraft + 'static> Runner<T> {
 
     /// Initialize the runner. Go through the handshake process for each [`Connection`]
     async fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res<Runner<T>> {
-
         let commands = Commands::init().await?;
 
         let RunnerOptions { delay_millis } = opts;
@@ -195,7 +191,6 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // fourth step: process packets from game loop
         for bot in &mut self.bots {
-
             let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut bot.actions, &mut self.global_state, &mut bot.out);
 
             // protocol-specific logic. Translates input packets and sends to processor
@@ -246,12 +241,12 @@ impl<T: Minecraft + 'static> Runner<T> {
     }
 
 
-    fn process_command(&mut self, command: Command){
+    fn process_command(&mut self, command: Command) {
         let global = &mut self.global_state;
         let bots = &mut self.bots;
         match command {
             Command::Mine(mine) => {
-                let Selection2D {from, to} = mine.sel.normalize();
+                let Selection2D { from, to } = mine.sel.normalize();
                 global.mine.mine(from, to, Some(MinePreference::FromDist));
 
                 for bot in bots {

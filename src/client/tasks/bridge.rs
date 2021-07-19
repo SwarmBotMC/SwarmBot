@@ -14,15 +14,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::storage::block::BlockLocation;
 use crate::client::pathfind::moves::CardinalDirection;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
-use crate::protocol::{InterfaceOut, Face};
-use crate::client::tasks::TaskTrait;
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
-use crate::types::{Displacement, Direction};
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
+use crate::client::tasks::TaskTrait;
+use crate::protocol::{Face, InterfaceOut};
+use crate::storage::block::BlockLocation;
+use crate::types::{Direction, Displacement};
 
 pub struct BridgeTask {
     count: u32,

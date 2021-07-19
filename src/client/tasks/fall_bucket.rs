@@ -15,11 +15,11 @@
  */
 
 
-use crate::storage::block::{BlockLocation, BlockState, SimpleType};
-use crate::client::tasks::TaskTrait;
-use crate::protocol::{InterfaceOut};
-use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
+use crate::client::tasks::TaskTrait;
+use crate::protocol::InterfaceOut;
+use crate::storage::block::{BlockLocation, BlockState, SimpleType};
 
 #[derive(Default)]
 pub struct FallBucketTask {
@@ -34,7 +34,6 @@ impl TaskTrait for FallBucketTask {
         const BUCKET_LEAVE_TICKS: u32 = 10;
 
         if self.placed {
-
             let place_loc = self.place_loc.unwrap();
             local.physics.look_at(place_loc.center_bottom());
             self.ticks_since_place += 1;

@@ -14,11 +14,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::client::tasks::{Task, TaskTrait};
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
-use crate::protocol::InterfaceOut;
 use std::time::Instant;
+
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
+use crate::client::tasks::{Task, TaskTrait};
+use crate::protocol::InterfaceOut;
 
 pub struct LazyTask<T: Lazy> {
     inner: Option<Box<Task>>,
@@ -29,18 +30,16 @@ pub trait Lazy {
     fn create(&self, local: &mut LocalState, global: &GlobalState) -> Task;
 }
 
-impl <T: Lazy> From<T> for LazyTask<T> {
+impl<T: Lazy> From<T> for LazyTask<T> {
     fn from(block: T) -> Self {
         Self {
             inner: None,
             create_task: Some(block),
         }
-
     }
 }
 
 impl<T: Lazy> LazyTask<T> {
-
     fn get(&mut self, local: &mut LocalState, global: &GlobalState) -> &mut Task {
         if self.inner.is_none() {
             let f = self.create_task.take().unwrap();

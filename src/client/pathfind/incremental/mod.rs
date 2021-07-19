@@ -15,13 +15,13 @@
  */
 
 use std::collections::{BinaryHeap, HashMap};
+use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::time::Instant;
 
 use crate::client::pathfind::MinHeapNode;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
 use crate::client::timing::Increment;
-use std::fmt::{Debug, Formatter};
 
 /// credit baritone
 const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
@@ -118,7 +118,7 @@ pub struct PathResult<T> {
     pub value: Vec<T>,
 }
 
-impl <T: Debug> Debug for PathResult<T> {
+impl<T: Debug> Debug for PathResult<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("PathResult{{complete: {:?}, value: {:?}}}", self.complete, self.value))
     }
@@ -167,7 +167,7 @@ impl<T: Node> AStar<T> {
             parent_map: Default::default(),
             valid: false,
             meta_heuristics_ids: [0; 7],
-            max_duration_ms: 5000
+            max_duration_ms: 5000,
         });
 
         AStar {
@@ -175,7 +175,7 @@ impl<T: Node> AStar<T> {
         }
     }
 
-    pub fn set_max_millis(&mut self, value: u128){
+    pub fn set_max_millis(&mut self, value: u128) {
         self.state.as_mut().unwrap().max_duration_ms = value;
     }
 

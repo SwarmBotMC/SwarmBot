@@ -15,15 +15,13 @@
  */
 use std::time::Instant;
 
-
-
 use bridge::*;
+use center::CenterTask;
 use compound::*;
 use delay::*;
 use eat::*;
 use fall_bucket::*;
 use lazy::*;
-
 use mine::*;
 use mine_column::*;
 use mine_goto::*;
@@ -33,24 +31,12 @@ use navigate::*;
 use pillar::*;
 use pillar_and_mine::*;
 
-
-
-
-
-
-
-
-
-
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::navigate::{BlockTravelTask, ChunkTravelTask};
-
-use crate::protocol::{InterfaceOut};
-
-
-
+use crate::client::tasks::safe_mine_coord::SafeMineRegion;
+use crate::protocol::InterfaceOut;
 
 pub mod delay;
 pub mod compound;
@@ -70,9 +56,6 @@ pub mod safe_mine_coord;
 pub mod bridge;
 pub mod fall_bucket;
 pub mod center;
-
-use center::CenterTask;
-use crate::client::tasks::safe_mine_coord::SafeMineRegion;
 
 #[enum_dispatch]
 pub trait TaskTrait {

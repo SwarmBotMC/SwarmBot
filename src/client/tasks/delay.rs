@@ -14,10 +14,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
 use crate::client::tasks::TaskTrait;
 use crate::protocol::InterfaceOut;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
 
 pub struct DelayTask(pub u32);
 

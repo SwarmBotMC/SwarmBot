@@ -14,12 +14,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
 use crate::client::tasks::TaskTrait;
 use crate::protocol::InterfaceOut;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
+use crate::storage::block::{BlockLocation, SimpleType};
 use crate::types::{Direction, Displacement};
-use crate::storage::block::{SimpleType, BlockLocation};
 
 pub struct PillarTask {
     dest_y: u32,

@@ -15,10 +15,10 @@
  */
 
 use crate::client::physics::Physics;
+use crate::client::state::local::inventory::PlayerInventory;
 use crate::protocol::{ClientInfo, Face};
 use crate::storage::block::BlockLocation;
 use crate::types::Dimension;
-use crate::client::state::local::inventory::PlayerInventory;
 
 pub mod inventory;
 

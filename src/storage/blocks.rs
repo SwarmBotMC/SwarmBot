@@ -324,8 +324,8 @@ impl WorldBlocks {
 mod tests {
     use std::fs::OpenOptions;
     use test::{Bencher, black_box};
-    use assert_matches::assert_matches as am;
 
+    use assert_matches::assert_matches as am;
     use rand::Rng;
 
     use crate::schematic::Schematic;
@@ -384,7 +384,7 @@ mod tests {
         for (loc, state) in schematic.blocks() {
             let actual = world.get_block_exact(loc).unwrap();
             assert_eq!(actual, state, "block at {} was supposed to be {:?} but was actually {:?} @ index {}", loc, state, actual, idx);
-            idx+=1;
+            idx += 1;
         }
     }
 

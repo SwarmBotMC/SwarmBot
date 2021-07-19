@@ -21,17 +21,17 @@ use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub};
 
 use ansi_term::Style;
 use itertools::Itertools;
-use swarm_bot_packets::*;
-use swarm_bot_packets::read::{ByteReadable, ByteReader};
-
-use swarm_bot_packets::write::{ByteWritable, ByteWriter};
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
+use swarm_bot_packets::*;
+use swarm_bot_packets::read::{ByteReadable, ByteReader};
+use swarm_bot_packets::write::{ByteWritable, ByteWriter};
+
 use crate::client::pathfind::moves::Change;
-use crate::storage::block::{BlockLocation};
-use crate::types::Origin::{Abs, Rel};
 use crate::client::state::local::inventory::ItemStack;
+use crate::storage::block::BlockLocation;
+use crate::types::Origin::{Abs, Rel};
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -299,7 +299,7 @@ pub struct Displacement {
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub struct Enchantment {
     pub lvl: u16,
-    pub id: u16
+    pub id: u16,
 }
 
 impl Enchantment {
@@ -314,7 +314,7 @@ impl Enchantment {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ItemNbt {
-    pub ench: Option<Vec<Enchantment>>
+    pub ench: Option<Vec<Enchantment>>,
 }
 
 impl ByteReadable for ItemNbt {
@@ -483,10 +483,10 @@ impl Displacement {
     pub fn zero_if_reachable(&self) -> Displacement {
         const EPSILON: f64 = 0.01;
 
-        let dx = if self.dx.abs() < 0.5 {0.} else {self.dx};
-        let dy = if self.dy.abs() < 0.5 {0.} else {self.dy};
-        let dz = if self.dz.abs() < 0.5 {0.} else {self.dz};
-        Self{dx,dy,dz}
+        let dx = if self.dx.abs() < 0.5 { 0. } else { self.dx };
+        let dy = if self.dy.abs() < 0.5 { 0. } else { self.dy };
+        let dz = if self.dz.abs() < 0.5 { 0. } else { self.dz };
+        Self { dx, dy, dz }
     }
 
 
@@ -733,7 +733,6 @@ pub struct Direction {
 }
 
 impl Direction {
-
     pub const DOWN: Direction = Direction {
         yaw: 90.,
         pitch: 90.,

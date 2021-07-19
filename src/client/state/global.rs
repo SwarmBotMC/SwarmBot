@@ -16,9 +16,9 @@
 
 use crate::bootstrap::block_data::BlockData;
 use crate::client::pathfind::context::PathConfig;
+use crate::client::state::global::mine_alloc::MineAlloc;
 use crate::storage::blocks::WorldBlocks;
 use crate::storage::entities::WorldEntities;
-use crate::client::state::global::mine_alloc::MineAlloc;
 
 pub mod mine_alloc;
 
@@ -33,7 +33,6 @@ pub struct GlobalState {
 }
 
 impl GlobalState {
-
     pub fn init() -> GlobalState {
         GlobalState::default()
     }

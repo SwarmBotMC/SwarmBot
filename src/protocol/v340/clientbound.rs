@@ -17,6 +17,7 @@
 use std::cmp::max;
 
 use itertools::Itertools;
+
 use swarm_bot_packets::{Packet, Readable, Writable};
 use swarm_bot_packets::read::{ByteReadable, ByteReadableLike, ByteReader};
 use swarm_bot_packets::types::{BitField, Identifier, RawVec, UUIDHyphenated, VarInt, VarUInt};
@@ -363,13 +364,12 @@ pub mod window {
     pub struct Set {
         pub window_id: u8,
         pub slot: u16,
-        pub data: Slot
+        pub data: Slot,
     }
 
     #[derive(Packet, Debug, Readable)]
     #[packet(0x13, Play)]
     pub struct Open {
-
         pub window_id: u8,
 
         /// https://wiki.vg/Inventory
@@ -380,7 +380,6 @@ pub mod window {
         pub slot_count: u8,
 
         // TODO: entity id if EntityHorse
-
     }
 
     #[derive(Packet, Readable)]
@@ -390,9 +389,8 @@ pub mod window {
         pub window_id: u8,
 
         // number of elements in the array
-        pub slots: ShortVec<Slot>
+        pub slots: ShortVec<Slot>,
     }
-
 }
 
 

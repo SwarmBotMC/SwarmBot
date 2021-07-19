@@ -19,9 +19,9 @@ use crate::client::state::global::GlobalState;
 use crate::client::state::global::mine_alloc::MineAlloc;
 use crate::client::state::local::LocalState;
 use crate::client::tasks::lazy::Lazy;
+use crate::client::tasks::pillar_and_mine::PillarAndMineTask;
 use crate::client::tasks::Task;
-use crate::storage::block::{BlockLocation};
-use crate::client::tasks::pillar_and_mine::{PillarAndMineTask};
+use crate::storage::block::BlockLocation;
 
 pub struct GoMineTop;
 

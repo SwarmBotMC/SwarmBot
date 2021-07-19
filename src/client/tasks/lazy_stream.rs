@@ -14,12 +14,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::time::Instant;
+
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
+use crate::client::tasks::{Task, TaskTrait};
 use crate::client::tasks::stream::TaskStream;
 use crate::protocol::InterfaceOut;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
-use crate::client::tasks::{Task, TaskTrait};
-use std::time::Instant;
 
 pub struct LazyStream<T: TaskStream> {
     current: Option<Box<Task>>,

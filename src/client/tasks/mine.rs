@@ -19,10 +19,9 @@
 
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
+use crate::client::tasks::TaskTrait;
 use crate::protocol::{Face, InterfaceOut, Mine};
 use crate::storage::block::{BlockLocation, BlockState};
-
-use crate::client::tasks::TaskTrait;
 
 pub struct MineTask {
     ticks: usize,
@@ -47,14 +46,13 @@ impl MineTask {
         }
     }
 
-    pub fn set_face(&mut self, face: Face){
+    pub fn set_face(&mut self, face: Face) {
         self.face = face;
     }
 }
 
 impl TaskTrait for MineTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-
         let look_loc = self.location.faces()[self.face as usize];
         local.physics.look_at(look_loc);
 

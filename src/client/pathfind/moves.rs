@@ -42,7 +42,6 @@ impl Default for State {
 pub struct Movements;
 
 impl Movements {
-
     pub fn obtain_all(on: &MoveNode, ctx: &GlobalContext) -> Progression<MoveNode> {
         let BlockLocation { x, y, z } = on.location;
         let w = ctx.world;
@@ -229,8 +228,6 @@ impl Movements {
 
             // we iterate through every single block which is not jumpable and set blocks behind it as not jumpable as well
             for (block_dx, block_dz) in not_jumpable {
-
-
 
 
                 // we will set blocks to closed in the direction of the block

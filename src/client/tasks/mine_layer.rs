@@ -16,7 +16,6 @@
 
 use float_ord::FloatOrd;
 
-
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::tasks::lazy_stream::LazyStream;

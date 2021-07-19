@@ -222,8 +222,7 @@ impl Interface340 {
         }
     }
 
-    fn click(&mut self, slot: u16, button: impl Into<u8>, mode: i32, clicked: impl Into<Slot>){
-
+    fn click(&mut self, slot: u16, button: impl Into<u8>, mode: i32, clicked: impl Into<Slot>) {
         let action_number = self.inv_action_id;
         let to_send = serverbound::ClickWindow {
             window_id: 0,
@@ -231,7 +230,7 @@ impl Interface340 {
             button: button.into(),
             action_number,
             mode: VarInt(mode),
-            clicked: clicked.into()
+            clicked: clicked.into(),
         };
 
         self.write(to_send);
@@ -256,7 +255,7 @@ impl InterfaceOut for Interface340 {
             cursor: serverbound::BlockCursor {
                 x: 1.0,
                 y: 1.5,
-                z: 0.5
+                z: 0.5,
             },
         });
     }

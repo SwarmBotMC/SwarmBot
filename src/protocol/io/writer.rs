@@ -16,11 +16,12 @@
 
 
 
-use swarm_bot_packets::types::{Packet, RawVec, VarInt};
-use swarm_bot_packets::write::{ByteWritable, ByteWritableLike, ByteWriter};
 use tokio::io::AsyncWriteExt;
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::sync::mpsc::UnboundedSender;
+
+use swarm_bot_packets::types::{Packet, RawVec, VarInt};
+use swarm_bot_packets::write::{ByteWritable, ByteWritableLike, ByteWriter};
 
 use crate::error::Res;
 use crate::protocol::io::{Aes, ZLib};

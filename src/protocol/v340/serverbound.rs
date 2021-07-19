@@ -104,7 +104,7 @@ pub struct ClickWindow {
     pub button: u8,
     pub action_number: u16,
     pub mode: VarInt,
-    pub clicked: Slot
+    pub clicked: Slot,
 }
 
 
@@ -116,14 +116,13 @@ pub struct BlockCursor {
 }
 
 
-
 #[derive(Writable, Packet)]
 #[packet(0x1f, Play)]
 pub struct PlaceBlock {
     pub location: Position,
     pub face: VarInt,
     pub hand: Hand,
-    pub cursor: BlockCursor
+    pub cursor: BlockCursor,
 }
 
 #[derive(Writable, Packet)]

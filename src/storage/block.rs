@@ -17,11 +17,11 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Add;
 
+use serde::{Deserialize, Serialize};
+
 use crate::bootstrap::block_data::{Block, BlockData};
 use crate::client::pathfind::moves::Change;
 use crate::types::{Displacement, Location};
-
-use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]

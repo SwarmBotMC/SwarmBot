@@ -14,12 +14,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::convert::TryInto;
 use std::io::{Cursor, Read};
 
 use bytes::Buf;
 
 use crate::types::{BitField, VarUInt};
-use std::convert::TryInto;
 
 #[derive(Clone)]
 pub struct ByteReader {
@@ -36,7 +36,7 @@ impl ByteReader {
         T::read_from_bytes(self)
     }
 
-    pub fn back(&mut self, bytes: u64){
+    pub fn back(&mut self, bytes: u64) {
         let position = self.bytes.position();
         let new_position = position - bytes;
         self.bytes.set_position(new_position);

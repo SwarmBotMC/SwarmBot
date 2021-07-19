@@ -87,7 +87,6 @@ impl MoveNode {
     }
 
     pub fn new(location: BlockLocation) -> MoveNode {
-
         MoveNode {
             location,
             action_to_obtain: None,

@@ -77,8 +77,8 @@ impl From<RawBlock> for Block {
             id: block.id,
             hardness: block.hardness,
             harvest_tools: block.harvest_tools.unwrap_or_default().into_iter()
-                .filter_map(|(k,v)| v.then(||k)).collect(),
-            material: block.material.unwrap_or_default()
+                .filter_map(|(k, v)| v.then(|| k)).collect(),
+            material: block.material.unwrap_or_default(),
         }
     }
 }
@@ -125,10 +125,9 @@ impl BlockData {
             .collect();
 
 
-
         Ok(BlockData {
             block_lookup,
-            food_lookup
+            food_lookup,
         })
     }
 }

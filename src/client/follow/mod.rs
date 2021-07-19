@@ -63,7 +63,6 @@ pub struct Follower {
 }
 
 impl Follower {
-
     pub fn points(&self) -> &VecDeque<Location> {
         &self.xs
     }
@@ -205,7 +204,7 @@ impl Follower {
         //     corr = 1.0;
         // }
 
-        const THRESH_VEL: f64 = 3.0/20.;
+        const THRESH_VEL: f64 = 3.0 / 20.;
         // const THRESH_VEL: f64 = 0.0;
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
@@ -252,11 +251,11 @@ mod tests {
     use crate::client::pathfind::implementations::novehicle::TravelProblem;
     use crate::client::pathfind::implementations::Problem;
     use crate::client::state::global::GlobalState;
+    use crate::client::state::local::inventory::PlayerInventory;
     use crate::client::state::local::LocalState;
     use crate::client::timing::Increment;
     use crate::schematic::Schematic;
     use crate::storage::block::BlockLocation;
-    use crate::client::state::local::inventory::PlayerInventory;
 
     #[test]
     fn test_parkour_course() {

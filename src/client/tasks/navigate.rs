@@ -14,19 +14,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::client::pathfind::traits::{Heuristic, GoalCheck};
-use crate::client::pathfind::implementations::{PlayerProblem, Problem};
-use crate::client::follow::{Follower, FollowResult};
-use crate::client::pathfind::implementations::novehicle::{ChunkHeuristic, CenterChunkGoalCheck, BlockGoalCheck, BlockHeuristic, BlockNearGoalCheck, TravelProblem};
-use crate::client::tasks::TaskTrait;
-use crate::client::state::local::LocalState;
-use crate::protocol::InterfaceOut;
-use crate::client::state::global::GlobalState;
-use crate::client::pathfind::context::MoveNode;
 use std::time::Instant;
+
+use crate::client::follow::{Follower, FollowResult};
+use crate::client::pathfind::context::MoveNode;
+use crate::client::pathfind::implementations::{PlayerProblem, Problem};
+use crate::client::pathfind::implementations::novehicle::{BlockGoalCheck, BlockHeuristic, BlockNearGoalCheck, CenterChunkGoalCheck, ChunkHeuristic, TravelProblem};
+use crate::client::pathfind::traits::{GoalCheck, Heuristic};
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
+use crate::client::tasks::TaskTrait;
 use crate::client::timing::Increment;
-use crate::storage::blocks::ChunkLocation;
+use crate::protocol::InterfaceOut;
 use crate::storage::block::BlockLocation;
+use crate::storage::blocks::ChunkLocation;
 
 pub type ChunkTravelTask = NavigateProblem<ChunkHeuristic, CenterChunkGoalCheck>;
 pub type BlockTravelTask = NavigateProblem<BlockHeuristic, BlockGoalCheck>;

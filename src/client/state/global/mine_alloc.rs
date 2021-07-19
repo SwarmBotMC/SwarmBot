@@ -58,13 +58,13 @@ impl MineAlloc {
             .map(move |((y, z), x)| BlockLocation::new(center.x + x, y as i16, center.z + z))
     }
 
-    pub fn locations(center: BlockLocation2D) -> Locations{
+    pub fn locations(center: BlockLocation2D) -> Locations {
         Self::locations_rad(center, Self::REGION_R)
     }
 
     // locations plus 1 block extra
     pub fn locations_extra(center: BlockLocation2D) -> Locations {
-        Self::locations_rad(center, Self::REGION_R+1)
+        Self::locations_rad(center, Self::REGION_R + 1)
     }
 
     pub fn mine(&mut self, from: BlockLocation2D, to: BlockLocation2D, preference: Option<MinePreference>) {

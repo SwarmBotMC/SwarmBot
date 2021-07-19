@@ -14,20 +14,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::client::tasks::lazy_stream::LazyStream;
-use crate::client::state::local::LocalState;
-use crate::storage::block::BlockLocation;
-use crate::client::tasks::stream::TaskStream;
-use crate::protocol::InterfaceOut;
 use crate::client::state::global::GlobalState;
-use crate::client::tasks::fall_bucket::FallBucketTask;
-
-use crate::client::tasks::delay::DelayTask;
+use crate::client::state::local::LocalState;
 use crate::client::tasks::compound::CompoundTask;
-use crate::client::tasks::mine_layer::MineLayer;
-use crate::client::tasks::Task;
-use crate::client::tasks::mine_goto::GoMineTop;
+use crate::client::tasks::delay::DelayTask;
+use crate::client::tasks::fall_bucket::FallBucketTask;
 use crate::client::tasks::lazy::LazyTask;
+use crate::client::tasks::lazy_stream::LazyStream;
+use crate::client::tasks::mine_goto::GoMineTop;
+use crate::client::tasks::mine_layer::MineLayer;
+use crate::client::tasks::stream::TaskStream;
+use crate::client::tasks::Task;
+use crate::protocol::InterfaceOut;
+use crate::storage::block::BlockLocation;
 
 pub struct MineColumn;
 

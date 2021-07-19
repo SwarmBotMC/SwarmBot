@@ -14,10 +14,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::io::Write;
+
 use bytes::{BufMut, BytesMut};
 
 use crate::types::VarInt;
-use std::io::Write;
 
 #[derive(Default)]
 pub struct ByteWriter {

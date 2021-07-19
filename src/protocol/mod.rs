@@ -17,12 +17,12 @@
 use swarm_bot_packets::types::UUID;
 
 use crate::bootstrap::Connection;
+use crate::client::pathfind::moves::CardinalDirection;
 use crate::client::processor::InterfaceIn;
+use crate::client::state::local::inventory::ItemStack;
 use crate::error::Res;
 use crate::storage::block::BlockLocation;
 use crate::types::{Direction, Location};
-use crate::client::pathfind::moves::CardinalDirection;
-use crate::client::state::local::inventory::ItemStack;
 
 pub mod v340;
 
@@ -46,10 +46,10 @@ pub enum Face {
     NegZ,
     PosZ,
     NegX,
-    PosX
+    PosX,
 }
 
-impl From<CardinalDirection> for Face{
+impl From<CardinalDirection> for Face {
     fn from(dir: CardinalDirection) -> Self {
         match dir {
             CardinalDirection::North => Face::PosX,
@@ -61,7 +61,6 @@ impl From<CardinalDirection> for Face{
 }
 
 impl Face {
-
     pub fn is_x(self) -> bool {
         matches!(self, Face::PosX | Face::NegX)
     }
@@ -83,7 +82,6 @@ impl Face {
             Face::PosX => BlockLocation::new(1, 0, 0),
         }
     }
-
 }
 
 impl From<u8> for Face {
@@ -104,7 +102,7 @@ impl From<u8> for Face {
 #[derive(Copy, Clone, Debug)]
 pub enum MouseButton {
     Left,
-    Right
+    Right,
 }
 
 impl From<MouseButton> for u8 {

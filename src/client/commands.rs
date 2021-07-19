@@ -14,22 +14,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-
-
-
-
 use std::sync::mpsc::Receiver;
 
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tokio::net::{TcpListener};
-
-
+use tokio::net::TcpListener;
 
 use crate::error::Res;
-use crate::storage::block::{BlockLocation2D, BlockLocation};
+use crate::storage::block::{BlockLocation, BlockLocation2D};
 
 pub struct Commands {
     pub pending: Receiver<Command>,
@@ -42,7 +35,6 @@ pub struct Selection2D {
 }
 
 impl Selection2D {
-
     /// Normalize so that the **from** coordinate is always smaller than the **to** coord.
     pub fn normalize(self) -> Self {
         let min_x = self.from.x.min(self.to.x);
@@ -58,20 +50,23 @@ impl Selection2D {
     }
 }
 
+/// The mine commad.
+/// Mine the given selection.
+/// A global command. The process should allocate appropriately to children.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Mine {
     pub sel: Selection2D,
 }
 
-
+/// A navigation command to go to the given block location
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GoTo {
-    pub location: BlockLocation
+    pub location: BlockLocation,
 }
 
 pub enum Command {
     Mine(Mine),
-    GoTo(GoTo)
+    GoTo(GoTo),
 }
 
 

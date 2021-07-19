@@ -30,6 +30,15 @@
 #![feature(box_syntax)]
 #![feature(default_free_fn)]
 
+#[macro_use]
+extern crate enum_dispatch;
+extern crate serde;
+#[macro_use]
+extern crate swarm_bot_packets;
+extern crate test;
+#[macro_use]
+extern crate thiserror;
+
 use std::fs::File;
 
 use tokio::runtime::Runtime;
@@ -42,18 +51,6 @@ use crate::bootstrap::storage::UserCache;
 use crate::client::runner::{Runner, RunnerOptions};
 use crate::error::{HasContext, ResContext};
 
-#[macro_use]
-extern crate enum_dispatch;
-
-#[macro_use]
-extern crate thiserror;
-
-extern crate serde;
-
-extern crate test;
-
-#[macro_use]
-extern crate swarm_bot_packets;
 
 mod error;
 mod bootstrap;

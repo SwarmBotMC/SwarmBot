@@ -19,12 +19,12 @@ use std::time::Instant;
 
 use crate::client::pathfind::context::{GlobalContext, MoveNode, MoveRecord};
 use crate::client::pathfind::incremental::{AStar, Node, PathResult};
+use crate::client::pathfind::moves::Movements;
 use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::timing::Increment;
 use crate::storage::block::{BlockLocation, BlockState};
-use crate::client::pathfind::moves::Movements;
 
 pub mod novehicle;
 
@@ -54,7 +54,7 @@ impl<H: Heuristic<MoveNode> + Send + Sync, G: GoalCheck<MoveNode> + Send + Sync>
         }
     }
 
-    pub fn set_max_millis(&mut self, value: u128){
+    pub fn set_max_millis(&mut self, value: u128) {
         self.a_star.set_max_millis(value);
     }
 }

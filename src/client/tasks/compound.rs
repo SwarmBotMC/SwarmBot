@@ -15,11 +15,12 @@
  */
 
 use std::collections::VecDeque;
+use std::time::Instant;
+
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
 use crate::client::tasks::{Task, TaskTrait};
 use crate::protocol::InterfaceOut;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
-use std::time::Instant;
 
 #[derive(Default)]
 pub struct CompoundTask {

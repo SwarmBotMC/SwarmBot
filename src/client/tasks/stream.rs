@@ -14,10 +14,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::protocol::InterfaceOut;
 use crate::client::state::global::GlobalState;
 use crate::client::state::local::LocalState;
 use crate::client::tasks::Task;
+use crate::protocol::InterfaceOut;
 
 pub trait TaskStream {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task>;

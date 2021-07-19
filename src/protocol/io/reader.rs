@@ -17,10 +17,11 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use swarm_bot_packets::read::{ByteReadable, ByteReader, LenRead};
-use swarm_bot_packets::types::{Packet, RawVec, VarInt};
 use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
 use tokio::net::tcp::OwnedReadHalf;
+
+use swarm_bot_packets::read::{ByteReadable, ByteReader, LenRead};
+use swarm_bot_packets::types::{Packet, RawVec, VarInt};
 
 use crate::error::Error::WrongPacket;
 use crate::error::Res;

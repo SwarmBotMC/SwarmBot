@@ -74,7 +74,7 @@ impl PlayerInventory {
 
     /// drop a single item in the hotbar (not multiple because anti cheat does not like this)
     /// returns if dropped all
-    pub fn drop_hotbar(&mut self, out: &mut impl InterfaceOut) -> bool{
+    pub fn drop_hotbar(&mut self, out: &mut impl InterfaceOut) -> bool {
         let idx = (36..45).filter_map(|idx| {
             self.slots[idx].take()?;
             Some(idx)

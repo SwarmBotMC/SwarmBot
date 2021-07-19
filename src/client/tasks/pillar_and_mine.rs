@@ -14,17 +14,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::client::tasks::stream::TaskStream;
-use crate::protocol::{InterfaceOut, Face};
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
-use crate::client::tasks::Task;
-use crate::client::tasks::lazy_stream::LazyStream;
-use crate::types::Displacement;
 use std::collections::HashSet;
+
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
+use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine::MineTask;
 use crate::client::tasks::pillar::PillarTask;
-
+use crate::client::tasks::stream::TaskStream;
+use crate::client::tasks::Task;
+use crate::protocol::{Face, InterfaceOut};
+use crate::types::Displacement;
 
 pub type PillarAndMineTask = LazyStream<PillarOrMine>;
 
@@ -41,7 +41,6 @@ pub struct PillarOrMine {
 
 impl TaskStream for PillarOrMine {
     fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
-
         let current_height = (local.physics.location().y).floor() as u32;
 
         // > not >= because we are considering block height

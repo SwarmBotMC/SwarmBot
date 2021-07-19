@@ -14,19 +14,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::client::tasks::{TaskTrait};
-use crate::protocol::InterfaceOut;
-use crate::client::state::local::LocalState;
-use crate::client::state::global::GlobalState;
-use crate::storage::block::BlockLocation;
 use crate::client::physics::Line;
 use crate::client::physics::speed::Speed;
+use crate::client::state::global::GlobalState;
+use crate::client::state::local::LocalState;
+use crate::client::tasks::TaskTrait;
+use crate::protocol::InterfaceOut;
+use crate::storage::block::BlockLocation;
 
 pub struct CenterTask;
 
 impl TaskTrait for CenterTask {
     fn tick(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, _global: &mut GlobalState) -> bool {
-
         const THR: f64 = 0.05;
         const VEL_THR: f64 = 0.05;
         let loc = local.physics.location();
