@@ -42,6 +42,8 @@ pub struct Selection2D {
 }
 
 impl Selection2D {
+
+    /// Normalize so that the **from** coordinate is always smaller than the **to** coord.
     pub fn normalize(self) -> Self {
         let min_x = self.from.x.min(self.to.x);
         let min_z = self.from.z.min(self.to.z);

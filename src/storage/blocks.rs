@@ -324,6 +324,7 @@ impl WorldBlocks {
 mod tests {
     use std::fs::OpenOptions;
     use test::{Bencher, black_box};
+    use assert_matches::assert_matches as am;
 
     use rand::Rng;
 
@@ -341,7 +342,7 @@ mod tests {
         {
             world.set_block(loc, BlockState::STONE);
             let got = world.get_block(loc);
-            assert_matches!(got , Some(BlockApprox::Realized(BlockState::STONE)));
+            am!(got , Some(BlockApprox::Realized(BlockState::STONE)));
         }
 
         {
@@ -350,16 +351,16 @@ mod tests {
             world.set_block(up, given);
 
             let got_up = world.get_block(up);
-            assert_matches!(got_up , Some(BlockApprox::Realized(_given)));
+            am!(got_up , Some(BlockApprox::Realized(_given)));
 
             let got = world.get_block(loc);
-            assert_matches!(got , Some(BlockApprox::Realized(BlockState::STONE)));
+            am!(got , Some(BlockApprox::Realized(BlockState::STONE)));
         }
 
         {
             world.set_block(loc, BlockState::AIR);
             let got = world.get_block(loc);
-            assert_matches!(got , Some(BlockApprox::Realized(BlockState::AIR)));
+            am!(got , Some(BlockApprox::Realized(BlockState::AIR)));
         }
     }
 

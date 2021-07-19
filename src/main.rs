@@ -29,7 +29,6 @@
 #![feature(test)]
 #![feature(box_syntax)]
 #![feature(default_free_fn)]
-#![feature(assert_matches)]
 
 use std::fs::File;
 
