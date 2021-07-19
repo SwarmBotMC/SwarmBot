@@ -35,7 +35,8 @@ aes = "0.7"
 cfb8 = "0.7"
 
 # zlib
-flate2 = { version = "1.0.20", features = ["zlib-ng-compat"], default-features = false }
+flate2 = {version = "1.0"}
+#flate2 = { version = "1.0.20", features = ["zlib-ng-compat"], default-features = false }
 
 # get_u8, etc extensions
 bytes = "1.0"
