@@ -124,6 +124,30 @@ impl ByteReadable for f64 {
     }
 }
 
+impl <A: ByteReadable, B: ByteReadable> ByteReadable for (A,B) {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        (byte_reader.read(), byte_reader.read())
+    }
+}
+
+impl <A: ByteReadable, B: ByteReadable, C: ByteReadable> ByteReadable for (A,B,C) {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        (byte_reader.read(), byte_reader.read(), byte_reader.read())
+    }
+}
+
+impl <A: ByteReadable, B: ByteReadable, C: ByteReadable, D: ByteReadable> ByteReadable for (A,B,C, D) {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        (byte_reader.read(), byte_reader.read(), byte_reader.read(), byte_reader.read())
+    }
+}
+
+impl <A: ByteReadable, B: ByteReadable, C: ByteReadable, D: ByteReadable, E: ByteReadable> ByteReadable for (A,B,C, D, E) {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        (byte_reader.read(), byte_reader.read(), byte_reader.read(), byte_reader.read(), byte_reader.read())
+    }
+}
+
 impl ByteReadable for f32 {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         byte_reader.bytes.get_f32()

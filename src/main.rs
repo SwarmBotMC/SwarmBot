@@ -78,7 +78,7 @@ fn main() {
 }
 
 
-async fn run() -> ResContext<()> {
+async fn run() -> ResContext {
     let Opts { users_file, proxies_file, host, count, version, port, delay, load } = Opts::get();
 
     let address = normalize_address(&host, port).await;

@@ -18,10 +18,17 @@ use indexmap::map::IndexMap;
 
 use crate::types::{Location, LocationOrigin};
 
-#[derive(Default)]
+pub enum EntityKind {
+    Normal,
+    Player {
+        uuid: u128
+    }
+}
+
 pub struct EntityData {
     pub location: Location,
     pub owner: Option<u32>,
+    pub kind: EntityKind
 }
 
 #[derive(Default)]
@@ -58,10 +65,11 @@ impl WorldEntities {
         }
     }
 
-    pub fn put_entity(&mut self, entity_id: u32, bot_id: u32, location: Location) {
+    pub fn put_entity(&mut self, entity_id: u32, bot_id: u32, location: Location, kind: EntityKind) {
         self.entities.insert(entity_id, EntityData {
             location,
             owner: Some(bot_id),
+            kind
         });
     }
 }

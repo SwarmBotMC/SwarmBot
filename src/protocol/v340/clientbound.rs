@@ -20,7 +20,7 @@ use itertools::Itertools;
 
 use swarm_bot_packets::{Packet, Readable, Writable};
 use swarm_bot_packets::read::{ByteReadable, ByteReadableLike, ByteReader};
-use swarm_bot_packets::types::{BitField, Identifier, RawVec, UUIDHyphenated, VarInt, VarUInt};
+use swarm_bot_packets::types::{BitField, Identifier, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
 
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
@@ -111,6 +111,102 @@ pub struct SetCompression {
     pub threshold: VarInt,
 }
 
+#[derive(Debug)]
+struct PlayerProperty {
+    name: String,
+    value: String,
+    signature: Option<String>,
+}
+
+impl ByteReadable for PlayerProperty {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let name = byte_reader.read();
+        let value = byte_reader.read();
+        let is_signed: bool = byte_reader.read();
+        let signature = is_signed.then(|| byte_reader.read());
+        Self { name, value, signature }
+    }
+}
+
+#[derive(Debug)]
+struct AddPlayer {
+    name: String,
+    properties: Vec<PlayerProperty>,
+    gamemode: VarInt,
+    ping: VarInt,
+    display_name: Option<Chat>,
+}
+
+impl ByteReadable for AddPlayer {
+    fn read_from_bytes(br: &mut ByteReader) -> Self {
+        let (name, properties, gamemode, ping) = br.read();
+        let has_display_name: bool = br.read();
+        let display_name = has_display_name.then(|| br.read());
+        Self { name, properties, gamemode, ping, display_name }
+    }
+}
+
+#[derive(Debug)]
+enum PlayerListType {
+    AddPlayer(AddPlayer),
+    UpdateGamemode(VarInt),
+    UpdateLatency(VarInt),
+    UpdateDisplayName(Option<Chat>),
+    RemovePlayer,
+}
+
+impl ByteReadableLike for PlayerListType {
+    type Param = usize;
+
+    fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
+        match *param {
+            0 => Self::AddPlayer(byte_reader.read()),
+            1 => Self::UpdateGamemode(byte_reader.read()),
+            2 => Self::UpdateLatency(byte_reader.read()),
+            3 => Self::UpdateDisplayName({
+                let has_val: bool = byte_reader.read();
+                has_val.then(||byte_reader.read())
+            }),
+            4 => Self::RemovePlayer,
+            _ => panic!("invalid id")
+        }
+    }
+}
+#[derive(Debug)]
+struct Player {
+    uuid: UUID,
+    list_type: PlayerListType,
+}
+
+impl ByteReadableLike for Player {
+    type Param = usize;
+
+    fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
+        Self {
+            uuid: byte_reader.read(),
+            list_type: byte_reader.read_like(param),
+        }
+    }
+}
+
+#[derive(Debug, Packet)]
+#[packet(0x2E, Play)]
+pub struct PlayerListItem {
+    players: Vec<Player>,
+}
+
+impl ByteReadable for PlayerListItem {
+    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
+        let VarUInt(action_id) = byte_reader.read();
+        let VarUInt(number_players) = byte_reader.read();
+        let mut players = Vec::with_capacity(number_players);
+        for _ in 0..number_players {
+            players.push(byte_reader.read_like(&action_id));
+        }
+        Self { players }
+    }
+}
+
 #[derive(Debug, Clone, Packet, Writable, Readable)]
 #[packet(0x01, Login)]
 pub struct EncryptionRequest {
@@ -134,6 +230,7 @@ pub struct PlayerPositionAndLookRaw {
     flags: BitField,
     teleport_id: VarInt,
 }
+
 
 pub mod entity {
     use swarm_bot_packets::*;

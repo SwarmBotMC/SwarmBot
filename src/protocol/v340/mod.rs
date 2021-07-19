@@ -36,6 +36,7 @@ use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
 use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState};
 use crate::storage::block::{BlockLocation, BlockState};
 use crate::storage::blocks::ChunkLocation;
+use crate::storage::entities::EntityKind;
 use crate::types::{Dimension, Direction, Location, PacketData, Slot};
 
 mod clientbound;
@@ -144,11 +145,11 @@ impl EventQueue340 {
             }
             entity::LivingSpawn::ID => {
                 let entity::LivingSpawn { entity_id, location, .. } = data.read();
-                processor.on_entity_spawn(entity_id.into(), location);
+                processor.on_entity_spawn(entity_id.into(), location, EntityKind::Normal);
             }
             entity::PlayerSpawn::ID => {
-                let entity::PlayerSpawn { entity_id, location, .. } = data.read();
-                processor.on_entity_spawn(entity_id.into(), location);
+                let entity::PlayerSpawn { entity_id, location, player_uuid, .. } = data.read();
+                processor.on_entity_spawn(entity_id.into(), location, EntityKind::Player { uuid: player_uuid.0 });
             }
             UpdateHealth::ID => {
                 let UpdateHealth { health, food, .. } = data.read();
