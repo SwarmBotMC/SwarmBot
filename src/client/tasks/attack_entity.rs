@@ -23,14 +23,19 @@ use crate::client::tasks::stream::TaskStream;
 use crate::client::tasks::Task;
 use crate::protocol::InterfaceOut;
 use crate::types::Location;
+use std::time::{SystemTime, Instant};
+use crate::client::tasks::delay::DelayTask;
+use crate::client::tasks::compound::CompoundTask;
+use crate::storage::block::{BlockLocation2D, BlockLocation};
 
 pub struct AttackEntity {
     id: u32,
+    hit_time: Option<Instant>,
 }
 
 impl AttackEntity {
     pub fn new(id: u32) -> Self {
-        Self {id}
+        Self {id, hit_time: None}
     }
 }
 
@@ -44,12 +49,19 @@ impl TaskStream for AttackEntity {
         let dist2 = entity_location.dist2(current_location);
 
         const THRESHOLD_DIST: f64 = 3.0;
+        const THRESHOLD_DIST_SMALLER: f64 = THRESHOLD_DIST - 0.5;
 
         if dist2 < THRESHOLD_DIST * THRESHOLD_DIST {  // we can hit the entity
             let hit = HitEntityTask::new(self.id);
-            Some(hit.into())
+            let mut compound = CompoundTask::default();
+
+            compound.add(hit)
+                .add(DelayTask(10));
+
+            Some(compound.into())
+
         } else { // we need to travel to them
-            let travel = TravelProblem::navigate_block(current_location.into(), entity_location.into());
+            let travel = TravelProblem::navigate_near_block(current_location.into(), BlockLocation2D::from(BlockLocation::from(entity_location)), THRESHOLD_DIST_SMALLER * THRESHOLD_DIST_SMALLER, false);
             let task = NavigateProblem::from(travel);
 
             Some(task.into())

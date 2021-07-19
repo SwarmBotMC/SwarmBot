@@ -166,7 +166,8 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
        self.global.players.remove(uuid);
     }
 
-    fn on_disconnect(&mut self, _reason: &str) {
+    fn on_disconnect(&mut self, reason: &str) {
+        println!("disconnecting because {}", reason);
         self.local.disconnected = true;
     }
 

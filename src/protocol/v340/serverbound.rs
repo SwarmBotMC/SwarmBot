@@ -266,9 +266,8 @@ pub enum InteractEntityKind {
 }
 
 #[derive(Writable, Packet)]
-#[packet(0x0e, Play)]
+#[packet(0x0a, Play)]
 pub struct InteractEntity {
     pub id: VarInt,
     pub kind: InteractEntityKind,
-    pub sneaking: bool,
 }

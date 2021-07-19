@@ -18,6 +18,7 @@ use crate::client::tasks::{Task, TaskTrait};
 use crate::protocol::InterfaceOut;
 use crate::client::state::local::LocalState;
 use crate::client::state::global::GlobalState;
+use crate::types::Displacement;
 
 pub struct HitEntityTask {
     id: u32,
@@ -33,16 +34,20 @@ impl TaskTrait for HitEntityTask {
     fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
 
         let mut action = || {
-            let target_loc = global.entities.by_id(self.id)?.location;
+            let entity_loc = global.entities.by_id(self.id)?.location;
+
+            // hit the head
+            let target_loc = entity_loc + Displacement::EYE_HEIGHT;
 
             local.physics.look_at(target_loc);
             out.look(local.physics.direction());
-            out.swing_arm();
             out.attack_entity(self.id);
+            out.swing_arm();
 
             Some(())
         };
 
-        action().is_none()
+        action();
+        true
     }
 }

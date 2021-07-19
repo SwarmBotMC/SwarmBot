@@ -81,6 +81,7 @@ pub struct PacketWriteChannel {
 impl PacketWriteChannel {
     pub fn write<T: Packet + ByteWritable>(&mut self, packet: T) {
         let data = data(packet, &self.compression);
+
         self.tx.send(data).unwrap();
     }
 }

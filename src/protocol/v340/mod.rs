@@ -281,7 +281,6 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::InteractEntity {
             id: id.into(),
             kind: InteractEntityKind::Attack,
-            sneaking: false
         })
     }
 
