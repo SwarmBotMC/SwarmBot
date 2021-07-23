@@ -2,17 +2,6 @@
 
 A bot launcher for Minecraft written in Rust. 
 
-## Installation
-
-### Bot Launcher
-1. Install cargo: https://rustup.rs/
-2. Make sure you are using _nightly_ `rustup default nightly`
-3. Run `cargo install swarm-bot`
-4. You can now execute `swarm-bot` executable to launch swarm bot
-
-### Forge Mod
-A forge mod is needed to interact with the bots. Follow the instructions [here](https://github.com/andrewgazelka/SwarmBotForge)
-
 ## What makes this unique?
 
 - **Performant**. I am able to run hundreds of bots off of my 2015 laptop with under 10% CPU. This is because MineBot does not depend on the default Minecraft client. Instead, it completely re-implements physics and the [Minecraft protocol](https://wiki.vg/Protocol) in [Rust](https://www.rust-lang.org/) which allows for increadibly fast speeds.
@@ -28,6 +17,18 @@ A forge mod is needed to interact with the bots. Follow the instructions [here](
 If you want to support a version you will need to implement the `Minecraft` trait for that version.
 - 1.12.* ✅
 - 1.16 — planned
+
+## Installation
+
+### Bot Launcher
+1. Install cargo: https://rustup.rs/
+2. Make sure you are using _nightly_ `rustup default nightly`
+3. Run `cargo install swarm-bot`
+4. You can now execute `swarm-bot` executable to launch swarm bot
+
+### Forge Mod
+A forge mod is needed to interact with the bots. Follow the instructions [here](https://github.com/andrewgazelka/SwarmBotForge)
+
 
 ## Running
 
