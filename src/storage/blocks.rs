@@ -380,11 +380,9 @@ mod tests {
 
         world.paste(&schematic);
 
-        let mut idx = 0;
-        for (loc, state) in schematic.blocks() {
+        for (idx, (loc, state)) in schematic.blocks().enumerate() {
             let actual = world.get_block_exact(loc).unwrap();
             assert_eq!(actual, state, "block at {} was supposed to be {:?} but was actually {:?} @ index {}", loc, state, actual, idx);
-            idx += 1;
         }
     }
 
