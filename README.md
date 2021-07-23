@@ -9,6 +9,8 @@
 - **Easy**. It is very easy to launch as many bots as you want. Simply do `./minebot -c {number} {server ip}`,
 
 ## Features
+- SOCKS5 ✅ — every bot can be launched through a separate IP using a SOCKS proxy.
+- Account Caching ✅ — valid accounts will be cached and invalid accounts will be pruned.
 - Incremental path navigation ✅ — `#goto`
 - Mining ✅ `#mine` — mines in 7×y×7 regions, where y is the highest block in the chunk
 - Parkour ✅ the best bot for parkouring at bedrock that I know of.
