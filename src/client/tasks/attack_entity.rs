@@ -22,8 +22,8 @@ use crate::client::tasks::navigate::NavigateProblem;
 use crate::client::tasks::stream::TaskStream;
 use crate::client::tasks::Task;
 use crate::protocol::InterfaceOut;
-use crate::types::Location;
-use std::time::{SystemTime, Instant};
+
+use std::time::{Instant};
 use crate::client::tasks::delay::DelayTask;
 use crate::client::tasks::compound::CompoundTask;
 use crate::storage::block::{BlockLocation2D, BlockLocation};
@@ -40,7 +40,7 @@ impl AttackEntity {
 }
 
 impl TaskStream for AttackEntity {
-    fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
+    fn poll(&mut self, _out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
         let current_location = local.physics.location();
 
         // we cannot do anything if we do not know the location so we end the task

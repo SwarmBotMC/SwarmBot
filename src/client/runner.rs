@@ -33,10 +33,10 @@ use crate::client::tasks::attack_entity::AttackEntity;
 use crate::client::tasks::lazy_stream::LazyStream;
 use crate::client::tasks::mine_region::MineRegion;
 use crate::client::tasks::navigate::BlockTravelTask;
-use crate::client::tasks::Task;
+
 use crate::error::{Res, ResBox};
 use crate::protocol::{EventQueue, Login, Minecraft};
-use std::error::Error;
+
 
 struct SyncGlobal(*const GlobalState);
 
@@ -264,8 +264,8 @@ impl<T: Minecraft + 'static> Runner<T> {
                 }
             }
             Command::Attack(attack) => {
-                let player = self.global_state.players.by_name(&attack.name).ok_or_else(|| "player does not exist")?;
-                let entity_id = self.global_state.entities.by_player_uuid(player.uuid).ok_or_else(||"could not find entity id for player")?;
+                let player = self.global_state.players.by_name(&attack.name).ok_or("player does not exist")?;
+                let entity_id = self.global_state.entities.by_player_uuid(player.uuid).ok_or("could not find entity id for player")?;
 
                 for bot in bots {
                     let task = LazyStream::from(AttackEntity::new(entity_id));
