@@ -1,5 +1,7 @@
 # SwarmBot
 
+![Bot](.github/parkour.webp)
+
 A bot launcher for Minecraft written in Rust. 
 
 ## What makes this unique?
