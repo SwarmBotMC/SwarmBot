@@ -21,6 +21,7 @@
 If you want to support a version you will need to implement the `Minecraft` trait for that version.
 - ✅ 1.12.*
 - ⏳ 1.16 — planned
+- Minecraft Bedrock — planned
 
 ## Installation
 
