@@ -1,6 +1,6 @@
 # SwarmBot
 <p align="center">
-  An intelligent bot launcher which can launch hundreds of bots at once
+  An autonomous bot launcher which can launch hundreds of bots at once
   <img alt="bot" src=".github/parkour.webp">
 </p>
 
