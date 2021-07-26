@@ -1,13 +1,20 @@
 # SwarmBot
 <p align="center">
+  An intelligent bot launcher which can launch hundreds of bots at once
   <img alt="bot" src=".github/parkour.webp">
 </p>
+
+## Why use this?
+
+- **Stress testing a server**. When launching a server it is often very hard to predict what CPU usage will be until SOTW. This will allow a developer to make optimizations to slow server plugins pre-launch.
+- **Anarchy servers**. If an anarchy server allows automation mods, SwarmBot can be used to build, destroy, or attack with hundreds of bots.
 
 ## What makes this unique?
 
 - **Integrated**. All bots run on a single process. This allows for easy communication between bots and much more efficient use of memory as the same chunk does not have to be stored multiple times.
 - **Performant**. I am able to run hundreds of bots off of my 2015 laptop with under 10% CPU. This is because SwarmBot does not depend on the default Minecraft client. Instead, it completely re-implements physics and the [Minecraft protocol](https://wiki.vg/Protocol) in [Rust](https://www.rust-lang.org/) which allows for increadibly fast speeds.
 - **Easy**. It is very easy to launch as many bots as you want. Simply do `./swarmbot -c {number} {server ip}`,
+
 
 ## Features
 - ✅  **SOCKS5** — every bot can be launched through a separate IP using a SOCKS proxy.
