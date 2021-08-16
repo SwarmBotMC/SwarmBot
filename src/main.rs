@@ -20,7 +20,7 @@
 #![feature(path_try_exists)]
 #![feature(const_evaluatable_checked)]
 #![feature(const_generics)]
-#![feature(min_type_alias_impl_trait)]
+#![feature(type_alias_impl_trait)]
 #![feature(once_cell)]
 #![feature(step_trait)]
 #![feature(option_get_or_insert_default)]
