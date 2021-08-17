@@ -153,6 +153,8 @@ impl UserCache {
                             return Some((mojang, proxy, valid.clone()));
                         }
 
+                        println!("refreshing auth tokens for {} due to time", user.email);
+
                         let is_valid = mojang.validate(&valid.access_id, &valid.client_id).await.unwrap();
 
                         if !is_valid {
@@ -197,6 +199,8 @@ impl UserCache {
                     }
                     User::Invalid(_invalid) => {}
                 }
+
+                println!("user {} is cached as invalid. If this user **is** valid, delete cache.db and re-run", user.email);
                 None
             }
         }
