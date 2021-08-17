@@ -1,4 +1,6 @@
 # SwarmBot — tested on 2b2t
+![Discord Shield](https://discordapp.com/api/guilds/877280790596165702/widget.png?style=shield) 
+
 <p align="center">
   An autonomous bot launcher which can launch hundreds of bots at once
   <img alt="bot" src=".github/parkour.webp">
@@ -14,6 +16,9 @@
 - **Integrated**. All bots run on a single process. This allows for easy communication between bots and much more efficient use of memory as the same chunk does not have to be stored multiple times.
 - **Performant**. I am able to run hundreds of bots off of my 2015 laptop with under 10% CPU. This is because SwarmBot does not depend on the default Minecraft client. Instead, it completely re-implements physics and the [Minecraft protocol](https://wiki.vg/Protocol) in [Rust](https://www.rust-lang.org/) which allows for increadibly fast speeds.
 - **Easy**. It is very easy to launch as many bots as you want. Simply do `./swarmbot -c {number} {server ip}`,
+
+## Support
+Join the discord ![Discord Shield](https://discordapp.com/api/guilds/877280790596165702/widget.png?style=shield) 
 
 
 ## Features
