@@ -1,4 +1,4 @@
-# SwarmBot
+# SwarmBot — tested on 2b2t
 <p align="center">
   An autonomous bot launcher which can launch hundreds of bots at once
   <img alt="bot" src=".github/parkour.webp">
