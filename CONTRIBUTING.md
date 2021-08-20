@@ -9,7 +9,7 @@ this is using the Kotlin Minecraft mod but there are several ways to do this.
 
 ```json5
 {
-    path: "{command idenitifier},
+    path: "{command idenitifier}",
     // ...
 }
 ```
