@@ -2,8 +2,7 @@
 
 ## Commands
 
-All commands sent to SwamBot are created from a websocket using JSON message. Currently, the only way to do
-this is using the Kotlin Minecraft mod but there are several ways to do this.
+All commands sent to SwamBot are created from a websocket using JSON message. Currently, the only full command implementation is the Kotlin Minecraft mod but any language supporting JSON and WebSockets should be able to control the bots.
 
 ### Format
 
