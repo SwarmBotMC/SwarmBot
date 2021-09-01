@@ -98,7 +98,6 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_death(&mut self) {
         self.actions.clear();
         self.out.respawn();
-        self.out.send_chat("I died... oof... well I guess I should respawn");
     }
 
     fn on_update_health(&mut self, health: f32, food: u8) {
