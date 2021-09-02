@@ -98,10 +98,10 @@ fn process(path: &str, value: Value) -> Option<Command> {
 
 
 impl Commands {
-    pub async fn init() -> Res<Self> {
+    pub async fn init(port: u16) -> Res<Self> {
         let (tx, rx) = std::sync::mpsc::channel();
 
-        let server = TcpListener::bind("127.0.0.1:8080").await?;
+        let server = TcpListener::bind(format!("127.0.0.1:{}", port)).await?;
 
         tokio::task::spawn_local(async move {
             loop {

@@ -78,7 +78,7 @@ fn main() {
 
 
 async fn run() -> ResContext {
-    let Opts { users_file, proxies_file, host, count, version, port, delay, load } = Opts::get();
+    let Opts { users_file, proxies_file, host, count, version, port, delay, load, ws_port } = Opts::get();
 
     let address = normalize_address(&host, port).await;
 
@@ -108,7 +108,7 @@ async fn run() -> ResContext {
         // taking the users and generating connections to the Minecraft server
         let connections = Connection::stream(address, proxy_users);
 
-        let opts = RunnerOptions { delay_millis: delay };
+        let opts = RunnerOptions { delay_millis: delay, ws_port };
 
         match version {
             340 => Runner::<protocol::v340::Protocol>::run(connections, opts).await.context_str("Error starting up 1.12")?, // 1.12

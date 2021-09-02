@@ -74,6 +74,7 @@ pub struct Runner<T: Minecraft> {
 pub struct RunnerOptions {
     /// The amount of milliseconds to wait between logging in successive users
     pub delay_millis: u64,
+    pub ws_port: u16
 }
 
 impl<T: Minecraft + 'static> Runner<T> {
@@ -87,9 +88,9 @@ impl<T: Minecraft + 'static> Runner<T> {
 
     /// Initialize the runner. Go through the handshake process for each [`Connection`]
     async fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res<Runner<T>> {
-        let commands = Commands::init().await?;
+        let commands = Commands::init(opts.ws_port).await?;
 
-        let RunnerOptions { delay_millis } = opts;
+        let RunnerOptions { delay_millis, ws_port } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
 
         {
