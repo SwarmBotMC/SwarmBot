@@ -90,7 +90,7 @@ impl<T: Minecraft + 'static> Runner<T> {
     async fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res<Runner<T>> {
         let commands = Commands::init(opts.ws_port).await?;
 
-        let RunnerOptions { delay_millis, ws_port } = opts;
+        let RunnerOptions { delay_millis, .. } = opts;
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
 
         {
