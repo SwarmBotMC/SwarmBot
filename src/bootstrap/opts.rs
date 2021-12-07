@@ -14,11 +14,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use clap::{AppSettings, Clap};
+use clap::{Parser};
 
-#[derive(Clap, Debug)]
+#[derive(Parser, Debug)]
 #[clap(version = "1.0", author = "Andrew Gazelka")]
-#[clap(setting = AppSettings::ColoredHelp)]
 pub struct Opts {
     pub host: String,
 

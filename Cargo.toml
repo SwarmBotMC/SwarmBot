@@ -1,6 +1,6 @@
 [package]
 name = "swarm-bot"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2018"
 description = "A autonomous bot launcher for Minecraft"
 license = "GPL-2.0-or-later"
@@ -10,7 +10,7 @@ license = "GPL-2.0-or-later"
 [dependencies]
 
 # parsing arguments
-clap = "3.0.0-beta"
+clap = "3.0.0-beta.5"
 
 # reading from csv
 csv = "1.1"
