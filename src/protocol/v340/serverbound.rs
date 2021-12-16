@@ -1,22 +1,22 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use swarm_bot_packets::*;
-use swarm_bot_packets::types::VarInt;
-use swarm_bot_packets::write::{ByteWritable, ByteWriter};
+use swarm_bot_packets::{
+    types::VarInt,
+    write::{ByteWritable, ByteWriter},
+    *,
+};
 
 use crate::types::{Direction, Location, Position, Slot};
 
@@ -65,7 +65,6 @@ pub struct ClientStatus {
     pub(crate) action: ClientStatusAction,
 }
 
-
 #[derive(Writable, Packet)]
 #[packet(0x0d, Play)]
 pub struct PlayerPosition {
@@ -82,7 +81,6 @@ pub struct PlayerPositionAndRotation {
     pub on_ground: bool,
 }
 
-
 #[derive(Packet, Writable)]
 #[packet(0x20, Login)]
 pub struct UseItem {
@@ -95,7 +93,6 @@ pub struct ChatMessage {
     pub message: String,
 }
 
-
 #[derive(Writable, Packet)]
 #[packet(0x07, Play)]
 pub struct ClickWindow {
@@ -107,14 +104,12 @@ pub struct ClickWindow {
     pub clicked: Slot,
 }
 
-
 #[derive(Writable, Default)]
 pub struct BlockCursor {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
-
 
 #[derive(Writable, Packet)]
 #[packet(0x1f, Play)]
@@ -205,7 +200,6 @@ pub struct HeldItemChange {
     pub slot: u16,
 }
 
-
 #[repr(i32)]
 #[derive(EnumWritable)]
 #[allow(dead_code)]
@@ -220,13 +214,11 @@ pub struct TeleportConfirm {
     pub teleport_id: VarInt,
 }
 
-
 #[derive(Writable, Packet)]
 #[packet(0x0b, Play)]
 pub struct KeepAlive {
     pub id: u64,
 }
-
 
 #[derive(EnumWritable, Debug)]
 #[allow(dead_code)]
@@ -261,7 +253,7 @@ pub enum InteractEntityKind {
     },
     Attack,
     InteractAt {
-        hand: Hand
+        hand: Hand,
     },
 }
 

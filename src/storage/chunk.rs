@@ -1,23 +1,23 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
 
-use crate::storage::block::{BlockApprox, BlockLocation, BlockState, SimpleType};
-use crate::storage::blocks::ChunkLocation;
+use crate::storage::{
+    block::{BlockApprox, BlockLocation, BlockState, SimpleType},
+    blocks::ChunkLocation,
+};
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
@@ -32,9 +32,7 @@ pub struct HighMemoryChunkSection {
 
 impl HighMemoryChunkSection {
     pub fn new(palette: Palette) -> Self {
-        HighMemoryChunkSection {
-            palette
-        }
+        HighMemoryChunkSection { palette }
     }
 }
 
@@ -46,13 +44,12 @@ pub struct LowMemoryChunkSection {
 impl Default for LowMemoryChunkSection {
     fn default() -> Self {
         Self {
-            storage: [0; SECTION_BYTES]
+            storage: [0; SECTION_BYTES],
         }
     }
 }
 
 pub fn bits_needed(number: usize) -> u8 {
-
     // 1 bit can encode 2
     let mut start = 2;
     let mut bits_needed = 1;
@@ -67,7 +64,8 @@ pub fn bits_needed(number: usize) -> u8 {
 
 impl LowMemoryChunkSection {
     fn get_simple_type(&self, x: u8, y: u8, z: u8) -> SimpleType {
-        let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
+        let block_number =
+            (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
 
         // 2 bits per block
         let idx = block_number >> 2;
@@ -81,7 +79,8 @@ impl LowMemoryChunkSection {
     }
 
     fn set_simple_type(&mut self, x: u8, y: u8, z: u8, input: SimpleType) {
-        let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
+        let block_number =
+            (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
 
         // 2 bits per block
         let idx = block_number >> 2;
@@ -135,9 +134,8 @@ impl ChunkData<HighMemoryChunkSection> {
         let mut res = [BlockState::AIR; 16 * 16];
         let section = match self.sections[section_idx as usize].as_ref() {
             Some(inner) => inner,
-            None => return res
+            None => return res,
         };
-
 
         let mut idx = 0;
 
@@ -151,33 +149,49 @@ impl ChunkData<HighMemoryChunkSection> {
 
         res
     }
-    pub fn select_up(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
-        self.sections.iter().enumerate()
+    pub fn select_up(
+        &'a self,
+        mut selector: impl FnMut(BlockState) -> bool + 'a,
+    ) -> impl Iterator<Item = usize> + 'a {
+        self.sections
+            .iter()
+            .enumerate()
             .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec| (chunk_idx << 12, sec)))
             .flat_map(|(idx_start, section)| {
-                IntoIterator::into_iter(section.palette.all_states()).enumerate().map(move |(idx, state)| (idx_start + idx, state))
+                IntoIterator::into_iter(section.palette.all_states())
+                    .enumerate()
+                    .map(move |(idx, state)| (idx_start + idx, state))
             })
-            .filter(move |(_, state)| {
-                selector(*state)
-            })
+            .filter(move |(_, state)| selector(*state))
             .map(|(idx, _)| idx)
     }
 
-    pub fn select_locs(&'a self, location: ChunkLocation, selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=BlockLocation> + 'a {
+    pub fn select_locs(
+        &'a self,
+        location: ChunkLocation,
+        selector: impl FnMut(BlockState) -> bool + 'a,
+    ) -> impl Iterator<Item = BlockLocation> + 'a {
         self.select_up(selector)
             .map(move |idx| self.block_location(location, idx))
     }
 
     // TODO: remove duplicate code... is it even possible?
-    pub fn select_down(&'a self, mut selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=usize> + 'a {
-        self.sections.iter().enumerate().rev()
+    pub fn select_down(
+        &'a self,
+        mut selector: impl FnMut(BlockState) -> bool + 'a,
+    ) -> impl Iterator<Item = usize> + 'a {
+        self.sections
+            .iter()
+            .enumerate()
+            .rev()
             .filter_map(|(chunk_idx, section)| section.as_ref().map(|sec| (chunk_idx << 12, sec)))
             .flat_map(|(idx_start, section)| {
-                IntoIterator::into_iter(section.palette.all_states()).enumerate().rev().map(move |(idx, state)| (idx_start + idx, state))
+                IntoIterator::into_iter(section.palette.all_states())
+                    .enumerate()
+                    .rev()
+                    .map(move |(idx, state)| (idx_start + idx, state))
             })
-            .filter(move |(_, state)| {
-                selector(*state)
-            })
+            .filter(move |(_, state)| selector(*state))
             .map(|(idx, _)| idx)
     }
 }
@@ -189,7 +203,8 @@ pub struct Palette {
     bits_per_block: u8,
     id_to_state: Option<Vec<BlockState>>,
 
-    /// invariant: must always be at bits_per_block * 4096 / 64 ... if 4 we have 256 ... if we have 1 we get 64
+    /// invariant: must always be at bits_per_block * 4096 / 64 ... if 4 we have
+    /// 256 ... if we have 1 we get 64
     storage: Vec<u64>,
 }
 
@@ -213,7 +228,11 @@ impl Palette {
         }
     }
 
-    pub fn indirect(bits_per_block: u8, id_to_state: Vec<BlockState>, storage: Vec<u64>) -> Palette {
+    pub fn indirect(
+        bits_per_block: u8,
+        id_to_state: Vec<BlockState>,
+        storage: Vec<u64>,
+    ) -> Palette {
         assert!(bits_per_block >= 4);
         assert!(bits_per_block <= 8);
         assert_eq!(storage.len(), 4096 / 64 * bits_per_block as usize);
@@ -234,7 +253,6 @@ impl Palette {
         let value = match self.id_to_state.as_mut() {
             None => state.0,
             Some(id_to_state) => {
-
                 // we only have to modify the map if we do not have the state
                 let value = id_to_state.iter().position(|&r| r == state);
 
@@ -247,7 +265,11 @@ impl Palette {
 
                         if required_bits > self.bits_per_block {
                             let (required_bits, reverse_map) = if required_bits <= 8 {
-                                let reverse_map: HashMap<_, _> = id_to_state.iter().enumerate().map(|(k, v)| (*v, k)).collect();
+                                let reverse_map: HashMap<_, _> = id_to_state
+                                    .iter()
+                                    .enumerate()
+                                    .map(|(k, v)| (*v, k))
+                                    .collect();
 
                                 (required_bits.max(4), Some(reverse_map))
                             } else {
@@ -256,7 +278,8 @@ impl Palette {
                                 (13, None)
                             };
 
-                            // debug_println!("expand bits {} -> {} ... reverse_map {:?}", self.bits_per_block, required_bits, reverse_map);
+                            // debug_println!("expand bits {} -> {} ... reverse_map {:?}",
+                            // self.bits_per_block, required_bits, reverse_map);
 
                             // we have to recreate the palette
 
@@ -270,19 +293,19 @@ impl Palette {
 
                             let indv_value_mask = (1 << required_bits) - 1;
 
-
                             assert!(required_bits >= 4);
                             let new_data_size = 4096 * (required_bits as usize) / 64;
                             let mut storage = vec![0_u64; new_data_size];
 
-                            for (block_number, state) in IntoIterator::into_iter(states).enumerate() {
+                            for (block_number, state) in IntoIterator::into_iter(states).enumerate()
+                            {
                                 let start_long = (block_number * required_bits) / 64;
                                 let start_offset = (block_number * required_bits) % 64;
                                 let end_long = ((block_number + 1) * required_bits - 1) / 64;
 
                                 let value = match reverse_map.as_ref() {
                                     None => state.0 as u64,
-                                    Some(reverse_map) => *reverse_map.get(&state).unwrap() as u64
+                                    Some(reverse_map) => *reverse_map.get(&state).unwrap() as u64,
                                 };
 
                                 let value = value & indv_value_mask;
@@ -298,31 +321,29 @@ impl Palette {
                         }
                         (new_len - 1) as u32
                     }
-                    Some(value) => {
-                        value as u32
-                    }
+                    Some(value) => value as u32,
                 }
             }
         };
 
-
         let value = value as u64;
         let indv_value_mask = (1 << self.bits_per_block) - 1;
 
-        let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
+        let block_number =
+            (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
         let bits_per_block = self.bits_per_block as usize;
         let start_long = (block_number * bits_per_block) / 64;
         let start_offset = (block_number * bits_per_block) % 64;
         let end_long = ((block_number + 1) * bits_per_block - 1) / 64;
 
-        // zero out TODO: thread 'main' panicked at 'index out of bounds: the len is 0 but the index is 0', below...
+        // zero out TODO: thread 'main' panicked at 'index out of bounds: the len is 0
+        // but the index is 0', below...
         self.storage[start_long] &= !(indv_value_mask << start_offset);
 
         // place
         self.storage[start_long] |= value << start_offset;
 
         if start_long != end_long {
-
             // zero out
             self.storage[end_long] &= !(indv_value_mask >> (64 - start_offset));
 
@@ -353,14 +374,15 @@ impl Palette {
 
         match &self.id_to_state {
             None => BlockState(data),
-            Some(map) => {
-                *map.get(data as usize).expect("internal chunk error getting block state")
-            }
+            Some(map) => *map
+                .get(data as usize)
+                .expect("internal chunk error getting block state"),
         }
     }
 
     fn get_block(&self, x: u8, y: u8, z: u8) -> BlockState {
-        let block_number = (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
+        let block_number =
+            (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
         self.get_block_by_idx(block_number)
     }
 
@@ -376,21 +398,28 @@ impl Palette {
     // }
 }
 
-
 pub enum ChunkColumn {
-    LowMemory { data: ChunkData<LowMemoryChunkSection> },
-    HighMemory { data: ChunkData<HighMemoryChunkSection> },
+    LowMemory {
+        data: ChunkData<LowMemoryChunkSection>,
+    },
+    HighMemory {
+        data: ChunkData<HighMemoryChunkSection>,
+    },
 }
 
 impl Default for ChunkColumn {
     fn default() -> Self {
-        Self::HighMemory { data: ChunkData::default() }
+        Self::HighMemory {
+            data: ChunkData::default(),
+        }
     }
 }
 
 impl ChunkColumn {
     pub fn modify(&mut self, column: ChunkColumn) {
-        if let (ChunkColumn::HighMemory { data: left }, ChunkColumn::HighMemory { data: right }) = (self, column) {
+        if let (ChunkColumn::HighMemory { data: left }, ChunkColumn::HighMemory { data: right }) =
+            (self, column)
+        {
             for (idx, new_section) in IntoIterator::into_iter(right.sections).enumerate() {
                 if let Some(section) = new_section {
                     left.sections[idx] = Some(section);
@@ -428,20 +457,19 @@ impl ChunkColumn {
                 let section = &sections.sections[section_idx];
                 BlockApprox::Estimate(match section {
                     None => SimpleType::WalkThrough,
-                    Some(section) => section.get_simple_type(x, y_offset, z)
+                    Some(section) => section.get_simple_type(x, y_offset, z),
                 })
             }
             ChunkColumn::HighMemory { data: sections } => {
                 let section = &sections.sections[section_idx];
                 BlockApprox::Realized(match section {
                     None => BlockState(0),
-                    Some(section) => section.palette.get_block(x, y_offset, z)
+                    Some(section) => section.palette.get_block(x, y_offset, z),
                 })
             }
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -449,8 +477,10 @@ mod tests {
 
     use itertools::Itertools;
 
-    use crate::storage::block::BlockState;
-    use crate::storage::chunk::{bits_needed, Palette};
+    use crate::storage::{
+        block::BlockState,
+        chunk::{bits_needed, Palette},
+    };
 
     #[test]
     fn test_bits_needed() {
@@ -522,7 +552,14 @@ mod tests {
                 BlockState::AIR
             };
 
-            assert_eq!(palette.get_block(x as u8, y as u8, z as u8), block_state, "not eq at {} {} {}", x, y, z);
+            assert_eq!(
+                palette.get_block(x as u8, y as u8, z as u8),
+                block_state,
+                "not eq at {} {} {}",
+                x,
+                y,
+                z
+            );
         }
     }
 }

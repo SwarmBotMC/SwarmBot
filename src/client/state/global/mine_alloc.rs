@@ -1,19 +1,16 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::VecDeque;
 
@@ -37,7 +34,7 @@ pub enum MinePreference {
     ToDist,
 }
 
-pub type Locations = impl Iterator<Item=BlockLocation>;
+pub type Locations = impl Iterator<Item = BlockLocation>;
 
 impl MineAlloc {
     pub const REGION_R: i32 = 3;
@@ -54,7 +51,9 @@ impl MineAlloc {
     }
 
     fn locations_rad(center: BlockLocation2D, rad: i32) -> Locations {
-        (0..256).cartesian_product(-rad..=rad).cartesian_product(-rad..=rad)
+        (0..256)
+            .cartesian_product(-rad..=rad)
+            .cartesian_product(-rad..=rad)
             .map(move |((y, z), x)| BlockLocation::new(center.x + x, y as i16, center.z + z))
     }
 
@@ -67,11 +66,16 @@ impl MineAlloc {
         Self::locations_rad(center, Self::REGION_R + 1)
     }
 
-    pub fn mine(&mut self, from: BlockLocation2D, to: BlockLocation2D, preference: Option<MinePreference>) {
-
+    pub fn mine(
+        &mut self,
+        from: BlockLocation2D,
+        to: BlockLocation2D,
+        preference: Option<MinePreference>,
+    ) {
         // we must complete previous operation before we continue.
-        // this also is important because right now every time a bot reads #mine in chat it executes this
-        // and if we had 100 bots that would mean this would execute 100 times = bad
+        // this also is important because right now every time a bot reads #mine in chat
+        // it executes this and if we had 100 bots that would mean this would
+        // execute 100 times = bad
         if !self.regions.is_empty() {
             return;
         }
@@ -88,15 +92,9 @@ impl MineAlloc {
         if let Some(preference) = preference {
             match preference {
                 MinePreference::FromDist => {
-                    vec.par_sort_unstable_by_key(|region| {
-                        region.0.dist2(from)
-                    })
+                    vec.par_sort_unstable_by_key(|region| region.0.dist2(from))
                 }
-                MinePreference::ToDist => {
-                    vec.par_sort_unstable_by_key(|region| {
-                        region.0.dist2(to)
-                    })
-                }
+                MinePreference::ToDist => vec.par_sort_unstable_by_key(|region| region.0.dist2(to)),
             }
         }
 

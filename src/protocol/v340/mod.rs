@@ -1,43 +1,49 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::mpsc::TryRecvError;
+use std::{cell::RefCell, rc::Rc, sync::mpsc::TryRecvError};
 
-use swarm_bot_packets::types::{PacketState, UUID, VarInt};
-use swarm_bot_packets::types::Packet;
-use swarm_bot_packets::write::ByteWritable;
+use swarm_bot_packets::{
+    types::{Packet, PacketState, VarInt, UUID},
+    write::ByteWritable,
+};
 
-use crate::bootstrap::{Address, Connection};
-use crate::bootstrap::mojang::calc_hash;
-use crate::bootstrap::storage::ValidUser;
-use crate::client::processor::InterfaceIn;
-use crate::error::{err, Res};
-use crate::error::Error::WrongPacket;
-use crate::protocol::{ClientInfo, EventQueue, Face, InterfaceOut, InvAction, Login, Mine, Minecraft};
-use crate::protocol::encrypt::{rand_bits, Rsa};
-use crate::protocol::io::reader::PacketReader;
-use crate::protocol::io::writer::{PacketWriteChannel, PacketWriter};
-use crate::protocol::v340::clientbound::{JoinGame, LoginSuccess};
-use crate::protocol::v340::serverbound::{ClientStatusAction, DigStatus, Hand, HandshakeNextState, InteractEntityKind};
-use crate::storage::block::{BlockLocation, BlockState};
-use crate::storage::blocks::ChunkLocation;
-use crate::storage::entities::EntityKind;
-use crate::types::{Dimension, Direction, Location, PacketData, Slot};
+use crate::{
+    bootstrap::{mojang::calc_hash, storage::ValidUser, Address, Connection},
+    client::processor::InterfaceIn,
+    error::{err, Error::WrongPacket, Res},
+    protocol::{
+        encrypt::{rand_bits, Rsa},
+        io::{
+            reader::PacketReader,
+            writer::{PacketWriteChannel, PacketWriter},
+        },
+        v340::{
+            clientbound::{JoinGame, LoginSuccess},
+            serverbound::{
+                ClientStatusAction, DigStatus, Hand, HandshakeNextState, InteractEntityKind,
+            },
+        },
+        ClientInfo, EventQueue, Face, InterfaceOut, InvAction, Login, Mine, Minecraft,
+    },
+    storage::{
+        block::{BlockLocation, BlockState},
+        blocks::ChunkLocation,
+        entities::EntityKind,
+    },
+    types::{Dimension, Direction, Location, PacketData, Slot},
+};
 
 mod clientbound;
 mod serverbound;
@@ -48,7 +54,8 @@ pub struct EventQueue340 {
     location: Location,
     dimension: Dimension,
 
-    /// we need to store state because sometimes death packets occur twice and we only want to send one event
+    /// we need to store state because sometimes death packets occur twice and
+    /// we only want to send one event
     alive: bool,
 }
 
@@ -84,11 +91,15 @@ impl EventQueue340 {
             }
 
             window::Set::ID => {
-                let window::Set { window_id, slot: idx, data } = data.read();
+                let window::Set {
+                    window_id,
+                    slot: idx,
+                    data,
+                } = data.read();
                 if window_id == 0 {
                     match data.into() {
                         None => processor.on_lose_item(idx as usize),
-                        Some(item_stack) => processor.on_pickup_item(idx as usize, item_stack)
+                        Some(item_stack) => processor.on_pickup_item(idx as usize, item_stack),
                     }
                 }
             }
@@ -96,11 +107,12 @@ impl EventQueue340 {
             window::Items::ID => {
                 let window::Items { window_id, slots } = data.read();
 
-                if window_id == 0 { // is player inventory
+                if window_id == 0 {
+                    // is player inventory
                     for (idx, slot) in slots.0.into_iter().enumerate() {
                         match slot.into() {
                             None => processor.on_lose_item(idx),
-                            Some(item_stack) => processor.on_pickup_item(idx, item_stack)
+                            Some(item_stack) => processor.on_pickup_item(idx, item_stack),
                         }
                     }
                 }
@@ -121,9 +133,7 @@ impl EventQueue340 {
                 // auto keep alive
                 let KeepAlive { id } = data.read();
 
-                self.out.write(serverbound::KeepAlive {
-                    id
-                });
+                self.out.write(serverbound::KeepAlive { id });
             }
             entity::RelativeMove::ID => {
                 let entity::RelativeMove { entity_id, loc, .. } = data.read();
@@ -140,16 +150,35 @@ impl EventQueue340 {
                 }
             }
             entity::Teleport::ID => {
-                let entity::Teleport { entity_id, location, .. } = data.read();
+                let entity::Teleport {
+                    entity_id,
+                    location,
+                    ..
+                } = data.read();
                 processor.on_entity_move(entity_id.into(), location.into());
             }
             entity::LivingSpawn::ID => {
-                let entity::LivingSpawn { entity_id, location, .. } = data.read();
+                let entity::LivingSpawn {
+                    entity_id,
+                    location,
+                    ..
+                } = data.read();
                 processor.on_entity_spawn(entity_id.into(), location, EntityKind::Normal);
             }
             entity::PlayerSpawn::ID => {
-                let entity::PlayerSpawn { entity_id, location, player_uuid, .. } = data.read();
-                processor.on_entity_spawn(entity_id.into(), location, EntityKind::Player { uuid: player_uuid.0 });
+                let entity::PlayerSpawn {
+                    entity_id,
+                    location,
+                    player_uuid,
+                    ..
+                } = data.read();
+                processor.on_entity_spawn(
+                    entity_id.into(),
+                    location,
+                    EntityKind::Player {
+                        uuid: player_uuid.0,
+                    },
+                );
             }
             UpdateHealth::ID => {
                 let UpdateHealth { health, food, .. } = data.read();
@@ -170,30 +199,48 @@ impl EventQueue340 {
             // need to do this because the chunk packet is read differently based on dimension
             clientbound::CHUNK_PKT_ID => {
                 let overworld = self.dimension == Dimension::Overworld;
-                let ChunkColumnPacket { chunk_x, chunk_z, column, new_chunk } = data.reader.read_like(&overworld);
+                let ChunkColumnPacket {
+                    chunk_x,
+                    chunk_z,
+                    column,
+                    new_chunk,
+                } = data.reader.read_like(&overworld);
                 processor.on_recv_chunk(ChunkLocation(chunk_x, chunk_z), column, new_chunk);
             }
             MultiBlock::ID => {
-                let MultiBlock { chunk_x, chunk_z, records } = data.read();
+                let MultiBlock {
+                    chunk_x,
+                    chunk_z,
+                    records,
+                } = data.read();
 
                 let base_x = chunk_x << 4;
                 let base_z = chunk_z << 4;
 
-                for Record { x, y, z, block_state } in records {
-                    let location = BlockLocation::new(base_x + x as i32, y as i16, base_z + z as i32);
+                for Record {
+                    x,
+                    y,
+                    z,
+                    block_state,
+                } in records
+                {
+                    let location =
+                        BlockLocation::new(base_x + x as i32, y as i16, base_z + z as i32);
                     processor.on_block_change(location, BlockState(block_state.0 as u32))
                 }
             }
             PlayerPositionAndLook::ID => {
-                let PlayerPositionAndLook { location, rotation: _, teleport_id } = data.read();
+                let PlayerPositionAndLook {
+                    location,
+                    rotation: _,
+                    teleport_id,
+                } = data.read();
 
                 self.location.apply_change(location);
                 processor.on_move(self.location);
 
                 // "accept" the packet
-                self.out.write(serverbound::TeleportConfirm {
-                    teleport_id
-                });
+                self.out.write(serverbound::TeleportConfirm { teleport_id });
             }
             PlayDisconnect::ID => {
                 let PlayDisconnect { reason } = data.read();
@@ -209,9 +256,7 @@ impl EventQueue340 {
                         PlayerListType::UpdateGamemode(_) => {}
                         PlayerListType::UpdateLatency(_) => {}
                         PlayerListType::UpdateDisplayName(_) => {}
-                        PlayerListType::RemovePlayer => {
-                            processor.on_player_leave(uuid.0)
-                        }
+                        PlayerListType::RemovePlayer => processor.on_player_leave(uuid.0),
                     }
                 }
             }
@@ -286,7 +331,7 @@ impl InterfaceOut for Interface340 {
 
     fn send_chat(&mut self, message: &str) {
         self.write(serverbound::ChatMessage {
-            message: message.to_string()
+            message: message.to_string(),
         });
     }
 
@@ -300,24 +345,22 @@ impl InterfaceOut for Interface340 {
     }
 
     fn swing_arm(&mut self) {
-        self.write(serverbound::ArmAnimation {
-            hand: Hand::Main
-        });
+        self.write(serverbound::ArmAnimation { hand: Hand::Main });
     }
 
     fn finish_eating(&mut self) {
-        self.write(serverbound::PlayerDig::status(DigStatus::ShootArrowOrFinishEat));
+        self.write(serverbound::PlayerDig::status(
+            DigStatus::ShootArrowOrFinishEat,
+        ));
     }
 
     fn use_item(&mut self) {
-        self.write(serverbound::UseItem {
-            hand: Hand::Main
-        });
+        self.write(serverbound::UseItem { hand: Hand::Main });
     }
 
     fn change_slot(&mut self, number: u8) {
         self.write(serverbound::ChangeSlot {
-            slot: number as u16
+            slot: number as u16,
         })
     }
 
@@ -325,7 +368,7 @@ impl InterfaceOut for Interface340 {
         let status = match mine {
             Mine::Start => DigStatus::Started,
             Mine::Cancel => DigStatus::Cancelled,
-            Mine::Finished => DigStatus::Finished
+            Mine::Finished => DigStatus::Finished,
         };
 
         if status == DigStatus::Started {
@@ -341,7 +384,7 @@ impl InterfaceOut for Interface340 {
 
     fn respawn(&mut self) {
         self.write(serverbound::ClientStatus {
-            action: ClientStatusAction::Respawn
+            action: ClientStatusAction::Respawn,
         });
     }
 
@@ -376,8 +419,19 @@ impl Minecraft for Protocol {
     type Interface = Interface340;
 
     async fn login(conn: Connection) -> Res<Login<EventQueue340, Interface340>> {
-        let Connection { user, address, mojang, read, write } = conn;
-        let ValidUser { username, uuid, access_id, .. } = user;
+        let Connection {
+            user,
+            address,
+            mojang,
+            read,
+            write,
+        } = conn;
+        let ValidUser {
+            username,
+            uuid,
+            access_id,
+            ..
+        } = user;
 
         let Address { host, port } = address;
         let uuid = UUID::from(&uuid);
@@ -385,22 +439,28 @@ impl Minecraft for Protocol {
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
 
-
         // START: handshake
-        writer.write(serverbound::Handshake {
-            protocol_version: VarInt(340),
-            host,
-            port,
-            next_state: HandshakeNextState::Login,
-        }).await?;
-
+        writer
+            .write(serverbound::Handshake {
+                protocol_version: VarInt(340),
+                host,
+                port,
+                next_state: HandshakeNextState::Login,
+            })
+            .await?;
 
         // START: login
-        writer.write(serverbound::LoginStart {
-            username: username.clone()
-        }).await?;
+        writer
+            .write(serverbound::LoginStart {
+                username: username.clone(),
+            })
+            .await?;
 
-        let clientbound::EncryptionRequest { public_key_der, verify_token, server_id } = reader.read_exact_packet().await?;
+        let clientbound::EncryptionRequest {
+            public_key_der,
+            verify_token,
+            server_id,
+        } = reader.read_exact_packet().await?;
 
         let rsa = Rsa::from_der(&public_key_der);
 
@@ -414,17 +474,18 @@ impl Minecraft for Protocol {
         mojang.join(uuid, &hash, &access_id).await?;
 
         // id = 1
-        writer.write(serverbound::EncryptionResponse {
-            shared_secret: encrypted_ss,
-            verify_token: encrypted_verify,
-        }).await?;
+        writer
+            .write(serverbound::EncryptionResponse {
+                shared_secret: encrypted_ss,
+                verify_token: encrypted_verify,
+            })
+            .await?;
 
         // writer.flush().await;
 
         // we now do everything encrypted
         writer.encryption(&shared_secret);
         reader.encryption(&shared_secret);
-
 
         // set compression or login success
         let mut data = reader.read().await?;
@@ -438,9 +499,7 @@ impl Minecraft for Protocol {
 
                 reader.read_exact_packet().await?
             }
-            clientbound::LoginSuccess::ID => {
-                data.reader.read()
-            }
+            clientbound::LoginSuccess::ID => data.reader.read(),
             actual => {
                 return Err(WrongPacket {
                     state: PacketState::Login,
@@ -461,7 +520,9 @@ impl Minecraft for Protocol {
                     if let Some(os_tx) = oneshot.take() {
                         let mut packet = packet.clone();
                         let processed: JoinGame = packet.read();
-                        os_tx.send((processed.entity_id, processed.dimension)).unwrap();
+                        os_tx
+                            .send((processed.entity_id, processed.dimension))
+                            .unwrap();
                     }
                 }
                 match tx.send(packet) {
@@ -476,7 +537,9 @@ impl Minecraft for Protocol {
 
         let tx = writer.into_channel();
 
-        let (entity_id, dimension) = os_rx.await.map_err(|_| err("disconnected before join game packet"))?;
+        let (entity_id, dimension) = os_rx
+            .await
+            .map_err(|_| err("disconnected before join game packet"))?;
 
         let out = Interface340::new(tx);
 

@@ -1,23 +1,23 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::bootstrap::block_data::{BlockData, Material};
-use crate::client::state::local::inventory::ItemStack;
-use crate::storage::block::BlockKind;
-use crate::types::Enchantment;
+use crate::{
+    bootstrap::block_data::{BlockData, Material},
+    client::state::local::inventory::ItemStack,
+    storage::block::BlockKind,
+    types::Enchantment,
+};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ToolMat {
@@ -29,7 +29,6 @@ pub enum ToolMat {
     Gold,
 }
 
-
 #[derive(Copy, Clone, Debug)]
 pub enum ToolKind {
     Generic,
@@ -39,7 +38,6 @@ pub enum ToolKind {
     Axe,
     Sword,
 }
-
 
 impl ToolMat {
     pub fn strength(self) -> f64 {
@@ -62,11 +60,9 @@ pub struct Tool {
     pub enchantments: Vec<Enchantment>,
 }
 
-
 impl From<&ItemStack> for Tool {
     fn from(stack: &ItemStack) -> Self {
-        use crate::client::physics::tools::ToolKind::*;
-        use crate::client::physics::tools::ToolMat::*;
+        use crate::client::physics::tools::{ToolKind::*, ToolMat::*};
 
         let id = stack.kind.id();
 
@@ -91,7 +87,7 @@ impl From<&ItemStack> for Tool {
             285 => Tool::simple(Pickaxe, Gold),
             286 => Tool::simple(Axe, Gold),
 
-            _ => Tool::simple(Generic, Hand)
+            _ => Tool::simple(Generic, Hand),
         };
 
         simple_tool.id = id;
@@ -117,20 +113,38 @@ impl Default for Tool {
 
 impl Tool {
     pub fn simple(kind: ToolKind, material: ToolMat) -> Self {
-        Self { material, kind, enchantments: Vec::new(), id: 0 }
+        Self {
+            material,
+            kind,
+            enchantments: Vec::new(),
+            id: 0,
+        }
     }
 
     pub fn efficiency(&self) -> Option<u16> {
-        self.enchantments.iter().filter_map(|ench| ench.efficiency())
+        self.enchantments
+            .iter()
+            .filter_map(|ench| ench.efficiency())
             .max()
     }
 
-    fn strength_against_block(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> f64 {
+    fn strength_against_block(
+        &self,
+        kind: BlockKind,
+        underwater: bool,
+        on_ground: bool,
+        data: &BlockData,
+    ) -> f64 {
         let block = kind.data(data);
 
         let can_harvest = match block.material {
-            Material::Web | Material::Generic | Material::Plant | Material::Dirt | Material::Wool | Material::Wood => true,
-            Material::Rock => block.harvest_tools.contains(&self.id)
+            Material::Web
+            | Material::Generic
+            | Material::Plant
+            | Material::Dirt
+            | Material::Wool
+            | Material::Wood => true,
+            Material::Rock => block.harvest_tools.contains(&self.id),
         };
 
         let best_tool = match (block.material, self.kind) {
@@ -138,16 +152,15 @@ impl Tool {
             (Material::Wood, ToolKind::Axe) => true,
             (Material::Dirt, ToolKind::Shovel) => true,
             (Material::Web, ToolKind::Sword) => true,
-            (Material::Plant, _) => false, // need sheers
+            (Material::Plant, _) => false,   // need sheers
             (Material::Generic, _) => false, // i.e., glass
 
-            _ => false
+            _ => false,
         };
 
         let hardness = block.hardness.unwrap_or(f64::INFINITY).max(0.0);
 
         let mut d = 1.0;
-
 
         if best_tool {
             if can_harvest {
@@ -161,9 +174,12 @@ impl Tool {
             }
         }
 
-        if underwater { d /= 5.0; }
-        if !on_ground { d /= 5.0; }
-
+        if underwater {
+            d /= 5.0;
+        }
+        if !on_ground {
+            d /= 5.0;
+        }
 
         let res = d / hardness;
 
@@ -175,18 +191,25 @@ impl Tool {
     }
 
     /// https://minecraft.fandom.com/wiki/Breaking#Speed
-    pub fn wait_time(&self, kind: BlockKind, underwater: bool, on_ground: bool, data: &BlockData) -> usize {
+    pub fn wait_time(
+        &self,
+        kind: BlockKind,
+        underwater: bool,
+        on_ground: bool,
+        data: &BlockData,
+    ) -> usize {
         let strength = self.strength_against_block(kind, underwater, on_ground, data);
         (1.0 / strength).round() as usize
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::bootstrap::block_data::BlockData;
-    use crate::client::physics::tools::{Tool, ToolKind, ToolMat};
-    use crate::storage::block::BlockKind;
+    use crate::{
+        bootstrap::block_data::BlockData,
+        client::physics::tools::{Tool, ToolKind, ToolMat},
+        storage::block::BlockKind,
+    };
 
     #[test]
     fn test_break_time() {
@@ -206,7 +229,6 @@ mod tests {
         assert_eq!(9, time(&hand, BlockKind::GLASS));
         assert_eq!(9, time(&diamond_pick, BlockKind::GLASS));
         assert_eq!(9, time(&diamond_shovel, BlockKind::GLASS));
-
 
         // stone
         assert_eq!(150, time(&hand, BlockKind::STONE));

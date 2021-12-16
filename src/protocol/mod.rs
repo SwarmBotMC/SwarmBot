@@ -1,34 +1,35 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use swarm_bot_packets::types::UUID;
 
-use crate::bootstrap::Connection;
-use crate::client::pathfind::moves::CardinalDirection;
-use crate::client::processor::InterfaceIn;
-use crate::client::state::local::inventory::ItemStack;
-use crate::error::Res;
-use crate::storage::block::BlockLocation;
-use crate::types::{Direction, Location};
+use crate::{
+    bootstrap::Connection,
+    client::{
+        pathfind::moves::CardinalDirection, processor::InterfaceIn,
+        state::local::inventory::ItemStack,
+    },
+    error::Res,
+    storage::block::BlockLocation,
+    types::{Direction, Location},
+};
 
 pub mod v340;
 
+mod encrypt;
 mod io;
 mod transform;
-mod encrypt;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[allow(dead_code)]
@@ -55,7 +56,7 @@ impl From<CardinalDirection> for Face {
             CardinalDirection::North => Face::PosX,
             CardinalDirection::South => Face::NegX,
             CardinalDirection::West => Face::PosZ,
-            CardinalDirection::East => Face::NegZ
+            CardinalDirection::East => Face::NegZ,
         }
     }
 }
@@ -94,7 +95,7 @@ impl From<u8> for Face {
             3 => PosZ,
             4 => NegX,
             5 => PosX,
-            _ => panic!("invalid")
+            _ => panic!("invalid"),
         }
     }
 }
@@ -109,7 +110,7 @@ impl From<MouseButton> for u8 {
     fn from(button: MouseButton) -> Self {
         match button {
             MouseButton::Left => 0,
-            MouseButton::Right => 1
+            MouseButton::Right => 1,
         }
     }
 }
@@ -158,7 +159,6 @@ pub struct ClientInfo {
     pub uuid: UUID,
     pub entity_id: u32,
 }
-
 
 /// login for a given bot. Holds
 pub struct Login<E: EventQueue, I: InterfaceOut> {

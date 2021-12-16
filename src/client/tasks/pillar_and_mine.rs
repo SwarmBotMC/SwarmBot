@@ -1,30 +1,29 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashSet;
 
-use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
-use crate::client::tasks::lazy_stream::LazyStream;
-use crate::client::tasks::mine::MineTask;
-use crate::client::tasks::pillar::PillarTask;
-use crate::client::tasks::stream::TaskStream;
-use crate::client::tasks::Task;
-use crate::protocol::{Face, InterfaceOut};
-use crate::types::Displacement;
+use crate::{
+    client::{
+        state::{global::GlobalState, local::LocalState},
+        tasks::{
+            lazy_stream::LazyStream, mine::MineTask, pillar::PillarTask, stream::TaskStream, Task,
+        },
+    },
+    protocol::{Face, InterfaceOut},
+    types::Displacement,
+};
 
 pub type PillarAndMineTask = LazyStream<PillarOrMine>;
 
@@ -40,7 +39,12 @@ pub struct PillarOrMine {
 }
 
 impl TaskStream for PillarOrMine {
-    fn poll(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> Option<Task> {
+    fn poll(
+        &mut self,
+        out: &mut impl InterfaceOut,
+        local: &mut LocalState,
+        global: &mut GlobalState,
+    ) -> Option<Task> {
         let current_height = (local.physics.location().y).floor() as u32;
 
         // > not >= because we are considering block height
@@ -50,7 +54,9 @@ impl TaskStream for PillarOrMine {
 
         let above1 = local.physics.location() + Displacement::new(0., 2.5, 0.);
         let mut set = HashSet::new();
-        local.physics.in_cross_section(above1, &global.blocks, &mut set);
+        local
+            .physics
+            .in_cross_section(above1, &global.blocks, &mut set);
 
         macro_rules! mine_task {
             ($position:expr) => {{
@@ -64,7 +70,9 @@ impl TaskStream for PillarOrMine {
             mine_task!(position)
         } else {
             let above2 = local.physics.location() + Displacement::new(0., 3.5, 0.);
-            local.physics.in_cross_section(above2, &global.blocks, &mut set);
+            local
+                .physics
+                .in_cross_section(above2, &global.blocks, &mut set);
             if let Some(&position) = set.iter().next() {
                 mine_task!(position)
             } else {

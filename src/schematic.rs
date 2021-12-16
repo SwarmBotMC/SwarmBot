@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::io::Read;
 
@@ -55,19 +53,15 @@ impl Schematic {
 
     pub fn origin(&self) -> Option<BlockLocation> {
         match (self.w_e_origin_x, self.w_e_origin_y, self.w_e_origin_z) {
-            (Some(x), Some(y), Some(z)) => {
-                Some(BlockLocation::new(x, y as i16, z))
-            }
-            _ => None
+            (Some(x), Some(y), Some(z)) => Some(BlockLocation::new(x, y as i16, z)),
+            _ => None,
         }
     }
 
     pub fn offset(&self) -> Option<BlockLocation> {
         match (self.w_e_offset_x, self.w_e_offset_y, self.w_e_offset_z) {
-            (Some(x), Some(y), Some(z)) => {
-                Some(BlockLocation::new(x, y as i16, z))
-            }
-            _ => None
+            (Some(x), Some(y), Some(z)) => Some(BlockLocation::new(x, y as i16, z)),
+            _ => None,
         }
     }
 
@@ -82,32 +76,30 @@ impl Schematic {
         self.length as u64
     }
 
-
-    pub fn blocks(&self) -> impl Iterator<Item=(BlockLocation, BlockState)> + '_ {
+    pub fn blocks(&self) -> impl Iterator<Item = (BlockLocation, BlockState)> + '_ {
         let origin = self.origin().unwrap_or_default();
 
-        (0..self.volume())
-            .map(move |idx| {
-                let x = idx % self.width();
+        (0..self.volume()).map(move |idx| {
+            let x = idx % self.width();
 
-                let leftover = idx / self.width();
-                let z = leftover % self.length();
+            let leftover = idx / self.width();
+            let z = leftover % self.length();
 
-                let y = leftover / self.length();
+            let y = leftover / self.length();
 
-                let location = BlockLocation::new(x as i32, y as i16, z as i32) + origin;
+            let location = BlockLocation::new(x as i32, y as i16, z as i32) + origin;
 
-                let id = self.blocks[idx as usize];
-                let data = self.data[idx as usize];
-                let state = BlockState::from(id as u32, data as u16);
+            let id = self.blocks[idx as usize];
+            let data = self.data[idx as usize];
+            let state = BlockState::from(id as u32, data as u16);
 
-                (location, state)
-            })
+            (location, state)
+        })
     }
 
     // pub fn trim(self) -> Schematic {
-    //     let mut min = BlockLocation::new(self.width as i32, self.height, self.length as i32);
-    //     let mut max = BlockLocation::default();
+    //     let mut min = BlockLocation::new(self.width as i32, self.height,
+    // self.length as i32);     let mut max = BlockLocation::default();
     //     for (location, state) in self.blocks() {
     //         if state.id() != 0 {
     //             for i in 0..3 {
@@ -136,8 +128,8 @@ impl Schematic {
     //             for y in min.y..=max.y {
     //                 let x = x as i16;
     //                 let z = z as i16;
-    //                 let index = (x + (z * self.width) + (y * self.width * self.length)) as usize;
-    //                 blocks.push(self.blocks[index]);
+    //                 let index = (x + (z * self.width) + (y * self.width *
+    // self.length)) as usize;                 blocks.push(self.blocks[index]);
     //                 data.push(self.data[index]);
     //             }
     //         }
@@ -163,13 +155,11 @@ impl Schematic {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::fs::OpenOptions;
+    use std::{collections::HashMap, fs::OpenOptions};
 
     use more_asserts::*;
 
-    use crate::schematic::Schematic;
-    use crate::storage::block::BlockLocation;
+    use crate::{schematic::Schematic, storage::block::BlockLocation};
 
     #[test]
     fn test_load() {

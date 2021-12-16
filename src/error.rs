@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::fmt::{Debug, Display, Formatter};
 
@@ -58,13 +56,14 @@ pub enum MojangErr {
 impl Display for MojangErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            MojangErr::InvalidCredentials { error_code, info } => {
-                f.write_fmt(format_args!("mojang err #{} info {}", error_code, info.clone().unwrap_or_default()))
-            }
+            MojangErr::InvalidCredentials { error_code, info } => f.write_fmt(format_args!(
+                "mojang err #{} info {}",
+                error_code,
+                info.clone().unwrap_or_default()
+            )),
         }
     }
 }
-
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -75,9 +74,16 @@ impl Display for Error {
             Error::Reqwest(inner) => std::fmt::Display::fmt(inner, f),
             Error::Socks5(socks) => std::fmt::Display::fmt(socks, f),
             Error::Mojang(inner) => std::fmt::Display::fmt(inner, f),
-            Error::WrongPacket { state, actual, expected } => f.write_fmt(format_args!("wrong packet. Expected ID {}, got {} in state {}", expected, actual, state)),
+            Error::WrongPacket {
+                state,
+                actual,
+                expected,
+            } => f.write_fmt(format_args!(
+                "wrong packet. Expected ID {}, got {} in state {}",
+                expected, actual, state
+            )),
             Error::Resolve(r) => std::fmt::Display::fmt(r, f),
-            Error::Serde(s) => std::fmt::Display::fmt(s, f)
+            Error::Serde(s) => std::fmt::Display::fmt(s, f),
         }
     }
 }
@@ -160,10 +166,7 @@ impl<T, E: Into<Error>> HasContext<T, Error> for Result<T, E> {
             Err(inner) => {
                 let inner = inner.into();
                 let context = f();
-                Err(ErrorContext {
-                    inner,
-                    context,
-                })
+                Err(ErrorContext { inner, context })
             }
         }
     }

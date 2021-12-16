@@ -1,42 +1,48 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
-use std::default::default;
-use std::rc::Rc;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::{
+    cell::RefCell,
+    default::default,
+    rc::Rc,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use tokio::sync::Notify;
 
-use crate::bootstrap::Connection;
-use crate::client::bot::{ActionState, Bot, run_threaded};
-use crate::client::commands::{Command, Commands, Selection2D};
-use crate::client::processor::SimpleInterfaceIn;
-use crate::client::state::global::GlobalState;
-use crate::client::state::global::mine_alloc::MinePreference;
-use crate::client::state::local::LocalState;
-use crate::client::tasks::attack_entity::AttackEntity;
-use crate::client::tasks::lazy_stream::LazyStream;
-use crate::client::tasks::mine_region::MineRegion;
-use crate::client::tasks::navigate::BlockTravelTask;
+use crate::{
+    bootstrap::Connection,
+    client::{
+        bot::{run_threaded, ActionState, Bot},
+        commands::{Command, Commands, Selection2D},
+        processor::SimpleInterfaceIn,
+        state::{
+            global::{mine_alloc::MinePreference, GlobalState},
+            local::LocalState,
+        },
+        tasks::{
+            attack_entity::AttackEntity, lazy_stream::LazyStream, mine_region::MineRegion,
+            navigate::BlockTravelTask,
+        },
+    },
+};
 
-use crate::error::{Res, ResBox};
-use crate::protocol::{EventQueue, Login, Minecraft};
-
+use crate::{
+    error::{Res, ResBox},
+    protocol::{EventQueue, Login, Minecraft},
+};
 
 struct SyncGlobal(*const GlobalState);
 
@@ -49,7 +55,6 @@ unsafe impl Send for SyncGlobal {}
 unsafe impl Sync for SyncLocal {}
 
 unsafe impl Send for SyncLocal {}
-
 
 pub type Logins<T> = Rc<RefCell<Vec<Login<<T as Minecraft>::Queue, <T as Minecraft>::Interface>>>>;
 
@@ -74,20 +79,26 @@ pub struct Runner<T: Minecraft> {
 pub struct RunnerOptions {
     /// The amount of milliseconds to wait between logging in successive users
     pub delay_millis: u64,
-    pub ws_port: u16
+    pub ws_port: u16,
 }
 
 impl<T: Minecraft + 'static> Runner<T> {
     /// Start the runner process
-    pub async fn run(connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res {
+    pub async fn run(
+        connections: tokio::sync::mpsc::Receiver<Connection>,
+        opts: RunnerOptions,
+    ) -> Res {
         let mut runner = Runner::<T>::init(connections, opts).await?;
         runner.game_loop().await;
         Ok(())
     }
 
-
-    /// Initialize the runner. Go through the handshake process for each [`Connection`]
-    async fn init(mut connections: tokio::sync::mpsc::Receiver<Connection>, opts: RunnerOptions) -> Res<Runner<T>> {
+    /// Initialize the runner. Go through the handshake process for each
+    /// [`Connection`]
+    async fn init(
+        mut connections: tokio::sync::mpsc::Receiver<Connection>,
+        opts: RunnerOptions,
+    ) -> Res<Runner<T>> {
         let commands = Commands::init(opts.ws_port).await?;
 
         let RunnerOptions { delay_millis, .. } = opts;
@@ -132,7 +143,6 @@ impl<T: Minecraft + 'static> Runner<T> {
             id_on: 0,
         })
     }
-
 
     pub async fn game_loop(&mut self) {
         let mut previous_goal = Instant::now();
@@ -180,7 +190,6 @@ impl<T: Minecraft + 'static> Runner<T> {
             }
         }
 
-
         let new_count = self.bots.len();
 
         // log clients if they have changed
@@ -197,27 +206,38 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // fourth step: process packets from game loop
         for bot in &mut self.bots {
-            let mut processor = SimpleInterfaceIn::new(&mut bot.state, &mut bot.actions, &mut self.global_state, &mut bot.out);
+            let mut processor = SimpleInterfaceIn::new(
+                &mut bot.state,
+                &mut bot.actions,
+                &mut self.global_state,
+                &mut bot.out,
+            );
 
             // protocol-specific logic. Translates input packets and sends to processor
             bot.queue.flush(&mut processor);
 
-            // fifth step: general sync logic that isn't dependent on protocol implementation
+            // fifth step: general sync logic that isn't dependent on protocol
+            // implementation
             bot.run_sync(&mut self.global_state);
         }
 
-        // sixth step: run multi-threaded environment for the rest of the game loop. GlobalState will be read-only and LocalState will be mutable
+        // sixth step: run multi-threaded environment for the rest of the game loop.
+        // GlobalState will be read-only and LocalState will be mutable
         let thread_loop_end = Arc::new(Notify::new());
 
         {
             let thread_loop_end = thread_loop_end.clone();
 
-            // We have to do unsafe stuff here because Rust requires a 'static lifetime for threads.
-            // However, in this case we know that the thread (task) will stop by the end of this function, so we
-            // can coerce the lifetimes of &GlobalState and &mut LocalState to be 'static. This is overall pretty
-            // safe as it still requires the states to be Send+Sync, so it is hard to make errors.
+            // We have to do unsafe stuff here because Rust requires a 'static lifetime for
+            // threads. However, in this case we know that the thread (task)
+            // will stop by the end of this function, so we can coerce the
+            // lifetimes of &GlobalState and &mut LocalState to be 'static. This is overall
+            // pretty safe as it still requires the states to be Send+Sync, so
+            // it is hard to make errors.
             let global_state_sync = SyncGlobal(&self.global_state);
-            let states_sync: Vec<_> = self.bots.iter_mut()
+            let states_sync: Vec<_> = self
+                .bots
+                .iter_mut()
                 .map(|bot| (&mut bot.state, &mut bot.actions))
                 .map(|(state, actions)| (state as *mut LocalState, actions as *mut ActionState))
                 .map(SyncLocal)
@@ -237,7 +257,8 @@ impl<T: Minecraft + 'static> Runner<T> {
                     }
                 });
 
-                // when all tasks are finished allow us to go to the beginning of the loop and mutate GlobalState again
+                // when all tasks are finished allow us to go to the beginning of the loop and
+                // mutate GlobalState again
                 thread_loop_end.notify_one();
             });
         }
@@ -261,12 +282,21 @@ impl<T: Minecraft + 'static> Runner<T> {
             }
             Command::GoTo(goto) => {
                 for bot in bots {
-                    bot.actions.schedule(BlockTravelTask::new(goto.location, &bot.state));
+                    bot.actions
+                        .schedule(BlockTravelTask::new(goto.location, &bot.state));
                 }
             }
             Command::Attack(attack) => {
-                let player = self.global_state.players.by_name(&attack.name).ok_or("player does not exist")?;
-                let entity_id = self.global_state.entities.by_player_uuid(player.uuid).ok_or("could not find entity id for player")?;
+                let player = self
+                    .global_state
+                    .players
+                    .by_name(&attack.name)
+                    .ok_or("player does not exist")?;
+                let entity_id = self
+                    .global_state
+                    .entities
+                    .by_player_uuid(player.uuid)
+                    .ok_or("could not find entity id for player")?;
 
                 for bot in bots {
                     let task = LazyStream::from(AttackEntity::new(entity_id));

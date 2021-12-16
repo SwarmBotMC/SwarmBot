@@ -1,26 +1,26 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::VecDeque;
-use std::time::Instant;
+use std::{collections::VecDeque, time::Instant};
 
-use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
-use crate::client::tasks::{Task, TaskTrait};
-use crate::protocol::InterfaceOut;
+use crate::{
+    client::{
+        state::{global::GlobalState, local::LocalState},
+        tasks::{Task, TaskTrait},
+    },
+    protocol::InterfaceOut,
+};
 
 #[derive(Default)]
 pub struct CompoundTask {
@@ -39,8 +39,12 @@ impl CompoundTask {
 }
 
 impl TaskTrait for CompoundTask {
-    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
-
+    fn tick(
+        &mut self,
+        out: &mut impl InterfaceOut,
+        local: &mut LocalState,
+        global: &mut GlobalState,
+    ) -> bool {
         // this is so we can do multiple 0-tick tasks in a gametick
         while let Some(front) = self.tasks.front_mut() {
             let finished = front.tick(out, local, global);
@@ -58,7 +62,7 @@ impl TaskTrait for CompoundTask {
     fn expensive(&mut self, end_at: Instant, local: &mut LocalState, global: &GlobalState) {
         match self.tasks.front_mut() {
             None => {}
-            Some(res) => res.expensive(end_at, local, global)
+            Some(res) => res.expensive(end_at, local, global),
         };
     }
 }

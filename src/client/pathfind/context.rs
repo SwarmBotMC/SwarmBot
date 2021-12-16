@@ -1,24 +1,26 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::hash::{Hash, Hasher};
 
-use crate::client::pathfind::incremental::Node;
-use crate::storage::block::{BlockLocation, BlockState};
-use crate::storage::blocks::WorldBlocks;
+use crate::{
+    client::pathfind::incremental::Node,
+    storage::{
+        block::{BlockLocation, BlockState},
+        blocks::WorldBlocks,
+    },
+};
 
 #[derive(Clone)]
 pub struct Costs {
@@ -68,9 +70,11 @@ pub struct MoveNode {
     /// The current location of the user
     pub location: BlockLocation,
 
-    /// All the modified blocks we currently have that are different than the global state
+    /// All the modified blocks we currently have that are different than the
+    /// global state
 
-    /// The action needed to obtain this node. Note: This different actions do not mean this node is not equal
+    /// The action needed to obtain this node. Note: This different actions do
+    /// not mean this node is not equal
     pub action_to_obtain: Option<Action>,
 
     /// The number of 'throwaway' blocks we have, i.e., for bridging
@@ -111,12 +115,16 @@ impl Clone for MoveNode {
     }
 }
 
-
 impl Node for MoveNode {
     type Record = MoveRecord;
 
     fn get_record(&self) -> Self::Record {
-        let &MoveNode { location, throwaway_block_count, action_to_obtain, .. } = self;
+        let &MoveNode {
+            location,
+            throwaway_block_count,
+            action_to_obtain,
+            ..
+        } = self;
 
         let state = MoveState {
             location,

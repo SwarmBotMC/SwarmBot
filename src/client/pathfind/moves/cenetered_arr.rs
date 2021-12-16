@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::ops::{Index, IndexMut};
 
@@ -24,13 +22,11 @@ pub struct ConstCenteredArray<T, const SIZE: usize> {
 pub struct CenteredArray;
 
 impl CenteredArray {
-    pub fn init<T: Default + Copy, const R: usize>() -> ConstCenteredArray<T, { (2 * R + 1) * (2 * R + 1) }> {
+    pub fn init<T: Default + Copy, const R: usize>(
+    ) -> ConstCenteredArray<T, { (2 * R + 1) * (2 * R + 1) }> {
         let arr = [T::default(); (2 * R + 1) * (2 * R + 1)];
         let width: usize = 2 * R + 1;
-        ConstCenteredArray {
-            arr,
-            width,
-        }
+        ConstCenteredArray { arr, width }
     }
 }
 
@@ -59,7 +55,6 @@ impl<T, const SIZE: usize> IndexMut<(i32, i32)> for ConstCenteredArray<T, SIZE> 
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
@@ -72,7 +67,6 @@ mod test {
                 arr[(x, y)] = (x, y);
             }
         }
-
 
         for x in -4..=4 {
             for y in -4..=4 {

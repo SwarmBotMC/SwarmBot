@@ -1,32 +1,37 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::{BinaryHeap, HashMap};
-use std::convert::TryFrom;
+use std::{
+    collections::{BinaryHeap, HashMap},
+    convert::TryFrom,
+};
 
 use float_ord::FloatOrd;
-use rand::{Rng, SeedableRng};
-use rand::rngs::StdRng;
+use rand::{rngs::StdRng, Rng, SeedableRng};
 
-use crate::client::bot::{ProcessError, WrongArgCount};
-use crate::client::pathfind::MinHeapNode;
-use crate::schematic::Schematic;
-use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
-use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection};
-use crate::types::Location;
+use crate::{
+    client::{
+        bot::{ProcessError, WrongArgCount},
+        pathfind::MinHeapNode,
+    },
+    schematic::Schematic,
+    storage::{
+        block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType},
+        chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection},
+    },
+    types::Location,
+};
 
 pub mod cache;
 
@@ -77,8 +82,11 @@ impl<T: Ord> Iterator for HeapIter<T> {
     }
 }
 
-
-fn block_chunk_iter(loc: &'a ChunkLocation, column: &'a ChunkData<HighMemoryChunkSection>, selector: impl FnMut(BlockState) -> bool + 'a) -> impl Iterator<Item=BlockLocation> + 'a {
+fn block_chunk_iter(
+    loc: &'a ChunkLocation,
+    column: &'a ChunkData<HighMemoryChunkSection>,
+    selector: impl FnMut(BlockState) -> bool + 'a,
+) -> impl Iterator<Item = BlockLocation> + 'a {
     let start_x = loc.0 << 4;
     let start_z = loc.1 << 4;
     column.select_up(selector).map(move |idx| {
@@ -104,7 +112,8 @@ impl WorldBlocks {
     }
 
     pub fn first_below(&self, location: BlockLocation) -> Option<(BlockLocation, BlockState)> {
-        (0..location.y).rev()
+        (0..location.y)
+            .rev()
             .map(|y| BlockLocation::new(location.x, y, location.z))
             .find_map(|loc| {
                 let exact = self.get_block_exact(loc)?;
@@ -116,7 +125,8 @@ impl WorldBlocks {
             })
     }
 
-    /// similar to a bedrock floor. (0,0) is guaranteed to be a solid as well as (950, 950)
+    /// similar to a bedrock floor. (0,0) is guaranteed to be a solid as well as
+    /// (950, 950)
     pub fn set_random_floor(&mut self) {
         const RADIUS: i32 = 1000;
         let mut rdm = StdRng::seed_from_u64(12338971);
@@ -134,7 +144,12 @@ impl WorldBlocks {
         self.set_block(BlockLocation::new(950, 0, 950), BlockState::STONE);
     }
 
-    pub fn y_slice(&self, origin: BlockLocation, radius: u8, mut selector: impl FnMut(BlockState) -> bool) -> Option<Vec<BlockLocation>> {
+    pub fn y_slice(
+        &self,
+        origin: BlockLocation,
+        radius: u8,
+        mut selector: impl FnMut(BlockState) -> bool,
+    ) -> Option<Vec<BlockLocation>> {
         let BlockLocation { x, y, z } = origin;
 
         let radius = radius as i32;
@@ -161,7 +176,10 @@ impl WorldBlocks {
                     .map(|(idx, state)| {
                         let dx = (idx % 16) as i32;
                         let dz = (idx / 16) as i32;
-                        (BlockLocation::new(chunk_start_x + dx, y as i16, chunk_start_z + dz), state)
+                        (
+                            BlockLocation::new(chunk_start_x + dx, y as i16, chunk_start_z + dz),
+                            state,
+                        )
                     })
                     .filter(|(loc, _)| {
                         let dx = (x - loc.x).abs();
@@ -209,7 +227,8 @@ impl WorldBlocks {
         let column = self.storage.get(&loc)?;
 
         // this *should* be either the void or the sky (at least pre-1.17)
-        // we do this check here because we want to return None if there is no chunk column in that position
+        // we do this check here because we want to return None if there is no chunk
+        // column in that position
         if !(0..256).contains(&y) {
             return Some(BlockApprox::Realized(BlockState::AIR));
         }
@@ -218,25 +237,40 @@ impl WorldBlocks {
         Some(block)
     }
 
-    pub fn closest_in_chunk(&'a self, origin: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> Option<BlockLocation> {
+    pub fn closest_in_chunk(
+        &'a self,
+        origin: BlockLocation,
+        selector: impl FnMut(BlockState) -> bool + 'a + Copy,
+    ) -> Option<BlockLocation> {
         let loc = ChunkLocation::from(origin);
         let chunk = self.storage.get(&loc)?;
 
         if let ChunkColumn::HighMemory { data } = chunk {
-            block_chunk_iter(&loc, data, selector).min_by_key(|&location| FloatOrd(origin.dist2(location)))
+            block_chunk_iter(&loc, data, selector)
+                .min_by_key(|&location| FloatOrd(origin.dist2(location)))
         } else {
             None
         }
     }
 
-    pub fn closest(&'a self, origin: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> Option<BlockLocation> {
+    pub fn closest(
+        &'a self,
+        origin: BlockLocation,
+        max_chunks: usize,
+        selector: impl FnMut(BlockState) -> bool + 'a + Copy,
+    ) -> Option<BlockLocation> {
         self.select(origin, max_chunks, selector)
             .min_by_key(|loc| FloatOrd(loc.dist2(origin)))
     }
 
-    pub fn closest_iter(&'a self, origin: BlockLocation, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
+    pub fn closest_iter(
+        &'a self,
+        origin: BlockLocation,
+        selector: impl FnMut(BlockState) -> bool + 'a + Copy,
+    ) -> impl Iterator<Item = BlockLocation> + 'a {
         // we use a heap to reduce complexity in case we do not need to use all values
-        let heap = self.select(origin, usize::MAX, selector)
+        let heap = self
+            .select(origin, usize::MAX, selector)
             .map(|loc| MinHeapNode::new(loc, loc.dist2(origin)))
             .collect();
 
@@ -244,39 +278,47 @@ impl WorldBlocks {
         iterator.map(|node| node.contents)
     }
 
-    fn real_chunks(&self) -> impl Iterator<Item=(&ChunkLocation, &ChunkData<HighMemoryChunkSection>)> + '_ {
-        self.storage.iter()
-            .filter_map(|(loc, column)| {
-                match column {
-                    ChunkColumn::HighMemory { data } => {
-                        Some((loc, data))
-                    }
-                    _ => { None }
-                }
+    fn real_chunks(
+        &self,
+    ) -> impl Iterator<Item = (&ChunkLocation, &ChunkData<HighMemoryChunkSection>)> + '_ {
+        self.storage
+            .iter()
+            .filter_map(|(loc, column)| match column {
+                ChunkColumn::HighMemory { data } => Some((loc, data)),
+                _ => None,
             })
     }
 
-    pub fn select(&'a self, _around: BlockLocation, max_chunks: usize, selector: impl FnMut(BlockState) -> bool + 'a + Copy) -> impl Iterator<Item=BlockLocation> + 'a {
+    pub fn select(
+        &'a self,
+        _around: BlockLocation,
+        max_chunks: usize,
+        selector: impl FnMut(BlockState) -> bool + 'a + Copy,
+    ) -> impl Iterator<Item = BlockLocation> + 'a {
         self.real_chunks()
             .take(max_chunks)
-            .flat_map(move |(loc, column)| {
-                block_chunk_iter(loc, column, selector)
-            })
+            .flat_map(move |(loc, column)| block_chunk_iter(loc, column, selector))
     }
 
-    pub fn get_real_column(&self, location: ChunkLocation) -> Option<&ChunkData<HighMemoryChunkSection>> {
+    pub fn get_real_column(
+        &self,
+        location: ChunkLocation,
+    ) -> Option<&ChunkData<HighMemoryChunkSection>> {
         let res = self.storage.get(&location)?;
         match res {
             ChunkColumn::HighMemory { data } => Some(data),
-            _ => None
+            _ => None,
         }
     }
 
-    pub fn get_real_column_mut(&mut self, location: ChunkLocation) -> Option<&mut ChunkData<HighMemoryChunkSection>> {
+    pub fn get_real_column_mut(
+        &mut self,
+        location: ChunkLocation,
+    ) -> Option<&mut ChunkData<HighMemoryChunkSection>> {
         let res = self.storage.get_mut(&location)?;
         match res {
             ChunkColumn::HighMemory { data } => Some(data),
-            _ => None
+            _ => None,
         }
     }
 
@@ -294,7 +336,6 @@ impl WorldBlocks {
         let chunk_x = chunk_x as i32;
         let chunk_z = chunk_z as i32;
 
-
         let loc = ChunkLocation(chunk_x, chunk_z);
 
         let column = self.storage.entry(loc).or_default();
@@ -310,7 +351,7 @@ impl WorldBlocks {
         let block = self.get_block(location)?;
         match block {
             BlockApprox::Realized(state) => Some(state),
-            _ => None
+            _ => None,
         }
     }
 
@@ -323,14 +364,18 @@ impl WorldBlocks {
 #[cfg(test)]
 mod tests {
     use std::fs::OpenOptions;
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
 
     use assert_matches::assert_matches as am;
     use rand::Rng;
 
-    use crate::schematic::Schematic;
-    use crate::storage::block::{BlockApprox, BlockLocation, BlockState};
-    use crate::storage::blocks::WorldBlocks;
+    use crate::{
+        schematic::Schematic,
+        storage::{
+            block::{BlockApprox, BlockLocation, BlockState},
+            blocks::WorldBlocks,
+        },
+    };
 
     #[test]
     fn test_get_set() {
@@ -338,11 +383,10 @@ mod tests {
 
         let loc = BlockLocation::new(0, 0, 0);
 
-
         {
             world.set_block(loc, BlockState::STONE);
             let got = world.get_block(loc);
-            am!(got , Some(BlockApprox::Realized(BlockState::STONE)));
+            am!(got, Some(BlockApprox::Realized(BlockState::STONE)));
         }
 
         {
@@ -351,16 +395,16 @@ mod tests {
             world.set_block(up, given);
 
             let got_up = world.get_block(up);
-            am!(got_up , Some(BlockApprox::Realized(_given)));
+            am!(got_up, Some(BlockApprox::Realized(_given)));
 
             let got = world.get_block(loc);
-            am!(got , Some(BlockApprox::Realized(BlockState::STONE)));
+            am!(got, Some(BlockApprox::Realized(BlockState::STONE)));
         }
 
         {
             world.set_block(loc, BlockState::AIR);
             let got = world.get_block(loc);
-            am!(got , Some(BlockApprox::Realized(BlockState::AIR)));
+            am!(got, Some(BlockApprox::Realized(BlockState::AIR)));
         }
     }
 
@@ -377,12 +421,15 @@ mod tests {
             Schematic::load(&mut spawn_2b2t)
         };
 
-
         world.paste(&schematic);
 
         for (idx, (loc, state)) in schematic.blocks().enumerate() {
             let actual = world.get_block_exact(loc).unwrap();
-            assert_eq!(actual, state, "block at {} was supposed to be {:?} but was actually {:?} @ index {}", loc, state, actual, idx);
+            assert_eq!(
+                actual, state,
+                "block at {} was supposed to be {:?} but was actually {:?} @ index {}",
+                loc, state, actual, idx
+            );
         }
     }
 
@@ -399,11 +446,9 @@ mod tests {
             Schematic::load(&mut spawn_2b2t)
         };
 
-
         world.paste(&schematic);
 
         let origin = schematic.origin().unwrap();
-
 
         let mut rand = rand::thread_rng();
 

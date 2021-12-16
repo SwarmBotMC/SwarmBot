@@ -1,30 +1,28 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::mpsc::UnboundedSender};
 
+use swarm_bot_packets::{
+    types::{Packet, RawVec, VarInt},
+    write::{ByteWritable, ByteWritableLike, ByteWriter},
+};
 
-use tokio::io::AsyncWriteExt;
-use tokio::net::tcp::OwnedWriteHalf;
-use tokio::sync::mpsc::UnboundedSender;
-
-use swarm_bot_packets::types::{Packet, RawVec, VarInt};
-use swarm_bot_packets::write::{ByteWritable, ByteWritableLike, ByteWriter};
-
-use crate::error::Res;
-use crate::protocol::io::{Aes, ZLib};
+use crate::{
+    error::Res,
+    protocol::io::{Aes, ZLib},
+};
 
 pub struct PacketWriter {
     writer: EncryptedWriter,
@@ -63,9 +61,7 @@ impl From<OwnedWriteHalf> for PacketWriter {
 fn data<T: Packet + ByteWritable>(packet: T, compression: &Option<ZLib>) -> Vec<u8> {
     let data = PktData::from(packet);
 
-    let complete_packet = CompletePacket {
-        data
-    };
+    let complete_packet = CompletePacket { data };
 
     let mut writer = ByteWriter::new();
 
@@ -95,7 +91,6 @@ impl PacketWriter {
         self.compression = Some(ZLib::new(threshold))
     }
 
-
     pub async fn write<T: Packet + ByteWritable>(&mut self, packet: T) -> Res {
         let mut data = data(packet, &self.compression);
         self.writer.write_all(&mut data).await
@@ -112,13 +107,9 @@ impl PacketWriter {
             }
         });
 
-        PacketWriteChannel {
-            tx,
-            compression,
-        }
+        PacketWriteChannel { tx, compression }
     }
 }
-
 
 struct PktData {
     pub id: VarInt,
@@ -143,14 +134,12 @@ struct CompletePacket {
 
 impl ByteWritable for PktData {
     fn write_to_bytes(self, writer: &mut ByteWriter) {
-        writer.write(self.id)
-            .write(self.data);
+        writer.write(self.id).write(self.data);
     }
 }
 
 impl ByteWritableLike for CompletePacket {
     type Param = Option<ZLib>;
-
 
     fn write_to_bytes_like(self, writer: &mut ByteWriter, zlib: &Self::Param) {
         let mut temp_writer = ByteWriter::new();
@@ -159,21 +148,21 @@ impl ByteWritableLike for CompletePacket {
         let data: RawVec = temp_writer.freeze().into();
         let uncompressed_len = data.len() as i32;
 
-
         match zlib {
             None => {
-                writer.write(VarInt(uncompressed_len))
-                    .write(data);
+                writer.write(VarInt(uncompressed_len)).write(data);
             }
             Some(zlib) => {
                 if uncompressed_len < zlib.threshold as i32 {
-                    writer.write(VarInt(uncompressed_len + 1))
+                    writer
+                        .write(VarInt(uncompressed_len + 1))
                         .write(VarInt(0))
                         .write(data);
                 } else {
                     let data: RawVec = zlib.compress(&data.inner()).unwrap().into();
                     let compressed_len: VarInt = (data.len() as i32 + uncompressed_len).into();
-                    writer.write(compressed_len)
+                    writer
+                        .write(compressed_len)
                         .write(VarInt(uncompressed_len))
                         .write(data);
                 }

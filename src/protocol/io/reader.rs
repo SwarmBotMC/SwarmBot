@@ -1,32 +1,37 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 
-use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
-use tokio::net::tcp::OwnedReadHalf;
+use tokio::{
+    io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf},
+    net::tcp::OwnedReadHalf,
+};
 
-use swarm_bot_packets::read::{ByteReadable, ByteReader, LenRead};
-use swarm_bot_packets::types::{Packet, RawVec, VarInt};
+use swarm_bot_packets::{
+    read::{ByteReadable, ByteReader, LenRead},
+    types::{Packet, RawVec, VarInt},
+};
 
-use crate::error::Error::WrongPacket;
-use crate::error::Res;
-use crate::protocol::io::{Aes, ZLib};
-use crate::types::PacketData;
+use crate::{
+    error::{Error::WrongPacket, Res},
+    protocol::io::{Aes, ZLib},
+    types::PacketData,
+};
 
 pub struct PacketReader {
     reader: EncryptedReader,
@@ -39,7 +44,11 @@ struct EncryptedReader {
 }
 
 impl AsyncRead for EncryptedReader {
-    fn poll_read(mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<std::io::Result<()>> {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
         let filled_before = buf.filled().len();
         Pin::new(&mut self.reader).poll_read(cx, buf).map_ok(|_| {
             let filled_after = buf.filled().len();
@@ -68,7 +77,6 @@ impl From<OwnedReadHalf> for PacketReader {
         }
     }
 }
-
 
 impl PacketReader {
     pub fn encryption(&mut self, key: &[u8]) {
@@ -100,7 +108,7 @@ impl PacketReader {
 
         let data = match self.compression.as_ref() {
             None => packet_reader(&mut reader, pkt_len),
-            Some(zlib) => packet_reader_compressed(&mut reader, zlib, pkt_len)
+            Some(zlib) => packet_reader_compressed(&mut reader, zlib, pkt_len),
         };
 
         let mut reader = ByteReader::new(data);
@@ -112,7 +120,11 @@ impl PacketReader {
         })
     }
 
-    pub async fn read_exact_packet<T>(&mut self) -> Res<T> where T: Packet, T: ByteReadable {
+    pub async fn read_exact_packet<T>(&mut self) -> Res<T>
+    where
+        T: Packet,
+        T: ByteReadable,
+    {
         let PacketData { id, mut reader } = self.read().await?;
 
         // if id == 0 && T::STATE == PacketState::Login {

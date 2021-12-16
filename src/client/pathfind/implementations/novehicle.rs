@@ -1,25 +1,28 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-use crate::client::pathfind::context::MoveNode;
-use crate::client::pathfind::implementations::PlayerProblem;
-use crate::client::pathfind::traits::{GoalCheck, Heuristic};
-use crate::storage::block::{BlockLocation, BlockLocation2D};
-use crate::storage::blocks::ChunkLocation;
+use crate::{
+    client::pathfind::{
+        context::MoveNode,
+        implementations::PlayerProblem,
+        traits::{GoalCheck, Heuristic},
+    },
+    storage::{
+        block::{BlockLocation, BlockLocation2D},
+        blocks::ChunkLocation,
+    },
+};
 
 pub struct BlockGoalCheck {
     goal: BlockLocation,
@@ -33,7 +36,11 @@ pub struct BlockNearGoalCheck {
 
 impl BlockNearGoalCheck {
     fn new(goal: BlockLocation2D, dist2: f64, must_not_hit: bool) -> Self {
-        Self { goal, dist2, must_not_hit }
+        Self {
+            goal,
+            dist2,
+            must_not_hit,
+        }
     }
 }
 
@@ -72,7 +79,10 @@ impl CenterChunkGoalCheck {
     fn new(goal: ChunkLocation) -> Self {
         let goal_x_center = (goal.0 << 4) + 8;
         let goal_z_center = (goal.1 << 4) + 8;
-        Self { goal_x_center, goal_z_center }
+        Self {
+            goal_x_center,
+            goal_z_center,
+        }
     }
 }
 
@@ -87,9 +97,7 @@ impl GoalCheck for CenterChunkGoalCheck {
 
 impl BlockGoalCheck {
     pub fn new(goal: BlockLocation) -> Self {
-        Self {
-            goal
-        }
+        Self { goal }
     }
 }
 
@@ -99,7 +107,6 @@ impl GoalCheck for BlockGoalCheck {
         close_y && input.location.x == self.goal.x && input.location.z == self.goal.z
     }
 }
-
 
 pub struct BlockHeuristic {
     pub move_cost: f64,
@@ -150,14 +157,25 @@ pub type TravelChunkCenterProblem = PlayerProblem<ChunkHeuristic, CenterChunkGoa
 
 impl TravelProblem {
     pub fn navigate_block(start: BlockLocation, goal: BlockLocation) -> TravelBlockProblem {
-        let heuristic = BlockHeuristic { move_cost: 1.0, goal };
+        let heuristic = BlockHeuristic {
+            move_cost: 1.0,
+            goal,
+        };
         let start_node = MoveNode::simple(start);
         let goal_checker = BlockGoalCheck::new(goal);
         PlayerProblem::new(start_node, heuristic, goal_checker)
     }
 
-    pub fn navigate_near_block(start: BlockLocation, goal: BlockLocation2D, dist2: f64, must_not_hit: bool) -> TravelNearProblem {
-        let heuristic = BlockHeuristic { move_cost: 1.0, goal: goal.into() };
+    pub fn navigate_near_block(
+        start: BlockLocation,
+        goal: BlockLocation2D,
+        dist2: f64,
+        must_not_hit: bool,
+    ) -> TravelNearProblem {
+        let heuristic = BlockHeuristic {
+            move_cost: 1.0,
+            goal: goal.into(),
+        };
         let start_node = MoveNode::simple(start);
         let goal_checker = BlockNearGoalCheck::new(goal, dist2, must_not_hit);
         PlayerProblem::new(start_node, heuristic, goal_checker)
@@ -170,7 +188,10 @@ impl TravelProblem {
         PlayerProblem::new(start_node, heuristic, goal_checker)
     }
 
-    pub fn navigate_center_chunk(start: BlockLocation, goal: ChunkLocation) -> TravelChunkCenterProblem {
+    pub fn navigate_center_chunk(
+        start: BlockLocation,
+        goal: ChunkLocation,
+    ) -> TravelChunkCenterProblem {
         let heuristic = ChunkHeuristic::new(goal, 1.0);
         let start_node = MoveNode::simple(start);
         let goal_checker = CenterChunkGoalCheck::new(goal);

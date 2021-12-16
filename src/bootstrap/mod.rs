@@ -1,34 +1,35 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use serde::Deserialize;
-use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
-use tokio::sync::mpsc::Receiver;
+use tokio::{
+    net::tcp::{OwnedReadHalf, OwnedWriteHalf},
+    sync::mpsc::Receiver,
+};
 use tokio_socks::tcp::Socks5Stream;
 
-use crate::bootstrap::mojang::Mojang;
-use crate::bootstrap::storage::{ProxyUser, ValidUser};
+use crate::bootstrap::{
+    mojang::Mojang,
+    storage::{ProxyUser, ValidUser},
+};
 
-pub mod opts;
-pub mod csv;
 pub mod block_data;
+pub mod csv;
 pub mod dns;
-pub mod storage;
 pub mod mojang;
-
+pub mod opts;
+pub mod storage;
 
 #[derive(Clone, Debug)]
 pub struct Address {
@@ -52,16 +53,30 @@ pub struct Connection {
 }
 
 impl Connection {
-    pub fn stream(address: Address, mut users: tokio::sync::mpsc::Receiver<ProxyUser>) -> Receiver<Connection> {
+    pub fn stream(
+        address: Address,
+        mut users: tokio::sync::mpsc::Receiver<ProxyUser>,
+    ) -> Receiver<Connection> {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         tokio::task::spawn_local(async move {
             while let Some(user) = users.recv().await {
                 let tx = tx.clone();
                 let address = address.clone();
                 tokio::task::spawn_local(async move {
-                    let ProxyUser { proxy, user, mojang } = user;
+                    let ProxyUser {
+                        proxy,
+                        user,
+                        mojang,
+                    } = user;
                     let target = String::from(&address);
-                    let conn = Socks5Stream::connect_with_password(proxy.address().as_str(), target.as_str(), &proxy.user, &proxy.pass).await.unwrap();
+                    let conn = Socks5Stream::connect_with_password(
+                        proxy.address().as_str(),
+                        target.as_str(),
+                        &proxy.user,
+                        &proxy.pass,
+                    )
+                    .await
+                    .unwrap();
                     let (read, write) = conn.into_inner().into_split();
                     tx.send(Connection {
                         user,
@@ -69,7 +84,9 @@ impl Connection {
                         mojang,
                         read,
                         write,
-                    }).await.unwrap();
+                    })
+                    .await
+                    .unwrap();
                 });
             }
         });

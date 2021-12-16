@@ -1,31 +1,35 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::client::bot::{ActionState, process_command};
-use crate::client::state::global::GlobalState;
-use crate::client::state::local::inventory::ItemStack;
-use crate::client::state::local::LocalState;
-use crate::client::tasks::eat::EatTask;
-use crate::protocol::InterfaceOut;
-use crate::storage::block::{BlockLocation, BlockState};
-use crate::storage::blocks::ChunkLocation;
-use crate::storage::chunk::ChunkColumn;
-use crate::types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage};
-use crate::storage::entities::EntityKind;
-use crate::client::state::global::world_players::Player;
+use crate::{
+    client::{
+        bot::{process_command, ActionState},
+        state::{
+            global::{world_players::Player, GlobalState},
+            local::{inventory::ItemStack, LocalState},
+        },
+        tasks::eat::EatTask,
+    },
+    protocol::InterfaceOut,
+    storage::{
+        block::{BlockLocation, BlockState},
+        blocks::ChunkLocation,
+        chunk::ChunkColumn,
+        entities::EntityKind,
+    },
+    types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage},
+};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -55,7 +59,12 @@ pub struct SimpleInterfaceIn<'a, I: InterfaceOut> {
 }
 
 impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
-    pub fn new(local: &'a mut LocalState, actions: &'a mut ActionState, global: &'a mut GlobalState, out: &'a mut I) -> SimpleInterfaceIn<'a, I> {
+    pub fn new(
+        local: &'a mut LocalState,
+        actions: &'a mut ActionState,
+        global: &'a mut GlobalState,
+        out: &'a mut I,
+    ) -> SimpleInterfaceIn<'a, I> {
         SimpleInterfaceIn {
             local,
             global,
@@ -65,7 +74,6 @@ impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
     }
 }
 
-
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
         println!("{}", message.clone().colorize());
@@ -74,7 +82,14 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
             if let Some(cmd) = msg.into_cmd() {
                 let name = cmd.command;
                 let args_str: Vec<&str> = cmd.args.iter().map(|x| x.as_str()).collect();
-                if let Err(err) = process_command(&name, &args_str, self.local, self.global, self.actions, self.out) {
+                if let Err(err) = process_command(
+                    &name,
+                    &args_str,
+                    self.local,
+                    self.global,
+                    self.actions,
+                    self.out,
+                ) {
                     println!("could not process command. Reason: {}", err);
                 }
             }
@@ -109,7 +124,11 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         // we should probably eat something
         if food < 10 {
             // if we could switch to food
-            if self.local.inventory.switch_food(&self.global.block_data, self.out) {
+            if self
+                .local
+                .inventory
+                .switch_food(&self.global.block_data, self.out)
+            {
                 self.actions.schedule(EatTask::default());
             }
         }
@@ -138,31 +157,31 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_entity_move(&mut self, id: u32, location: LocationOrigin) {
-        self.global.entities.update_entity(id, self.local.bot_id, location);
+        self.global
+            .entities
+            .update_entity(id, self.local.bot_id, location);
     }
 
     fn on_block_change(&mut self, location: BlockLocation, state: BlockState) {
         self.global.blocks.set_block(location, state);
     }
 
-
     fn on_entity_destroy(&mut self, id: u32) {
         self.global.entities.remove_entity(id, self.local.bot_id);
     }
 
     fn on_entity_spawn(&mut self, id: u32, location: Location, kind: EntityKind) {
-        self.global.entities.put_entity(id, self.local.bot_id, location, kind);
+        self.global
+            .entities
+            .put_entity(id, self.local.bot_id, location, kind);
     }
 
     fn on_player_join(&mut self, uuid: u128, name: String) {
-       self.global.players.add(Player {
-           name,
-           uuid
-       });
+        self.global.players.add(Player { name, uuid });
     }
 
     fn on_player_leave(&mut self, uuid: u128) {
-       self.global.players.remove(uuid);
+        self.global.players.remove(uuid);
     }
 
     fn on_disconnect(&mut self, reason: &str) {

@@ -1,31 +1,29 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
-use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
 use bincode::{config::Configuration, Decode, Encode};
+use std::{
+    collections::HashMap,
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    path::PathBuf,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use tokio::sync::mpsc::Receiver;
 
-use crate::bootstrap::{CSVUser, Proxy};
-use crate::bootstrap::mojang::Mojang;
+use crate::bootstrap::{mojang::Mojang, CSVUser, Proxy};
 
 #[derive(Encode, Decode, Debug)]
 struct Root {
@@ -59,7 +57,7 @@ impl User {
     fn email(&self) -> &String {
         match self {
             User::Valid(ValidUser { email, .. }) => email,
-            User::Invalid(InvalidUser { email, .. }) => email
+            User::Invalid(InvalidUser { email, .. }) => email,
         }
     }
 }
@@ -69,9 +67,9 @@ pub struct UserCache {
     cache: HashMap<String, User>,
 }
 
-
-/// A proxy user holds the "Mojang" object used in cache to verify that the user is valid along with
-/// data about what the proxy address is and the valid user information
+/// A proxy user holds the "Mojang" object used in cache to verify that the user
+/// is valid along with data about what the proxy address is and the valid user
+/// information
 #[derive(Debug)]
 pub struct ProxyUser {
     pub user: ValidUser,
@@ -99,17 +97,22 @@ impl UserCache {
             let file = File::open(&file_path).unwrap();
             let bytes: Result<Vec<_>, _> = file.bytes().collect();
             let bytes = bytes.unwrap();
-            let (Root { users }, _) = bincode::decode_from_slice(&bytes, Configuration::standard()).unwrap();
+            let (Root { users }, _) =
+                bincode::decode_from_slice(&bytes, Configuration::standard()).unwrap();
 
-            let cache: HashMap<_, _> = users.into_iter().map(|user| (user.email().clone(), user)).collect();
-            UserCache {
-                file_path,
-                cache,
-            }
+            let cache: HashMap<_, _> = users
+                .into_iter()
+                .map(|user| (user.email().clone(), user))
+                .collect();
+            UserCache { file_path, cache }
         }
     }
 
-    async fn get_or_put(&mut self, user: &CSVUser, iter: &mut impl Iterator<Item=Proxy>) -> Option<(Mojang, Proxy, ValidUser)> {
+    async fn get_or_put(
+        &mut self,
+        user: &CSVUser,
+        iter: &mut impl Iterator<Item = Proxy>,
+    ) -> Option<(Mojang, Proxy, ValidUser)> {
         match self.cache.get_mut(&user.email) {
             None => {
                 let proxy = iter.next().unwrap();
@@ -126,7 +129,8 @@ impl UserCache {
                             client_id: res.client_token,
                         };
                         let valid_user = valid_user;
-                        self.cache.insert(valid_user.email.clone(), User::Valid(valid_user.clone()));
+                        self.cache
+                            .insert(valid_user.email.clone(), User::Valid(valid_user.clone()));
                         Some((mojang, proxy, valid_user))
                     }
 
@@ -137,7 +141,8 @@ impl UserCache {
                             email: user.email.clone(),
                             password: user.password.clone(),
                         };
-                        self.cache.insert(invalid.email.clone(), User::Invalid(invalid));
+                        self.cache
+                            .insert(invalid.email.clone(), User::Invalid(invalid));
                         None
                     }
                 }
@@ -155,7 +160,10 @@ impl UserCache {
 
                         println!("refreshing auth tokens for {} due to time", user.email);
 
-                        let is_valid = mojang.validate(&valid.access_id, &valid.client_id).await.unwrap();
+                        let is_valid = mojang
+                            .validate(&valid.access_id, &valid.client_id)
+                            .await
+                            .unwrap();
 
                         if !is_valid {
                             println!("failed validating {}", user.email);
@@ -184,7 +192,10 @@ impl UserCache {
 
                                         // we cannot do anything more -> change to invalid
                                         Err(e) => {
-                                            println!("failed authenticating {} .. {}", user.email, e);
+                                            println!(
+                                                "failed authenticating {} .. {}",
+                                                user.email, e
+                                            );
                                             *cached = User::Invalid(InvalidUser {
                                                 email: valid.email.clone(),
                                                 password: valid.password.clone(),
@@ -206,7 +217,12 @@ impl UserCache {
         }
     }
 
-    pub fn obtain_users(mut self, count: usize, users: Vec<CSVUser>, proxies: Vec<Proxy>) -> Receiver<ProxyUser> {
+    pub fn obtain_users(
+        mut self,
+        count: usize,
+        users: Vec<CSVUser>,
+        proxies: Vec<Proxy>,
+    ) -> Receiver<ProxyUser> {
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(32);
@@ -214,16 +230,18 @@ impl UserCache {
         tokio::task::spawn_local(async move {
             let mut local_count = 0;
 
-            'user_loop:
-            for csv_user in users.into_iter() {
-                if let Some((mojang, proxy, user)) = self.get_or_put(&csv_user, &mut proxies).await {
+            'user_loop: for csv_user in users.into_iter() {
+                if let Some((mojang, proxy, user)) = self.get_or_put(&csv_user, &mut proxies).await
+                {
                     local_count += 1;
                     println!("valid user {}", user.email);
                     tx.send(ProxyUser {
                         user,
                         proxy,
                         mojang,
-                    }).await.unwrap();
+                    })
+                    .await
+                    .unwrap();
                 } else {
                     println!("invalid user {}", csv_user.email);
                 }
@@ -242,9 +260,7 @@ impl UserCache {
 
             let users = self.cache.drain().map(|(_, v)| v).collect();
 
-            let root = Root {
-                users
-            };
+            let root = Root { users };
 
             let data = bincode::encode_to_vec(&root, Configuration::standard()).unwrap();
             file.write_all(&data).unwrap();

@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
@@ -21,8 +19,10 @@ use sha1::Sha1;
 
 use swarm_bot_packets::types::UUID;
 
-use crate::bootstrap::Proxy;
-use crate::error::{MojangErr, Res};
+use crate::{
+    bootstrap::Proxy,
+    error::{MojangErr, Res},
+};
 
 #[derive(Debug)]
 pub struct Mojang {
@@ -36,16 +36,11 @@ impl Mojang {
         let pass = &proxy.pass;
         let full_address = format!("socks5://{}", address);
 
-        let proxy = reqwest::Proxy::https(full_address)?
-            .basic_auth(user, pass);
+        let proxy = reqwest::Proxy::https(full_address)?.basic_auth(user, pass);
 
-        let client = reqwest::Client::builder()
-            .proxy(proxy)
-            .build()?;
+        let client = reqwest::Client::builder().proxy(proxy).build()?;
 
-        Ok(Mojang {
-            client
-        })
+        Ok(Mojang { client })
     }
 }
 
@@ -62,7 +57,6 @@ fn hexdigest(bytes: &[u8]) -> String {
     let bigint = BigInt::from_signed_bytes_be(bytes);
     format!("{:x}", bigint)
 }
-
 
 #[derive(Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -101,7 +95,9 @@ impl Mojang {
 
         let payload = payload.to_string();
 
-        let res = self.client.post("https://authserver.mojang.com/authenticate")
+        let res = self
+            .client
+            .post("https://authserver.mojang.com/authenticate")
             .body(payload)
             .send()
             .await?;
@@ -111,7 +107,8 @@ impl Mojang {
             return Err(MojangErr::InvalidCredentials {
                 error_code: status,
                 info: res.text().await.ok(),
-            }.into());
+            }
+            .into());
         }
 
         let auth: RawAuthResponse = res.json().await?;
@@ -129,9 +126,12 @@ impl Mojang {
             "accessToken": access_token, // this is not a mistake... the username now takes in email
             "clientToken": client_token,
             "requestUser": false,
-        }).to_string();
+        })
+        .to_string();
 
-        let res = self.client.post("https://authserver.mojang.com/refresh")
+        let res = self
+            .client
+            .post("https://authserver.mojang.com/refresh")
             .body(payload)
             .send()
             .await?;
@@ -151,9 +151,12 @@ impl Mojang {
         let payload = json!({
             "accessToken": access_token, // this is not a mistake... the username now takes in email
             "clientToken": client_token,
-        }).to_string();
+        })
+        .to_string();
 
-        let res = self.client.post("https://authserver.mojang.com/validate")
+        let res = self
+            .client
+            .post("https://authserver.mojang.com/validate")
             .body(payload)
             .send()
             .await?;
@@ -173,7 +176,9 @@ impl Mojang {
 
         let payload = payload.to_string();
 
-        let res = self.client.post("https://sessionserver.mojang.com/session/minecraft/join")
+        let res = self
+            .client
+            .post("https://sessionserver.mojang.com/session/minecraft/join")
             .body(payload)
             .send()
             .await?;
@@ -184,7 +189,8 @@ impl Mojang {
             let err = Err(MojangErr::InvalidCredentials {
                 error_code: status,
                 info: res.text().await.ok(),
-            }.into());
+            }
+            .into());
 
             println!("err {:?}", err);
             return err;
@@ -193,7 +199,6 @@ impl Mojang {
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

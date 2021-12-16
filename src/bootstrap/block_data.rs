@@ -1,21 +1,21 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::{HashMap, HashSet};
-use std::fs::OpenOptions;
+use std::{
+    collections::{HashMap, HashSet},
+    fs::OpenOptions,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -76,8 +76,12 @@ impl From<RawBlock> for Block {
         Self {
             id: block.id,
             hardness: block.hardness,
-            harvest_tools: block.harvest_tools.unwrap_or_default().into_iter()
-                .filter_map(|(k, v)| v.then(|| k)).collect(),
+            harvest_tools: block
+                .harvest_tools
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|(k, v)| v.then(|| k))
+                .collect(),
             material: block.material.unwrap_or_default(),
         }
     }
@@ -104,7 +108,6 @@ impl BlockData {
         self.food_lookup.contains(&id)
     }
 
-
     pub fn read() -> Result<BlockData, serde_json::Error> {
         let blocks: Vec<RawBlock> = {
             let reader = OpenOptions::new().read(true).open("blocks.json").unwrap();
@@ -120,10 +123,7 @@ impl BlockData {
 
         let blocks = blocks.into_iter().map(Block::from);
 
-        let block_lookup = blocks
-            .map(|elem| (elem.id, elem))
-            .collect();
-
+        let block_lookup = blocks.map(|elem| (elem.id, elem)).collect();
 
         Ok(BlockData {
             block_lookup,

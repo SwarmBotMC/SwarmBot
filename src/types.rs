@@ -1,37 +1,40 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::f32::consts::PI;
-use std::fmt::{Display, Formatter};
-use std::lazy::SyncLazy;
-use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub};
+use std::{
+    f32::consts::PI,
+    fmt::{Display, Formatter},
+    lazy::SyncLazy,
+    ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub},
+};
 
 use ansi_term::Style;
 use itertools::Itertools;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
-use swarm_bot_packets::*;
-use swarm_bot_packets::read::{ByteReadable, ByteReader};
-use swarm_bot_packets::write::{ByteWritable, ByteWriter};
+use swarm_bot_packets::{
+    read::{ByteReadable, ByteReader},
+    write::{ByteWritable, ByteWriter},
+    *,
+};
 
-use crate::client::pathfind::moves::Change;
-use crate::client::state::local::inventory::ItemStack;
-use crate::storage::block::BlockLocation;
-use crate::types::Origin::{Abs, Rel};
+use crate::{
+    client::{pathfind::moves::Change, state::local::inventory::ItemStack},
+    storage::block::BlockLocation,
+    types::Origin::{Abs, Rel},
+};
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -86,7 +89,7 @@ impl ChatSection {
             "dark_gray" => Black,
             "green" | "dark_green" => Green,
             "white" => White,
-            _ => Black
+            _ => Black,
         };
 
         let mut res = Style::from(color);
@@ -118,7 +121,6 @@ pub struct Command {
     pub args: Vec<String>,
 }
 
-
 #[derive(Debug)]
 pub struct PlayerMessage {
     pub player: String,
@@ -127,14 +129,11 @@ pub struct PlayerMessage {
 
 impl PlayerMessage {
     pub fn into_cmd(self) -> Option<Command> {
-        static RE: SyncLazy<Regex> = SyncLazy::new(|| {
-            Regex::new(r"^#(\S+)\s?(.*)").unwrap()
-        });
+        static RE: SyncLazy<Regex> = SyncLazy::new(|| Regex::new(r"^#(\S+)\s?(.*)").unwrap());
         let capture = RE.captures(&self.message)?;
 
         let command = capture.get(1)?.as_str().to_string();
         let args = capture.get(2)?.as_str().to_string();
-
 
         let args = if args.is_empty() {
             Vec::new()
@@ -152,9 +151,8 @@ impl PlayerMessage {
 
 impl Chat {
     pub fn player_dm(&self) -> Option<PlayerMessage> {
-        static RE: SyncLazy<Regex> = SyncLazy::new(|| {
-            Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap()
-        });
+        static RE: SyncLazy<Regex> =
+            SyncLazy::new(|| Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap());
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
 
@@ -162,15 +160,11 @@ impl Chat {
 
         let player = captures.get(1)?.as_str().to_string();
         let message = captures.get(2)?.as_str().to_string();
-        Some(PlayerMessage {
-            player,
-            message,
-        })
+        Some(PlayerMessage { player, message })
     }
     pub fn player_message(&self) -> Option<PlayerMessage> {
-        static RE: SyncLazy<Regex> = SyncLazy::new(|| {
-            Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap()
-        });
+        static RE: SyncLazy<Regex> =
+            SyncLazy::new(|| Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap());
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
 
@@ -179,10 +173,7 @@ impl Chat {
         let player = captures.get(1)?.as_str().to_string();
         let message = captures.get(2)?.as_str().to_string();
 
-        Some(PlayerMessage {
-            player,
-            message,
-        })
+        Some(PlayerMessage { player, message })
     }
 }
 
@@ -208,7 +199,11 @@ impl Location {
 
     pub fn round(&self) -> Location {
         let &Location { x, y, z } = self;
-        Location { x: x.round(), y: y.round(), z: z.round() }
+        Location {
+            x: x.round(),
+            y: y.round(),
+            z: z.round(),
+        }
     }
 
     pub fn add_y(&self, dy: f64) -> Location {
@@ -343,7 +338,6 @@ impl<T: ByteReadable> ByteReadable for ShortVec<T> {
     }
 }
 
-
 /// https://wiki.vg/Slot_Data
 #[derive(Debug)]
 pub struct Slot {
@@ -389,7 +383,7 @@ impl ByteWritable for Slot {
 
             match self.nbt {
                 None => writer.write(0_u8),
-                Some(nbt) => writer.write(nbt)
+                Some(nbt) => writer.write(nbt),
             };
         }
     }
@@ -426,7 +420,6 @@ impl ByteReadable for Slot {
     }
 }
 
-
 impl From<Change> for Displacement {
     fn from(change: Change) -> Self {
         Self {
@@ -439,7 +432,10 @@ impl From<Change> for Displacement {
 
 impl Display for Displacement {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("[{:.2} {:.2} {:.2}]", self.dx, self.dy, self.dz))
+        f.write_fmt(format_args!(
+            "[{:.2} {:.2} {:.2}]",
+            self.dx, self.dy, self.dz
+        ))
     }
 }
 
@@ -488,7 +484,6 @@ impl Displacement {
         let dz = if self.dz.abs() < 0.5 { 0. } else { self.dz };
         Self { dx, dy, dz }
     }
-
 
     pub fn make_dy(&self, dy: f64) -> Displacement {
         Self {
@@ -566,7 +561,7 @@ impl Index<usize> for Displacement {
             0 => &self.dx,
             1 => &self.dy,
             2 => &self.dz,
-            _ => panic!("invalid index")
+            _ => panic!("invalid index"),
         }
     }
 }
@@ -676,7 +671,7 @@ impl Origin<f64> {
     pub fn apply(&self, other: &mut f64) {
         match self {
             Origin::Rel(x) => *other += *x,
-            Origin::Abs(x) => *other = *x
+            Origin::Abs(x) => *other = *x,
         }
     }
 }
@@ -685,7 +680,7 @@ impl Origin<f32> {
     pub fn apply(&self, other: &mut f32) {
         match self {
             Origin::Rel(x) => *other += *x,
-            Origin::Abs(x) => *other = *x
+            Origin::Abs(x) => *other = *x,
         }
     }
 }
@@ -725,9 +720,12 @@ impl DirectionOrigin {
 #[derive(Readable, Writable, Copy, Clone, Default, Debug)]
 pub struct Direction {
     /// wiki.vg:
-    ///yaw is measured in degrees, and does not follow classical trigonometry rules.
-    ///The unit circle of yaw on the XZ-plane starts at (0, 1) and turns counterclockwise, with 90 at (-1, 0), 180 at (0,-1) and 270 at (1, 0).
-    ///Additionally, yaw is not clamped to between 0 and 360 degrees; any number is valid, including negative numbers and numbers greater than 360.
+    /// yaw is measured in degrees, and does not follow classical trigonometry
+    /// rules. The unit circle of yaw on the XZ-plane starts at (0, 1) and
+    /// turns counterclockwise, with 90 at (-1, 0), 180 at (0,-1) and 270 at (1,
+    /// 0). Additionally, yaw is not clamped to between 0 and 360 degrees;
+    /// any number is valid, including negative numbers and numbers greater than
+    /// 360.
     pub yaw: f32,
     pub pitch: f32,
 }
@@ -763,7 +761,6 @@ impl From<Displacement> for Direction {
         let r = (dx * dx + dy * dy + dz * dz).sqrt();
         let mut yaw = -dx.atan2(dz) / PI * 180.0;
 
-
         if yaw < 0.0 {
             yaw += 360.0
         }
@@ -774,10 +771,7 @@ impl From<Displacement> for Direction {
             yaw = 0.0;
         }
         let pitch = -(dy / r).asin() / PI * 180.0;
-        Direction {
-            yaw,
-            pitch,
-        }
+        Direction { yaw, pitch }
     }
 }
 
@@ -793,7 +787,7 @@ impl Display for Dimension {
         let to_write = match self {
             Dimension::Nether => "nether",
             Dimension::Overworld => "overworld",
-            Dimension::End => "end"
+            Dimension::End => "end",
         };
         f.write_str(to_write)
     }
@@ -807,19 +801,17 @@ impl ByteReadable for Dimension {
             -1 => Nether,
             0 => Overworld,
             1 => End,
-            val => panic!("dimension {} is not valid", val)
+            val => panic!("dimension {} is not valid", val),
         }
     }
 }
 
 pub type Position = BlockLocation;
 
-
 impl ByteReadable for Position {
     ///
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let val: u64 = byte_reader.read();
-
 
         let mut x = (val >> 38) as i32;
         let mut y = ((val >> 26) & 0xFFF) as i16;
@@ -831,22 +823,25 @@ impl ByteReadable for Position {
         const Y_THRESH: i16 = 1 << 11;
         const Y_SUB: i16 = 1 << 12;
 
-        if x >= LAT_LON_THRESHOLD { x -= LAT_LON_SUB }
-        if y >= Y_THRESH { y -= Y_SUB }
-        if z >= LAT_LON_THRESHOLD { z -= LAT_LON_SUB }
-
-        Position {
-            x,
-            y,
-            z,
+        if x >= LAT_LON_THRESHOLD {
+            x -= LAT_LON_SUB
         }
+        if y >= Y_THRESH {
+            y -= Y_SUB
+        }
+        if z >= LAT_LON_THRESHOLD {
+            z -= LAT_LON_SUB
+        }
+
+        Position { x, y, z }
     }
 }
 
 impl ByteWritable for Position {
     fn write_to_bytes(self, writer: &mut ByteWriter) {
         let Position { x, y, z } = self;
-        let write = ((x as u64 & 0x3FFFFFF) << 38) | ((y as u64 & 0xFFF) << 26) | (z as u64 & 0x3FFFFFF);
+        let write =
+            ((x as u64 & 0x3FFFFFF) << 38) | ((y as u64 & 0xFFF) << 26) | (z as u64 & 0x3FFFFFF);
         writer.write(write);
     }
 }

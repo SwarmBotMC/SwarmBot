@@ -1,27 +1,31 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::{BinaryHeap, HashMap};
-use std::fmt::{Debug, Formatter};
-use std::hash::Hash;
-use std::time::Instant;
+use std::{
+    collections::{BinaryHeap, HashMap},
+    fmt::{Debug, Formatter},
+    hash::Hash,
+    time::Instant,
+};
 
-use crate::client::pathfind::MinHeapNode;
-use crate::client::pathfind::traits::{GoalCheck, Heuristic, Progression, Progressor};
-use crate::client::timing::Increment;
+use crate::client::{
+    pathfind::{
+        traits::{GoalCheck, Heuristic, Progression, Progressor},
+        MinHeapNode,
+    },
+    timing::Increment,
+};
 
 /// credit baritone
 const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
@@ -31,19 +35,23 @@ const MIN_DIST2: f64 = MIN_DIST * MIN_DIST;
 /// An A-star Node
 pub trait Node: Clone {
     /// # Purpose
-    /// Sometimes nodes are very memory expensive. To reduce this only open nodes need to contain
-    /// full state. Records can instead store a hash to show equality. Records should contain all the information
+    /// Sometimes nodes are very memory expensive. To reduce this only open
+    /// nodes need to contain full state. Records can instead store a hash
+    /// to show equality. Records should contain all the information
     /// needed in the path returned by A-star.
     ///
     /// # Equality
-    /// If a Node is equal to another node its records should be equal and if nodes are not equal the
-    /// records should not be equal.
+    /// If a Node is equal to another node its records should be equal and if
+    /// nodes are not equal the records should not be equal.
     ///
     /// # Example
-    /// If A-star is done on a block mining problem we need to store all blocks mined for every node. This is expensive as we
-    /// only need to progress from the open set and in the path returned we will only need to record each block mined at an
-    /// individual node. When progressing the parents of each node we can get the total state, but this is expensive so in the
-    /// open set we will probably want to have some type of [HashSet] or [HashMap].
+    /// If A-star is done on a block mining problem we need to store all blocks
+    /// mined for every node. This is expensive as we only need to progress
+    /// from the open set and in the path returned we will only need to record
+    /// each block mined at an individual node. When progressing the parents
+    /// of each node we can get the total state, but this is expensive so in the
+    /// open set we will probably want to have some type of [HashSet] or
+    /// [HashMap].
     ///
     /// ```
     /// For any node pair (Node_a, Node_b)
@@ -61,7 +69,8 @@ pub struct AStar<T: Node> {
     state: Option<AStarState<T>>,
 }
 
-/// The state of AStar. This is a separate object so that when the iteration is done the state can be moved
+/// The state of AStar. This is a separate object so that when the iteration is
+/// done the state can be moved
 struct AStarState<T: Node> {
     /// given an idx return a record
     idx_to_record: Vec<T::Record>,
@@ -69,7 +78,8 @@ struct AStarState<T: Node> {
     /// given a record return an idx
     record_to_idx: HashMap<T::Record, usize>,
 
-    /// tracks ancestors of records to reconstruct the final path `Vec<T::Record>`
+    /// tracks ancestors of records to reconstruct the final path
+    /// `Vec<T::Record>`
     parent_map: HashMap<usize, usize>,
 
     /// **map record_id -> g_score**.
@@ -93,11 +103,16 @@ struct AStarState<T: Node> {
 
 pub type Path<T> = Vec<T>;
 
-/// Takes ownership of all nodes and returns a path ending at goal_idx which will start
-/// at a starting idx determined by tracing parent_map HashMap<idx,idx> until there
-/// is no parent (i.e., the root node). This is the most efficient path, so there should
-/// be no circles assuming non-negative weights.
-fn reconstruct_path<T: Clone>(vec: Vec<T>, goal_idx: usize, parent_map: &HashMap<usize, usize>) -> Vec<T> {
+/// Takes ownership of all nodes and returns a path ending at goal_idx which
+/// will start at a starting idx determined by tracing parent_map
+/// HashMap<idx,idx> until there is no parent (i.e., the root node). This is the
+/// most efficient path, so there should be no circles assuming non-negative
+/// weights.
+fn reconstruct_path<T: Clone>(
+    vec: Vec<T>,
+    goal_idx: usize,
+    parent_map: &HashMap<usize, usize>,
+) -> Vec<T> {
     let init_value = vec[goal_idx].clone();
 
     let mut res = vec![init_value];
@@ -120,7 +135,10 @@ pub struct PathResult<T> {
 
 impl<T: Debug> Debug for PathResult<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("PathResult{{complete: {:?}, value: {:?}}}", self.complete, self.value))
+        f.write_fmt(format_args!(
+            "PathResult{{complete: {:?}, value: {:?}}}",
+            self.complete, self.value
+        ))
     }
 }
 
@@ -170,9 +188,7 @@ impl<T: Node> AStar<T> {
             max_duration_ms: 5000,
         });
 
-        AStar {
-            state
-        }
+        AStar { state }
     }
 
     pub fn set_max_millis(&mut self, value: u128) {
@@ -199,12 +215,17 @@ impl<T: Node> AStar<T> {
         Increment::Finished(PathResult::incomplete(path))
     }
 
-    pub fn iterate_until(&mut self, end_at: Instant, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T::Record>> {
+    pub fn iterate_until(
+        &mut self,
+        end_at: Instant,
+        heuristic: &impl Heuristic<T>,
+        progressor: &impl Progressor<T>,
+        goal_check: &impl GoalCheck<T>,
+    ) -> Increment<PathResult<T::Record>> {
         let iter_start = Instant::now();
 
         loop {
             let now = Instant::now();
-
 
             if now >= end_at {
                 let iter_duration = now.duration_since(iter_start);
@@ -227,12 +248,17 @@ impl<T: Node> AStar<T> {
             }
         }
     }
-    pub fn iterate(&mut self, heuristic: &impl Heuristic<T>, progressor: &impl Progressor<T>, goal_check: &impl GoalCheck<T>) -> Increment<PathResult<T::Record>> {
-
-        // obtain the state. If we have already finished the state is Option as we did Option#take(..). We should not ever call this in that state.
+    pub fn iterate(
+        &mut self,
+        heuristic: &impl Heuristic<T>,
+        progressor: &impl Progressor<T>,
+        goal_check: &impl GoalCheck<T>,
+    ) -> Increment<PathResult<T::Record>> {
+        // obtain the state. If we have already finished the state is Option as we did
+        // Option#take(..). We should not ever call this in that state.
         let state = match self.state.as_mut() {
             None => panic!("called after finished"),
-            Some(state) => state
+            Some(state) => state,
         };
 
         if let Some(node) = state.open_set.pop() {
@@ -251,7 +277,9 @@ impl<T: Node> AStar<T> {
                 Progression::Movements(neighbors) => {
                     neighbors // we have neighbors that we can process
                 }
-                _ => return Increment::InProgress, // there are no neighbors. Each iteration we just look at the neighbors of one open node so we return
+                _ => return Increment::InProgress, /* there are no neighbors. Each iteration we
+                                                    * just look at the neighbors of one open node
+                                                    * so we return */
             };
 
             let parent_record = parent.get_record();
@@ -259,8 +287,7 @@ impl<T: Node> AStar<T> {
 
             let parent_g_score = *state.g_scores.get(&parent_record_idx).unwrap();
 
-            'neighbor_loop:
-            for neighbor in neighbors {
+            'neighbor_loop: for neighbor in neighbors {
                 let tentative_g_score = parent_g_score + neighbor.cost;
 
                 let value = neighbor.value.clone();
@@ -311,7 +338,10 @@ impl<T: Node> AStar<T> {
                 state.open_set.push(heap_node);
             }
         } else {
-            println!("no more nodes iterated through {}", state.idx_to_record.len());
+            println!(
+                "no more nodes iterated through {}",
+                state.idx_to_record.len()
+            );
             return self.select_best();
         }
 

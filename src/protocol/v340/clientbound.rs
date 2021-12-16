@@ -1,37 +1,43 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::cmp::max;
 
 use itertools::Itertools;
 
-use swarm_bot_packets::{Packet, Readable, Writable};
-use swarm_bot_packets::read::{ByteReadable, ByteReadableLike, ByteReader};
-use swarm_bot_packets::types::{BitField, Identifier, RawVec, UUID, UUIDHyphenated, VarInt, VarUInt};
+use swarm_bot_packets::{
+    read::{ByteReadable, ByteReadableLike, ByteReader},
+    types::{BitField, Identifier, RawVec, UUIDHyphenated, VarInt, VarUInt, UUID},
+    Packet, Readable, Writable,
+};
 
-use crate::storage::block::{BlockLocation, BlockState};
-use crate::storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette};
-use crate::types::{Chat, Dimension, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin, Position};
+use crate::{
+    storage::{
+        block::{BlockLocation, BlockState},
+        chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette},
+    },
+    types::{
+        Chat, Dimension, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin,
+        Position,
+    },
+};
 
 #[derive(Packet, Readable)]
 #[packet(0x00, Login)]
 pub struct Disconnect {
     pub reason: String,
 }
-
 
 #[derive(Debug)]
 pub enum GameMode {
@@ -50,7 +56,7 @@ impl ByteReadable for GameMode {
             1 => Creative,
             2 => Adventure,
             3 => Spectator,
-            val => panic!("gamemode {} is not valid", val)
+            val => panic!("gamemode {} is not valid", val),
         }
     }
 }
@@ -124,7 +130,11 @@ impl ByteReadable for PlayerProperty {
         let value = byte_reader.read();
         let is_signed: bool = byte_reader.read();
         let signature = is_signed.then(|| byte_reader.read());
-        Self { name, value, signature }
+        Self {
+            name,
+            value,
+            signature,
+        }
     }
 }
 
@@ -142,7 +152,13 @@ impl ByteReadable for AddPlayer {
         let (name, properties, gamemode, ping) = br.read();
         let has_display_name: bool = br.read();
         let display_name = has_display_name.then(|| br.read());
-        Self { name, properties, gamemode, ping, display_name }
+        Self {
+            name,
+            properties,
+            gamemode,
+            ping,
+            display_name,
+        }
     }
 }
 
@@ -165,10 +181,10 @@ impl ByteReadableLike for PlayerListType {
             2 => Self::UpdateLatency(byte_reader.read()),
             3 => Self::UpdateDisplayName({
                 let has_val: bool = byte_reader.read();
-                has_val.then(||byte_reader.read())
+                has_val.then(|| byte_reader.read())
             }),
             4 => Self::RemovePlayer,
-            _ => panic!("invalid id")
+            _ => panic!("invalid id"),
         }
     }
 }
@@ -231,10 +247,11 @@ pub struct PlayerPositionAndLookRaw {
     teleport_id: VarInt,
 }
 
-
 pub mod entity {
-    use swarm_bot_packets::*;
-    use swarm_bot_packets::types::{Angle, UUID, VarInt};
+    use swarm_bot_packets::{
+        types::{Angle, VarInt, UUID},
+        *,
+    };
 
     use crate::types::{Location, ShortLoc};
 
@@ -303,7 +320,6 @@ pub mod entity {
     }
 }
 
-
 #[derive(Packet, Debug)]
 #[packet(0x2f, Play)]
 pub struct PlayerPositionAndLook {
@@ -318,7 +334,6 @@ pub struct PluginMessage {
     pub channel: Identifier,
     pub data: RawVec,
 }
-
 
 #[derive(Packet, Debug, Readable)]
 #[packet(0x0f, Play)]
@@ -354,14 +369,18 @@ impl ByteReadable for Explosion {
             records.0
         };
 
-
         let origin_block = BlockLocation::from_flts(location.x, location.y, location.z);
         let location: Location = location.into();
-        let records = records.into_iter().map(|record| BlockLocation::new(
-            origin_block.x + record.x as i32,
-            origin_block.y + record.y as i16,
-            origin_block.z + record.z as i32,
-        )).collect();
+        let records = records
+            .into_iter()
+            .map(|record| {
+                BlockLocation::new(
+                    origin_block.x + record.x as i32,
+                    origin_block.y + record.y as i16,
+                    origin_block.z + record.z as i32,
+                )
+            })
+            .collect();
         Self {
             location,
             radius,
@@ -376,7 +395,6 @@ pub struct BlockChange {
     pub location: Position,
     pub block_id: VarInt,
 }
-
 
 #[derive(Packet, Debug, Readable)]
 #[packet(0x41, Play)]
@@ -435,13 +453,9 @@ impl ByteReadableLike for ChunkColumnPacket {
             idx += 1;
         }
 
-        let data = ChunkData {
-            sections
-        };
+        let data = ChunkData { sections };
 
-        let column = ChunkColumn::HighMemory {
-            data
-        };
+        let column = ChunkColumn::HighMemory { data };
 
         ChunkColumnPacket {
             chunk_x,
@@ -451,7 +465,6 @@ impl ByteReadableLike for ChunkColumnPacket {
         }
     }
 }
-
 
 pub mod window {
     use crate::types::{ShortVec, Slot};
@@ -475,7 +488,6 @@ pub mod window {
         pub title: String,
 
         pub slot_count: u8,
-
         // TODO: entity id if EntityHorse
     }
 
@@ -490,7 +502,6 @@ pub mod window {
     }
 }
 
-
 pub struct ChunkSection {
     palette: crate::storage::chunk::Palette,
 
@@ -502,7 +513,6 @@ pub struct ChunkSection {
     sky_light: Option<[u8; 2048]>,
 }
 
-
 impl ByteReadableLike for ChunkSection {
     type Param = bool;
 
@@ -511,7 +521,10 @@ impl ByteReadableLike for ChunkSection {
         let palette = if bits_per_block <= 8 {
             let bits_per_block = max(bits_per_block, 4);
             let block_state_ids: Vec<VarInt> = byte_reader.read();
-            let block_state_ids = block_state_ids.into_iter().map(|id| BlockState(id.0 as u32)).collect_vec();
+            let block_state_ids = block_state_ids
+                .into_iter()
+                .map(|id| BlockState(id.0 as u32))
+                .collect_vec();
             let storage: Vec<u64> = byte_reader.read();
             Palette::indirect(bits_per_block, block_state_ids, storage)
         } else {

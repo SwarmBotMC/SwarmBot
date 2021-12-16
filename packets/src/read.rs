@@ -1,21 +1,21 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::convert::TryInto;
-use std::io::{Cursor, Read};
+use std::{
+    convert::TryInto,
+    io::{Cursor, Read},
+};
 
 use bytes::Buf;
 
@@ -53,7 +53,7 @@ impl ByteReader {
         }
     }
 
-    pub fn read_like<T: ByteReadableLike<Param=P>, P>(&mut self, input: &P) -> T {
+    pub fn read_like<T: ByteReadableLike<Param = P>, P>(&mut self, input: &P) -> T {
         T::read_from_bytes(self, input)
     }
 
@@ -71,19 +71,15 @@ impl ByteReader {
 
     pub fn new(vec: Vec<u8>) -> ByteReader {
         let bytes = Cursor::new(vec);
-        Self {
-            bytes
-        }
+        Self { bytes }
     }
 }
-
 
 impl Read for ByteReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         self.bytes.read(buf)
     }
 }
-
 
 pub trait ByteReadable {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self;
@@ -124,27 +120,42 @@ impl ByteReadable for f64 {
     }
 }
 
-impl <A: ByteReadable, B: ByteReadable> ByteReadable for (A,B) {
+impl<A: ByteReadable, B: ByteReadable> ByteReadable for (A, B) {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         (byte_reader.read(), byte_reader.read())
     }
 }
 
-impl <A: ByteReadable, B: ByteReadable, C: ByteReadable> ByteReadable for (A,B,C) {
+impl<A: ByteReadable, B: ByteReadable, C: ByteReadable> ByteReadable for (A, B, C) {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         (byte_reader.read(), byte_reader.read(), byte_reader.read())
     }
 }
 
-impl <A: ByteReadable, B: ByteReadable, C: ByteReadable, D: ByteReadable> ByteReadable for (A,B,C, D) {
+impl<A: ByteReadable, B: ByteReadable, C: ByteReadable, D: ByteReadable> ByteReadable
+    for (A, B, C, D)
+{
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        (byte_reader.read(), byte_reader.read(), byte_reader.read(), byte_reader.read())
+        (
+            byte_reader.read(),
+            byte_reader.read(),
+            byte_reader.read(),
+            byte_reader.read(),
+        )
     }
 }
 
-impl <A: ByteReadable, B: ByteReadable, C: ByteReadable, D: ByteReadable, E: ByteReadable> ByteReadable for (A,B,C, D, E) {
+impl<A: ByteReadable, B: ByteReadable, C: ByteReadable, D: ByteReadable, E: ByteReadable>
+    ByteReadable for (A, B, C, D, E)
+{
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        (byte_reader.read(), byte_reader.read(), byte_reader.read(), byte_reader.read(), byte_reader.read())
+        (
+            byte_reader.read(),
+            byte_reader.read(),
+            byte_reader.read(),
+            byte_reader.read(),
+            byte_reader.read(),
+        )
     }
 }
 
@@ -159,7 +170,6 @@ impl ByteReadable for i8 {
         byte_reader.bytes.get_i8()
     }
 }
-
 
 impl ByteReadable for u64 {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
@@ -202,7 +212,6 @@ impl<T: ByteReadable> ByteReadable for Vec<T> {
         (0..length).map(|_| byte_reader.read()).collect()
     }
 }
-
 
 impl ByteReadable for String {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {

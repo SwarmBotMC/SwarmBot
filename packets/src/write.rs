@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::io::Write;
 
@@ -44,7 +42,6 @@ impl ByteWritable for u8 {
         writer.bytes.put_u8(self);
     }
 }
-
 
 impl ByteWritable for bool {
     fn write_to_bytes(self, writer: &mut ByteWriter) {
@@ -104,14 +101,18 @@ impl ByteWriter {
         self
     }
 
-    pub fn write_like<T: ByteWritableLike<Param=P>, P>(&mut self, value: T, param: &P) -> &mut Self {
+    pub fn write_like<T: ByteWritableLike<Param = P>, P>(
+        &mut self,
+        value: T,
+        param: &P,
+    ) -> &mut Self {
         value.write_to_bytes_like(self, param);
         self
     }
 
     pub fn new() -> Self {
         ByteWriter {
-            bytes: BytesMut::new()
+            bytes: BytesMut::new(),
         }
     }
 
@@ -119,7 +120,6 @@ impl ByteWriter {
         self.bytes.freeze().to_vec()
     }
 }
-
 
 impl ByteWritable for &[u8] {
     fn write_to_bytes(self, writer: &mut ByteWriter) {
@@ -134,8 +134,7 @@ impl ByteWritable for String {
         let bytes = self.as_bytes();
         let byte_len = self.bytes().len();
 
-        writer.write(VarInt::from(byte_len))
-            .write(bytes);
+        writer.write(VarInt::from(byte_len)).write(bytes);
     }
 }
 

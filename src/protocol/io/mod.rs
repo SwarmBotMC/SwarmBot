@@ -1,27 +1,25 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::io::{Read, Write};
 
-use aes::Aes128;
-use aes::cipher::{AsyncStreamCipher, NewCipher};
+use aes::{
+    cipher::{AsyncStreamCipher, NewCipher},
+    Aes128,
+};
 use cfb8::Cfb8;
-use flate2::Compression;
-use flate2::read::ZlibDecoder;
-use flate2::write::ZlibEncoder;
+use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 
 pub mod reader;
 pub mod writer;
@@ -61,9 +59,7 @@ const EXPANSION: f64 = 1.5;
 /// https://wiki.vg/Protocol#With_compression
 impl ZLib {
     fn new(threshold: u32) -> ZLib {
-        ZLib {
-            threshold
-        }
+        ZLib { threshold }
     }
     pub fn decompress(&self, input: &[u8]) -> Vec<u8> {
         let mut buf = Vec::with_capacity((input.len() as f64 * EXPANSION) as usize);

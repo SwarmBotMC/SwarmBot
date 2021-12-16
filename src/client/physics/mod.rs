@@ -1,35 +1,35 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::HashSet;
-use std::default::default;
+use std::{collections::HashSet, default::default};
 
 use float_ord::FloatOrd;
 use itertools::Itertools;
 use num::traits::Pow;
 
-use crate::client::physics::speed::Speed;
-use crate::client::state::local::inventory::PlayerInventory;
-use crate::protocol::Face;
-use crate::storage::block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
-use crate::storage::blocks::WorldBlocks;
-use crate::types::{Direction, Displacement, Location};
+use crate::{
+    client::{physics::speed::Speed, state::local::inventory::PlayerInventory},
+    protocol::Face,
+    storage::{
+        block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType},
+        blocks::WorldBlocks,
+    },
+    types::{Direction, Displacement, Location},
+};
 
-pub mod tools;
 pub mod speed;
+pub mod tools;
 
 const JUMP_UPWARDS_MOTION: f64 = 0.42;
 const WATER_JUMP_UPWARDS: f64 = 0.04;
@@ -50,12 +50,11 @@ const ACC_G: f64 = 0.08;
 
 const WATER_DECEL: f64 = 0.2;
 
-
 const DRAG_MULT: f64 = 0.98; // 00000190734863;
 
 // player width divided by 2
-const PLAYER_WIDTH_2: f64 = 0.6 / 2.0;// + 0.001;
-// const PLAYER_WIDTH_2_REG: f64 = 0.6 / 2.0;
+const PLAYER_WIDTH_2: f64 = 0.6 / 2.0; // + 0.001;
+                                       // const PLAYER_WIDTH_2_REG: f64 = 0.6 / 2.0;
 
 // remove 0.1
 const PLAYER_HEIGHT: f64 = 1.79999;
@@ -88,13 +87,26 @@ fn ver_speed(prev_speed: f64) -> f64 {
     (prev_speed - GRAV) * DRAG
 }
 
-fn ground_speed(prev_speed: f64, prev_slip: f64, move_mult: f64, effect_mult: f64, slip: f64) -> f64 {
+fn ground_speed(
+    prev_speed: f64,
+    prev_slip: f64,
+    move_mult: f64,
+    effect_mult: f64,
+    slip: f64,
+) -> f64 {
     let momentum = prev_speed * prev_slip * 0.91;
     let acc = 0.1 * move_mult * effect_mult * (0.6 / slip).pow(3);
     momentum + acc
 }
 
-fn jump_speed(prev_speed: f64, prev_slip: f64, move_mult: f64, effect_mult: f64, slip: f64, was_sprinting: bool) -> f64 {
+fn jump_speed(
+    prev_speed: f64,
+    prev_slip: f64,
+    move_mult: f64,
+    effect_mult: f64,
+    slip: f64,
+    was_sprinting: bool,
+) -> f64 {
     // let momentum = prev_speed * prev_slip * 0.91;
     // let acc = 0.1 * move_mult * effect_mult* (0.6 / slip).pow(3);
     let jump_sprint_boost = if was_sprinting { 0.2 } else { 0.0 };
@@ -106,7 +118,6 @@ fn air_speed(prev_speed: f64, prev_slip: f64, move_mult: f64) -> f64 {
     let acc = 0.02 * move_mult;
     momentum + acc
 }
-
 
 #[derive(Debug)]
 struct MovementState {
@@ -144,8 +155,9 @@ fn threshold(value: f64) -> f64 {
 }
 
 /// # Purpose
-/// Used to simulate a player position. Takes in movement events (such as jumping and strafing) and allows polling the resulting player data---for instance location.
-/// # Resources
+/// Used to simulate a player position. Takes in movement events (such as
+/// jumping and strafing) and allows polling the resulting player data---for
+/// instance location. # Resources
 /// - [Minecaft Parkour](https://www.mcpk.wiki/wiki/Movement_Formulas)
 #[derive(Debug, Default)]
 pub struct Physics {
@@ -190,7 +202,6 @@ struct MovementProc {}
 impl Physics {
     /// move to location and zero out velocity
     pub fn teleport(&mut self, location: Location) {
-
         // sometimes the server tells us that should be in a block *_*
         self.location = location;
 
@@ -240,20 +251,21 @@ impl Physics {
 
         const EPSILON: f64 = 0.4;
 
-        // the code below is so we target the closest area on the face as possible. A case where this is nice is when we are bridging we don't want
+        // the code below is so we target the closest area on the face as possible. A
+        // case where this is nice is when we are bridging we don't want
         // to be looking at an angle else we will fall off
 
         // if !face.is_x() {
-        //     place_loc.x = current_loc.x.clamp(self.location.x - EPSILON, self.location.x + EPSILON)
-        // }
+        //     place_loc.x = current_loc.x.clamp(self.location.x - EPSILON,
+        // self.location.x + EPSILON) }
         //
         // if !face.is_y() {
-        //     place_loc.y = current_loc.y.clamp(self.location.y - EPSILON, self.location.y + EPSILON)
-        // }
+        //     place_loc.y = current_loc.y.clamp(self.location.y - EPSILON,
+        // self.location.y + EPSILON) }
         //
         // if !face.is_z() {
-        //     place_loc.z = current_loc.z.clamp(self.location.z - EPSILON, self.location.z + EPSILON)
-        // }
+        //     place_loc.z = current_loc.z.clamp(self.location.z - EPSILON,
+        // self.location.z + EPSILON) }
 
         self.look_at(place_loc);
 
@@ -266,7 +278,9 @@ impl Physics {
     pub fn place_hand(&mut self, against: BlockLocation) {
         let faces = against.faces();
         let eye_loc = self.location + Displacement::EYE_HEIGHT;
-        let face_idx = IntoIterator::into_iter(faces).position_min_by_key(|&location| FloatOrd(location.dist2(eye_loc))).unwrap();
+        let face_idx = IntoIterator::into_iter(faces)
+            .position_min_by_key(|&location| FloatOrd(location.dist2(eye_loc)))
+            .unwrap();
 
         let face = Face::from(face_idx as u8);
 
@@ -286,17 +300,24 @@ impl Physics {
         dist > 0.35
     }
 
-    pub fn in_cross_section(&self, loc: Location, world: &WorldBlocks, set: &mut HashSet<BlockLocation>) {
+    pub fn in_cross_section(
+        &self,
+        loc: Location,
+        world: &WorldBlocks,
+        set: &mut HashSet<BlockLocation>,
+    ) {
         let dif_x = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
         let dif_z = [-PLAYER_WIDTH_2, PLAYER_WIDTH_2];
-
 
         for dx in dif_x {
             for dz in dif_z {
                 let test_loc = loc + Displacement::new(dx, 0., dz);
                 let test_block_loc = BlockLocation::from(test_loc);
                 // let's also count avoid as most avoid blocks are semi-full
-                let solid = matches!(world.get_block_simple(test_block_loc), Some(SimpleType::Solid | SimpleType::Avoid));
+                let solid = matches!(
+                    world.get_block_simple(test_block_loc),
+                    Some(SimpleType::Solid | SimpleType::Avoid)
+                );
                 if solid {
                     set.insert(test_block_loc);
                 }
@@ -312,7 +333,10 @@ impl Physics {
             for dz in dif_z {
                 let test_loc = loc + Displacement::new(dx, 0., dz);
                 let test_block_loc = BlockLocation::from(test_loc);
-                let solid = matches!(world.get_block_simple(test_block_loc), Some(SimpleType::Solid));
+                let solid = matches!(
+                    world.get_block_simple(test_block_loc),
+                    Some(SimpleType::Solid)
+                );
                 if solid {
                     return false;
                 }
@@ -328,7 +352,10 @@ impl Physics {
 
             match inventory.current() {
                 Some(current) => {
-                    world.set_block(actual_loc, BlockState::from(current.kind.id(), current.damage));
+                    world.set_block(
+                        actual_loc,
+                        BlockState::from(current.kind.id(), current.damage),
+                    );
                 }
                 None => {
                     eprintln!("tried to place air");
@@ -337,12 +364,15 @@ impl Physics {
             };
         }
 
-
         let in_block_loc = BlockLocation::from(self.location);
 
         let in_block = world.get_block_simple(in_block_loc) == Some(SimpleType::Solid);
         if in_block {
-            println!("was in block at {} of type {:?}", in_block_loc, world.get_block(in_block_loc));
+            println!(
+                "was in block at {} of type {:?}",
+                in_block_loc,
+                world.get_block(in_block_loc)
+            );
 
             // auto jump if we are stuck in a block
             self.pending.jump = true;
@@ -353,17 +383,17 @@ impl Physics {
 
         let current_block_loc = BlockLocation::from(self.location + EPSILON_Y);
 
-        // first check is because we can be counted as falling if we are inside a block (Minecraft is weird)
-        let mut falling = below_block_loc.y == current_block_loc.y || self.cross_section_empty(below_loc, world);
+        // first check is because we can be counted as falling if we are inside a block
+        // (Minecraft is weird)
+        let mut falling =
+            below_block_loc.y == current_block_loc.y || self.cross_section_empty(below_loc, world);
 
         let mut just_hit_ground = false;
 
         let mut slip = match world.get_block(below_block_loc) {
-            Some(BlockApprox::Realized(block)) => {
-                block.kind().slip()
-            }
+            Some(BlockApprox::Realized(block)) => block.kind().slip(),
             // we might be on the edge of a block
-            _ => BlockKind::DEFAULT_SLIP
+            _ => BlockKind::DEFAULT_SLIP,
         };
 
         // the horizontal direction we are moving determined from the look direction
@@ -398,8 +428,11 @@ impl Physics {
 
         let mut speeds = [0.0, 0.0];
 
-        let MovementState { speeds: prev_speeds, slip: prev_slip, .. } = self.prev;
-
+        let MovementState {
+            speeds: prev_speeds,
+            slip: prev_slip,
+            ..
+        } = self.prev;
 
         let mut y_vel = if !self.in_water {
             if falling {
@@ -413,20 +446,22 @@ impl Physics {
                 ver_speed(self.prev.y_vel)
             } else if self.pending.jump {
                 for i in 0..2 {
-                    speeds[i] = ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
+                    speeds[i] =
+                        ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
                 }
                 if self.pending.speed == Speed::SPRINT {
-                    let move_displacement = Displacement::new(move_mults[0], 0., move_mults[1]).normalize();
+                    let move_displacement =
+                        Displacement::new(move_mults[0], 0., move_mults[1]).normalize();
                     speeds[0] += move_displacement.dx * 0.2;
                     speeds[1] += move_displacement.dz * 0.2;
                 }
                 falling = true;
                 initial_ver(0)
             } else {
-
                 // we are not falling and not jumping
                 for i in 0..2 {
-                    speeds[i] = ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
+                    speeds[i] =
+                        ground_speed(prev_speeds[i], prev_slip, move_mults[i], effect_mult, slip);
                 }
                 0.0
             }
@@ -469,7 +504,8 @@ impl Physics {
                 falling = false;
                 just_hit_ground = true;
             }
-        } else if y_vel >= 0.0 {// we are moving up
+        } else if y_vel >= 0.0 {
+            // we are moving up
 
             let mut head_loc = new_loc_first + EPSILON_Y;
             head_loc.y += PLAYER_HEIGHT;
@@ -480,7 +516,6 @@ impl Physics {
             }
         }
 
-
         let prev_loc = self.location;
 
         {
@@ -489,7 +524,6 @@ impl Physics {
             new_loc.z += speeds[1];
 
             let mut locs = HashSet::new();
-
 
             self.in_cross_section(new_loc + EPSILON_Y, world, &mut locs);
             self.in_cross_section(new_loc + UNIT_Y, world, &mut locs);
@@ -509,7 +543,6 @@ impl Physics {
                     stop_x = true;
                 }
             });
-
 
             let prev_legs: BlockLocation = prev_loc.into();
             let legs: BlockLocation = new_loc.into();
@@ -533,9 +566,11 @@ impl Physics {
                     speeds[1] = 0.0;
                 }
 
-                self.in_water = prev_legs_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
+                self.in_water = prev_legs_block == Some(SimpleType::Water)
+                    || head_block == Some(SimpleType::Water);
             } else {
-                self.in_water = leg_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
+                self.in_water =
+                    leg_block == Some(SimpleType::Water) || head_block == Some(SimpleType::Water);
             }
 
             // let leg_kind = world.get_block_kind(legs);
@@ -545,19 +580,16 @@ impl Physics {
             // }
         }
 
-
         new_loc_first.x += speeds[0];
         new_loc_first.z += speeds[1];
-
 
         self.location = new_loc_first;
 
         let actions = Actions {
-            block_placed: self.pending.place.take()
+            block_placed: self.pending.place.take(),
         };
 
         self.pending = Pending::default();
-
 
         self.prev = MovementState {
             just_hit_ground,
@@ -583,23 +615,24 @@ impl Physics {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use more_asserts::*;
 
-    use crate::client::physics::{Line, Physics};
-    use crate::client::physics::speed::Speed;
-    use crate::client::state::local::inventory::PlayerInventory;
-    use crate::storage::blocks::WorldBlocks;
-    use crate::types::{Direction, Displacement, Location};
+    use crate::{
+        client::{
+            physics::{speed::Speed, Line, Physics},
+            state::local::inventory::PlayerInventory,
+        },
+        storage::blocks::WorldBlocks,
+        types::{Direction, Displacement, Location},
+    };
 
     #[test]
     fn test_run() {
         let mut world = WorldBlocks::flat();
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
-
 
         let disp = Displacement::new(1., 0., 0.);
         let dir = Direction::from(disp);
@@ -619,8 +652,8 @@ mod tests {
             }
         }
 
-        // I got 17.95 seconds when I did this in Minecraft = 359 ticks which is close enough to
-        // what I got which was 358
+        // I got 17.95 seconds when I did this in Minecraft = 359 ticks which is close
+        // enough to what I got which was 358
         assert_eq!(358, ticks);
     }
 
@@ -629,7 +662,6 @@ mod tests {
         let mut world = WorldBlocks::flat();
         let mut physics = Physics::default();
         physics.teleport(Location::new(0., 1., 0.));
-
 
         let disp = Displacement::new(1., 0., 0.);
         let dir = Direction::from(disp);
@@ -650,8 +682,8 @@ mod tests {
             }
         }
 
-        // I got 14.11 seconds when I did this in Minecraft = 282.2 ticks which is close enough to
-        // what I got in the simulation which was 286
+        // I got 14.11 seconds when I did this in Minecraft = 282.2 ticks which is close
+        // enough to what I got in the simulation which was 286
         assert_eq!(286, ticks);
     }
 
@@ -698,7 +730,6 @@ mod tests {
         }
 
         assert_le!((highest_y - 2.25221_f64).abs(), 0.001);
-
 
         // 12 is the number of blocks a player should be in the air
         assert_eq!(12, ticks_in_air);

@@ -1,25 +1,26 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
-use crate::client::tasks::TaskTrait;
-use crate::protocol::InterfaceOut;
-use crate::storage::block::{BlockLocation, SimpleType};
-use crate::types::{Direction, Displacement};
+use crate::{
+    client::{
+        state::{global::GlobalState, local::LocalState},
+        tasks::TaskTrait,
+    },
+    protocol::InterfaceOut,
+    storage::block::{BlockLocation, SimpleType},
+    types::{Direction, Displacement},
+};
 
 pub struct PillarTask {
     dest_y: u32,
@@ -37,10 +38,16 @@ impl PillarTask {
 }
 
 impl TaskTrait for PillarTask {
-    fn tick(&mut self, out: &mut impl InterfaceOut, local: &mut LocalState, global: &mut GlobalState) -> bool {
+    fn tick(
+        &mut self,
+        out: &mut impl InterfaceOut,
+        local: &mut LocalState,
+        global: &mut GlobalState,
+    ) -> bool {
         local.inventory.switch_block(out);
 
-        // equal OR GREATER because we don't want to pillar if we are higher than we need to be
+        // equal OR GREATER because we don't want to pillar if we are higher than we
+        // need to be
         if local.physics.location().y as u32 >= self.dest_y {
             let below_loc = BlockLocation::from(local.physics.location()).below();
 
@@ -54,16 +61,21 @@ impl TaskTrait for PillarTask {
 
         local.physics.look(Direction::DOWN);
 
-
         // subtract a little so we can be conservative with placements
         let location = local.physics.location() - Displacement::new(0., 0.1, 0.);
 
         let below_block = BlockLocation::from(location).below();
         let two_below = below_block.below();
 
-        let below_valid = matches!(global.blocks.get_block_simple(below_block), Some(SimpleType::Water) | Some(SimpleType::WalkThrough));
+        let below_valid = matches!(
+            global.blocks.get_block_simple(below_block),
+            Some(SimpleType::Water) | Some(SimpleType::WalkThrough)
+        );
 
-        let two_below_valid = matches!(global.blocks.get_block_simple(two_below), Some(SimpleType::Solid));
+        let two_below_valid = matches!(
+            global.blocks.get_block_simple(two_below),
+            Some(SimpleType::Solid)
+        );
 
         if below_valid && two_below_valid {
             let below = BlockLocation::from(local.physics.location()).below();

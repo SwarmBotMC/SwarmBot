@@ -1,27 +1,29 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::fmt::{Debug, Display, Formatter};
-use std::ops::Add;
+use std::{
+    fmt::{Debug, Display, Formatter},
+    ops::Add,
+};
 
 use serde::{Deserialize, Serialize};
 
-use crate::bootstrap::block_data::{Block, BlockData};
-use crate::client::pathfind::moves::Change;
-use crate::types::{Displacement, Location};
+use crate::{
+    bootstrap::block_data::{Block, BlockData},
+    client::pathfind::moves::Change,
+    types::{Displacement, Location},
+};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
 #[repr(transparent)]
@@ -48,12 +50,16 @@ impl BlockKind {
     }
 
     pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
-        let block = blocks.by_id(self.0).unwrap_or_else(|| panic!("no block for id {}", self.0));
+        let block = blocks
+            .by_id(self.0)
+            .unwrap_or_else(|| panic!("no block for id {}", self.0));
         block.hardness
     }
 
     pub fn data(&self, blocks: &'a BlockData) -> &'a Block {
-        blocks.by_id(self.0).unwrap_or_else(|| panic!("no block for id {}", self.0))
+        blocks
+            .by_id(self.0)
+            .unwrap_or_else(|| panic!("no block for id {}", self.0))
     }
 
     pub fn throw_away_block(self) -> bool {
@@ -62,7 +68,6 @@ impl BlockKind {
     }
 
     pub fn mineable(&self, blocks: &BlockData) -> bool {
-
         // we can't mine air
         if self.0 == 0 {
             return false;
@@ -76,10 +81,10 @@ impl BlockKind {
 
     pub fn slip(&self) -> f64 {
         match self.0 {
-            266 => 0.989, // blue ice
+            266 => 0.989,           // blue ice
             79 | 174 | 212 => 0.98, // ice, packed ice, or frosted ice
-            37 => 0.8, // slime block
-            _ => Self::DEFAULT_SLIP
+            37 => 0.8,              // slime block
+            _ => Self::DEFAULT_SLIP,
         }
     }
 }
@@ -132,7 +137,7 @@ impl BlockState {
     }
 
     pub fn full_block(&self) -> bool {
-        //consider 54 |
+        // consider 54 |
         matches!(self.id(),
             1..=5 |7 | 12..=25 | 29 | 33 |35 | 41 ..=43 | 45..=49 | 52 | 56..=58 | 60..=62 | 73 | 74 |
             78..=80| // snow, ice
@@ -154,8 +159,9 @@ impl BlockState {
     }
 
     pub fn is_water(&self) -> bool {
-        matches!(self.id(), 8 | 9 |
-            65 // ladder ... this is VERY jank
+        matches!(
+            self.id(),
+            8 | 9 | 65 // ladder ... this is VERY jank
         )
     }
 
@@ -164,7 +170,8 @@ impl BlockState {
     }
 
     pub fn no_motion_effect(&self) -> bool {
-        matches!(self.id(),
+        matches!(
+            self.id(),
             0| // air
             6|// sapling
             27|28| //  rail
@@ -178,18 +185,16 @@ impl BlockState {
             104|105|106|
             115|119|
             175..=177
-
-
-
-
         )
     }
 }
 
-
-/// A block location stored by (x,z) = i32, y = i16. y is signed to preserve compatibility with 1.17, where the world
-/// height can be much higher and goes to negative values.
-#[derive(Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default, Serialize, Deserialize)]
+/// A block location stored by (x,z) = i32, y = i16. y is signed to preserve
+/// compatibility with 1.17, where the world height can be much higher and goes
+/// to negative values.
+#[derive(
+    Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default, Serialize, Deserialize,
+)]
 pub struct BlockLocation {
     pub x: i32,
     pub y: i16,
@@ -198,10 +203,7 @@ pub struct BlockLocation {
 
 impl From<BlockLocation> for BlockLocation2D {
     fn from(loc: BlockLocation) -> Self {
-        Self {
-            x: loc.x,
-            z: loc.z,
-        }
+        Self { x: loc.x, z: loc.z }
     }
 }
 
@@ -299,7 +301,7 @@ impl BlockLocation {
             0 => self.x,
             1 => self.y as i32,
             2 => self.z,
-            _ => panic!("invalid index for block location")
+            _ => panic!("invalid index for block location"),
         }
     }
 
@@ -308,10 +310,9 @@ impl BlockLocation {
             0 => self.x = value,
             1 => self.y = value as i16,
             2 => self.z = value,
-            _ => panic!("invalid index for block location")
+            _ => panic!("invalid index for block location"),
         }
     }
-
 
     pub fn from_flts(x: impl num::Float, y: impl num::Float, z: impl num::Float) -> BlockLocation {
         let x = num::cast(x.floor()).unwrap();
@@ -374,23 +375,20 @@ pub enum BlockApprox {
     Estimate(SimpleType),
 }
 
-
 impl BlockApprox {
     pub const AIR: BlockApprox = BlockApprox::Estimate(SimpleType::WalkThrough);
 
     pub fn s_type(&self) -> SimpleType {
         match self {
-            BlockApprox::Realized(x) => {
-                x.simple_type()
-            }
-            BlockApprox::Estimate(x) => *x
+            BlockApprox::Realized(x) => x.simple_type(),
+            BlockApprox::Estimate(x) => *x,
         }
     }
 
     pub fn as_real(&self) -> BlockState {
         match self {
             BlockApprox::Realized(inner) => *inner,
-            _ => panic!("was not relized")
+            _ => panic!("was not relized"),
         }
     }
 
@@ -417,7 +415,7 @@ impl SimpleType {
             SimpleType::Solid => 0,
             SimpleType::Water => 1,
             SimpleType::Avoid => 2,
-            SimpleType::WalkThrough => 3
+            SimpleType::WalkThrough => 3,
         }
     }
 }
@@ -429,7 +427,7 @@ impl From<u8> for SimpleType {
             1 => SimpleType::Water,
             2 => SimpleType::Avoid,
             3 => SimpleType::WalkThrough,
-            _ => panic!("invalid id")
+            _ => panic!("invalid id"),
         }
     }
 }

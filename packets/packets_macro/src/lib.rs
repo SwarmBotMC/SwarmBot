@@ -1,24 +1,24 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use proc_macro::TokenStream;
 
 use quote::quote;
-use syn::{DeriveInput, ItemEnum, ItemStruct, parse_macro_input, Token};
-use syn::parse::{Parse, ParseStream};
+use syn::{
+    parse::{Parse, ParseStream},
+    parse_macro_input, DeriveInput, ItemEnum, ItemStruct, Token,
+};
 
 struct MyParams(syn::LitInt, syn::Ident);
 
@@ -39,14 +39,16 @@ impl Parse for MyParams {
 pub fn packet(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    let packe_attr = input.attrs
-        .iter().find(|attr| attr.path.is_ident("packet"))
+    let packe_attr = input
+        .attrs
+        .iter()
+        .find(|attr| attr.path.is_ident("packet"))
         .expect("need packet attibute");
-
 
     let name = input.ident;
 
-    let MyParams(id, kind) = syn::parse(packe_attr.tokens.clone().into()).expect("Invalid attributes!");
+    let MyParams(id, kind) =
+        syn::parse(packe_attr.tokens.clone().into()).expect("Invalid attributes!");
 
     let expanded = quote! {
 
@@ -55,7 +57,6 @@ pub fn packet(input: TokenStream) -> TokenStream {
             const STATE: swarm_bot_packets::types::PacketState = swarm_bot_packets::types::PacketState::#kind;
         }
     };
-
 
     TokenStream::from(expanded)
 }
@@ -66,9 +67,7 @@ pub fn writable(input: TokenStream) -> TokenStream {
 
     let name = input.ident;
 
-    let idents = input.fields.iter().map(|x| {
-        x.ident.as_ref().unwrap()
-    });
+    let idents = input.fields.iter().map(|x| x.ident.as_ref().unwrap());
 
     let expanded = quote! {
         impl swarm_bot_packets::write::ByteWritable for #name {
@@ -87,9 +86,7 @@ pub fn readable(input: TokenStream) -> TokenStream {
 
     let name = input.ident;
 
-    let idents = input.fields.iter().map(|x| {
-        x.ident.as_ref().unwrap()
-    });
+    let idents = input.fields.iter().map(|x| x.ident.as_ref().unwrap());
 
     let expanded = quote! {
         impl swarm_bot_packets::read::ByteReadable for #name {
@@ -128,10 +125,13 @@ pub fn enum_readable_count(input: TokenStream) -> TokenStream {
 
     let name = input.ident;
 
-    // let mut discriminants = input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
+    // let mut discriminants =
+    // input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
 
     let idents = input.variants.iter().map(|x| x.ident.clone());
-    let discriminants = input.variants.iter()
+    let discriminants = input
+        .variants
+        .iter()
         .enumerate()
         .map(|(a, _)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
@@ -159,10 +159,12 @@ pub fn enum_readable(input: TokenStream) -> TokenStream {
 
     let name = input.ident;
 
-    // let mut discriminants = input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
+    // let mut discriminants =
+    // input.variants.iter().map(|x|x.discriminant.clone().unwrap().1);
 
-
-    let discriminants = input.variants.iter()
+    let discriminants = input
+        .variants
+        .iter()
         .enumerate()
         .map(|(a, _)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
@@ -177,7 +179,6 @@ pub fn enum_readable(input: TokenStream) -> TokenStream {
         };
         variants_ts.push(variant_ts);
     }
-
 
     let expanded = quote! {
         impl swarm_bot_packets::read::ByteReadable for #name {
@@ -205,14 +206,20 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
 
     let idents: Vec<_> = input.variants.iter().map(|x| x.ident.clone()).collect();
 
-    let discriminants = input.variants.iter()
+    let discriminants = input
+        .variants
+        .iter()
         .enumerate()
         .map(|(a, _)| proc_macro2::Literal::i32_unsuffixed(a as i32));
 
     let mut variants_ts = Vec::new();
     for variant in input.variants.clone() {
         let var_ident = variant.ident;
-        let var_fields: Vec<_> = variant.fields.iter().map(|x| x.ident.clone().unwrap()).collect();
+        let var_fields: Vec<_> = variant
+            .fields
+            .iter()
+            .map(|x| x.ident.clone().unwrap())
+            .collect();
         let variant_ts = quote! {
             #name::#var_ident { #(#var_fields),* }=> {
                 #(writer.write(#var_fields));*;
@@ -220,7 +227,6 @@ pub fn adt_writable(input: TokenStream) -> TokenStream {
         };
         variants_ts.push(variant_ts);
     }
-
 
     let expanded = quote! {
         impl swarm_bot_packets::write::ByteWritable for #name {

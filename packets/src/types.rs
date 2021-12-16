@@ -1,29 +1,28 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::fmt::{Display, Formatter};
-use std::pin::Pin;
+use std::{
+    fmt::{Display, Formatter},
+    pin::Pin,
+};
 
 use tokio::io::{AsyncRead, AsyncReadExt};
 
-use crate::read::ByteReadable;
-use crate::read::ByteReadableLike;
-use crate::read::ByteReader;
-use crate::write::ByteWritable;
-use crate::write::ByteWriter;
+use crate::{
+    read::{ByteReadable, ByteReadableLike, ByteReader},
+    write::{ByteWritable, ByteWriter},
+};
 
 pub trait Packet {
     const ID: u32;
@@ -44,7 +43,7 @@ impl Display for PacketState {
             PacketState::Handshake => "handshake",
             PacketState::Status => "status",
             PacketState::Login => "login",
-            PacketState::Play => "play"
+            PacketState::Play => "play",
         };
         f.write_str(res)
     }
@@ -83,12 +82,9 @@ impl From<u8> for BitField {
             byte <<= 1;
             i += 1;
         }
-        BitField {
-            values
-        }
+        BitField { values }
     }
 }
-
 
 #[derive(Copy, Clone, Debug)]
 pub struct VarUInt(pub usize);
@@ -174,7 +170,6 @@ impl From<UUIDHyphenated> for UUID {
         UUID(hyph.0)
     }
 }
-
 
 #[derive(Debug, Copy, Clone, Default)]
 pub struct UUID(pub u128);

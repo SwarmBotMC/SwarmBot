@@ -1,37 +1,38 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::fmt::{Display, Formatter};
-use std::num::ParseIntError;
-use std::time::Instant;
+use std::{
+    fmt::{Display, Formatter},
+    num::ParseIntError,
+    time::Instant,
+};
 
 use float_ord::FloatOrd;
 use itertools::Itertools;
 
-use crate::client::state::global::GlobalState;
-use crate::client::state::local::LocalState;
-use crate::client::tasks::{Task, TaskTrait};
-use crate::client::tasks::compound::CompoundTask;
-use crate::client::tasks::eat::EatTask;
-use crate::client::tasks::fall_bucket::FallBucketTask;
-use crate::client::tasks::mine::MineTask;
-use crate::client::tasks::navigate::BlockTravelTask;
-use crate::protocol::{EventQueue, Face, InterfaceOut};
-use crate::storage::block::BlockLocation;
-use crate::types::Displacement;
+use crate::{
+    client::{
+        state::{global::GlobalState, local::LocalState},
+        tasks::{
+            compound::CompoundTask, eat::EatTask, fall_bucket::FallBucketTask, mine::MineTask,
+            navigate::BlockTravelTask, Task, TaskTrait,
+        },
+    },
+    protocol::{EventQueue, Face, InterfaceOut},
+    storage::block::BlockLocation,
+    types::Displacement,
+};
 
 #[derive(Default)]
 pub struct ActionState {
@@ -64,9 +65,13 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
                 }
             }
         }
-        let actions = self.state.physics.tick(&mut global.blocks, &self.state.inventory);
+        let actions = self
+            .state
+            .physics
+            .tick(&mut global.blocks, &self.state.inventory);
         let physics = &self.state.physics;
-        self.out.teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
+        self.out
+            .teleport_and_look(physics.location(), physics.direction(), physics.on_ground());
 
         // if self.actions.task.is_none() {
         //     // let mut vel = self.state.physics.velocity();
@@ -85,12 +90,12 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
             self.out.place_block(place.location, place.face);
         }
 
-        // this should be after everything else as actions depend on the previous location
+        // this should be after everything else as actions depend on the previous
+        // location
 
         self.state.ticks += 1;
     }
 }
-
 
 #[derive(Error, Debug)]
 pub enum ProcessError {
@@ -110,9 +115,7 @@ impl std::error::Error for WrongArgCount {}
 
 impl WrongArgCount {
     pub fn new(required: u32) -> Self {
-        Self {
-            required
-        }
+        Self { required }
     }
 }
 
@@ -124,8 +127,14 @@ impl Display for WrongArgCount {
 
 /// Always returns None.
 #[allow(clippy::many_single_char_names)]
-pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global: &mut GlobalState, actions: &mut ActionState, out: &mut impl InterfaceOut) -> Result<(), ProcessError> {
-
+pub fn process_command(
+    name: &str,
+    args: &[&str],
+    local: &mut LocalState,
+    global: &mut GlobalState,
+    actions: &mut ActionState,
+    out: &mut impl InterfaceOut,
+) -> Result<(), ProcessError> {
     // println! but bold
     macro_rules! msg {
         () => {{
@@ -203,7 +212,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             //
             //     let loc = BlockLocation::from(local.physics.location());
             //
-            //     let closest = global.blocks.closest(loc, usize::MAX, |state| state.kind() == kind);
+            //     let closest = global.blocks.closest(loc, usize::MAX, |state| state.kind()
+            // == kind);
             //
             //     if let Some(closest) = closest {
             //         actions.schedule(BlockTravelTask::new(closest, local));
@@ -224,14 +234,19 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
             actions.task = None;
         }
         "loc" => {
-            msg!("My location is {} in {}", local.physics.location(), local.dimension);
+            msg!(
+                "My location is {} in {}",
+                local.physics.location(),
+                local.dimension
+            );
         }
         "state" => {
             if let [name] = args {
                 if name == &local.info.username {
                     msg!("location {}", local.physics.location());
                     msg!("on ground {}", local.physics.on_ground());
-                    let below_loc = BlockLocation::from(local.physics.location() - Displacement::EPSILON_Y);
+                    let below_loc =
+                        BlockLocation::from(local.physics.location() - Displacement::EPSILON_Y);
                     msg!("below kind {:?}", global.blocks.get_block_kind(below_loc));
                     msg!("inventory slots {:?}", local.inventory.hotbar());
                 }
@@ -257,7 +272,9 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
 
                 let location = BlockLocation::new(x, y, z);
                 let faces = location.faces();
-                let best_loc_idx = IntoIterator::into_iter(faces).position_min_by_key(|loc| FloatOrd(loc.dist2(origin))).unwrap();
+                let best_loc_idx = IntoIterator::into_iter(faces)
+                    .position_min_by_key(|loc| FloatOrd(loc.dist2(origin)))
+                    .unwrap();
 
                 local.physics.look_at(faces[best_loc_idx]);
                 out.use_item();
@@ -267,7 +284,8 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
         // "mine" => {
         //     let origin = local.physics.location() + Displacement::EYE_HEIGHT;
         //
-        //     let closest = global.blocks.closest_in_chunk(origin.into(), |state| state.kind().mineable(&global.block_data));
+        //     let closest = global.blocks.closest_in_chunk(origin.into(), |state|
+        // state.kind().mineable(&global.block_data));
         //
         //     if let Some(closest) = closest {
         //         let mine_task = MineTask::new(closest, local, global);
@@ -280,7 +298,13 @@ pub fn process_command(name: &str, args: &[&str], local: &mut LocalState, global
     Ok(())
 }
 
-pub fn run_threaded(_: &rayon::Scope, local: &mut LocalState, actions: &mut ActionState, global: &GlobalState, end_by: Instant) {
+pub fn run_threaded(
+    _: &rayon::Scope,
+    local: &mut LocalState,
+    actions: &mut ActionState,
+    global: &GlobalState,
+    end_by: Instant,
+) {
     if let Some(task) = actions.task.as_mut() {
         task.expensive(end_by, local, global);
     }

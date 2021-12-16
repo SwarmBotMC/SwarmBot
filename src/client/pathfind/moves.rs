@@ -1,27 +1,28 @@
-/*
- * Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2021 Andrew Gazelka - All Rights Reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
-
-use crate::client::pathfind::context::{GlobalContext, MoveNode};
-use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
-use crate::client::pathfind::traits::{Neighbor, Progression};
-use crate::storage::block::{BlockLocation, SimpleType};
-use crate::storage::blocks::WorldBlocks;
+use crate::{
+    client::pathfind::{
+        context::{GlobalContext, MoveNode},
+        moves::cenetered_arr::CenteredArray,
+        traits::{Neighbor, Progression},
+    },
+    storage::{
+        block::{BlockLocation, SimpleType},
+        blocks::WorldBlocks,
+    },
+};
 
 pub const MAX_FALL: i32 = 3;
 
@@ -47,22 +48,21 @@ impl Movements {
         let w = ctx.world;
 
         macro_rules! get_block {
-            ($x: expr, $y: expr, $z:expr) => {{
-                let res: Option<SimpleType> = w.get_block_simple(BlockLocation::new($x,$y,$z));
+            ($x:expr, $y:expr, $z:expr) => {{
+                let res: Option<SimpleType> = w.get_block_simple(BlockLocation::new($x, $y, $z));
                 res
             }};
         }
 
-
         // macro_rules! get_kind {
         //     ($x: expr, $y: expr, $z:expr) => {{
-        //         let res: Option<BlockKind> = w.get_block_kind(BlockLocation::new($x,$y,$z));
-        //         res
+        //         let res: Option<BlockKind> =
+        // w.get_block_kind(BlockLocation::new($x,$y,$z));         res
         //     }};
         // }
 
         macro_rules! wrap {
-            ($block_loc: expr) => {{
+            ($block_loc:expr) => {{
                 let mut node = MoveNode::from(&on);
                 node.location = $block_loc;
                 node
@@ -73,11 +73,14 @@ impl Movements {
             None => return Progression::Edge,
             Some(inner) => {
                 // we do not like our head in water (breathing is nice)
-                let multiplier = if inner == Water { ctx.path_config.costs.no_breathe_mult } else { 1.0 };
+                let multiplier = if inner == Water {
+                    ctx.path_config.costs.no_breathe_mult
+                } else {
+                    1.0
+                };
                 (inner, multiplier)
             }
         };
-
 
         use crate::storage::block::SimpleType::*;
 
@@ -98,7 +101,8 @@ impl Movements {
                 (Some(legs), Some(head)) => {
                     adj_legs[idx] = legs;
                     adj_head[idx] = head;
-                    can_move_adj_noplace[idx] = matches!(legs, WalkThrough | Water) && matches!(head, WalkThrough | Water);
+                    can_move_adj_noplace[idx] =
+                        matches!(legs, WalkThrough | Water) && matches!(head, WalkThrough | Water);
                 }
                 _ => return Progression::Edge,
             };
@@ -150,18 +154,17 @@ impl Movements {
 
         if above == Water || head == Water && above == WalkThrough {
             res.push(Neighbor {
-                value: wrap!(BlockLocation::new(x,y+1,z)),
+                value: wrap!(BlockLocation::new(x, y + 1, z)),
                 cost: ctx.path_config.costs.ascend * multiplier,
             });
         }
 
         if floor == Water || (floor == WalkThrough && head == Water) {
             res.push(Neighbor {
-                value: wrap!(BlockLocation::new(x,y-1,z)),
+                value: wrap!(BlockLocation::new(x, y - 1, z)),
                 cost: ctx.path_config.costs.ascend * multiplier,
             });
         }
-
 
         let can_micro_jump = above == WalkThrough && (floor == Solid || feet == Water);
 
@@ -172,11 +175,16 @@ impl Movements {
 
                 // we can only move if we couldn't move adjacent without changing elevation
                 if !can_move_adj_noplace[idx] {
-                    let adj_above = matches!(get_block!(x+dx, y+2, z+dz).unwrap(), WalkThrough | Water);
-                    let can_jump = adj_above && adj_legs[idx] == Solid && matches!(adj_head[idx], WalkThrough | Water);
+                    let adj_above = matches!(
+                        get_block!(x + dx, y + 2, z + dz).unwrap(),
+                        WalkThrough | Water
+                    );
+                    let can_jump = adj_above
+                        && adj_legs[idx] == Solid
+                        && matches!(adj_head[idx], WalkThrough | Water);
                     if can_jump {
                         res.push(Neighbor {
-                            value: wrap!(BlockLocation::new(x+dx,y+1,z+dz)),
+                            value: wrap!(BlockLocation::new(x + dx, y + 1, z + dz)),
                             cost: ctx.path_config.costs.ascend * multiplier,
                         });
                     }
@@ -197,19 +205,17 @@ impl Movements {
             let mut not_jumpable = Vec::new();
             let mut edge = false;
 
-
-            'check_loop:
-            for dx in -RADIUS..=RADIUS {
+            'check_loop: for dx in -RADIUS..=RADIUS {
                 for dz in -RADIUS..=RADIUS {
-                    let adj_above = get_block!(x+dx, y+2, z+dz);
+                    let adj_above = get_block!(x + dx, y + 2, z + dz);
                     if adj_above == None {
                         edge = true;
                         break 'check_loop;
                     }
 
                     let adj_above = adj_above.unwrap() == WalkThrough;
-                    let adj_head = get_block!(x+dx, y+1, z+dz).unwrap() == WalkThrough;
-                    let adj_feet = get_block!(x+dx, y, z+dz).unwrap() == WalkThrough;
+                    let adj_head = get_block!(x + dx, y + 1, z + dz).unwrap() == WalkThrough;
+                    let adj_feet = get_block!(x + dx, y, z + dz).unwrap() == WalkThrough;
                     if !(adj_above && adj_head && adj_feet) {
                         not_jumpable.push((dx, dz));
                     }
@@ -220,16 +226,14 @@ impl Movements {
                 return Progression::Edge;
             }
 
-
             let mut open = CenteredArray::init::<_, RADIUS_S>();
 
             // so we do not add the origin (it is already added)
             open[(0, 0)] = State::Closed;
 
-            // we iterate through every single block which is not jumpable and set blocks behind it as not jumpable as well
+            // we iterate through every single block which is not jumpable and set blocks
+            // behind it as not jumpable as well
             for (block_dx, block_dz) in not_jumpable {
-
-
                 // we will set blocks to closed in the direction of the block
 
                 let mut update = |sign_x: i32, sign_z: i32| {
@@ -272,7 +276,7 @@ impl Movements {
                 for dz in -RADIUS..=RADIUS {
                     let is_open = open[(dx, dz)] == State::Open;
 
-                    let same_y = get_block!(x+dx, y - 1, z+dz).unwrap();
+                    let same_y = get_block!(x + dx, y - 1, z + dz).unwrap();
 
                     let same_y_possible = same_y == Solid;
 
@@ -281,16 +285,19 @@ impl Movements {
                     const MIN_RAD: f64 = 1.1;
                     const MAX_RAD: f64 = 4.5;
 
-                    if same_y_possible && rad2 <= MAX_RAD * MAX_RAD && rad2 >= MIN_RAD * MIN_RAD && is_open {
+                    if same_y_possible
+                        && rad2 <= MAX_RAD * MAX_RAD
+                        && rad2 >= MIN_RAD * MIN_RAD
+                        && is_open
+                    {
                         res.push(Neighbor {
-                            value: wrap!(BlockLocation::new(x+dx,y,z+dz)),
+                            value: wrap!(BlockLocation::new(x + dx, y, z + dz)),
                             cost: ctx.path_config.costs.block_parkour * multiplier,
                         });
                     }
                 }
             }
         }
-
 
         Progression::Movements(res)
     }
@@ -324,7 +331,6 @@ fn drop_y(start: BlockLocation, world: &WorldBlocks) -> Option<i16> {
         travelled += 1;
     }
 
-
     None
 }
 
@@ -355,14 +361,13 @@ impl Change {
     }
 }
 
-
 impl CardinalDirection {
     pub fn unit_change(&self) -> Change {
         match self {
             CardinalDirection::North => Change::new(1, 0, 0),
             CardinalDirection::South => Change::new(-1, 0, 0),
             CardinalDirection::West => Change::new(0, 0, 1),
-            CardinalDirection::East => Change::new(0, 0, -1)
+            CardinalDirection::East => Change::new(0, 0, -1),
         }
     }
 }
