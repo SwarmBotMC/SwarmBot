@@ -25,6 +25,9 @@ pub struct Opts {
     #[clap(short, long, default_value = "1")]
     pub count: usize,
 
+    #[clap(short)]
+    pub proxy: bool,
+
     #[clap(long, default_value = "25565")]
     pub port: u16,
 

@@ -14,14 +14,17 @@
 
 use serde::Deserialize;
 use tokio::{
-    net::tcp::{OwnedReadHalf, OwnedWriteHalf},
+    net::{
+        tcp::{OwnedReadHalf, OwnedWriteHalf},
+        TcpStream,
+    },
     sync::mpsc::Receiver,
 };
 use tokio_socks::tcp::Socks5Stream;
 
 use crate::bootstrap::{
-    mojang::Mojang,
-    storage::{ProxyUser, ValidUser},
+    mojang::MojangApi,
+    storage::{ProducedUser, ValidUser},
 };
 
 pub mod block_data;
@@ -47,7 +50,7 @@ impl From<&Address> for String {
 pub struct Connection {
     pub user: ValidUser,
     pub address: Address,
-    pub mojang: Mojang,
+    pub mojang: MojangApi,
     pub read: OwnedReadHalf,
     pub write: OwnedWriteHalf,
 }
@@ -55,7 +58,7 @@ pub struct Connection {
 impl Connection {
     pub fn stream(
         address: Address,
-        mut users: tokio::sync::mpsc::Receiver<ProxyUser>,
+        mut users: tokio::sync::mpsc::Receiver<ProducedUser>,
     ) -> Receiver<Connection> {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         tokio::task::spawn_local(async move {
@@ -63,21 +66,30 @@ impl Connection {
                 let tx = tx.clone();
                 let address = address.clone();
                 tokio::task::spawn_local(async move {
-                    let ProxyUser {
+                    let ProducedUser {
                         proxy,
                         user,
                         mojang,
                     } = user;
+
                     let target = String::from(&address);
-                    let conn = Socks5Stream::connect_with_password(
-                        proxy.address().as_str(),
-                        target.as_str(),
-                        &proxy.user,
-                        &proxy.pass,
-                    )
-                    .await
-                    .unwrap();
-                    let (read, write) = conn.into_inner().into_split();
+
+                    let conn = match proxy {
+                        Some(proxy) => {
+                            let conn = Socks5Stream::connect_with_password(
+                                proxy.address().as_str(),
+                                target.as_str(),
+                                &proxy.user,
+                                &proxy.pass,
+                            )
+                            .await
+                            .unwrap();
+                            conn.into_inner()
+                        }
+                        None => TcpStream::connect(target.as_str()).await.unwrap(),
+                    };
+
+                    let (read, write) = conn.into_split();
                     tx.send(Connection {
                         user,
                         address,

@@ -46,6 +46,12 @@ use crate::{
 
 struct SyncGlobal(*const GlobalState);
 
+impl SyncGlobal {
+    fn state(&self) -> &GlobalState {
+        unsafe { &*self.0 }
+    }
+}
+
 struct SyncLocal((*mut LocalState, *mut ActionState));
 
 unsafe impl Sync for SyncGlobal {}
@@ -244,7 +250,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 .collect();
 
             rayon::spawn(move || {
-                let global_state = unsafe { &*global_state_sync.0 };
+                let global_state = global_state_sync.state();
                 let states_sync = states_sync;
                 rayon::scope(|s| {
                     for state_sync in states_sync {

@@ -20,10 +20,11 @@ use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
+use std::convert::TryFrom;
 
 use tokio::sync::mpsc::Receiver;
 
-use crate::bootstrap::{mojang::Mojang, CSVUser, Proxy};
+use crate::bootstrap::{mojang::MojangApi, CSVUser, Proxy};
 
 #[derive(Encode, Decode, Debug)]
 struct Root {
@@ -71,10 +72,10 @@ pub struct UserCache {
 /// is valid along with data about what the proxy address is and the valid user
 /// information
 #[derive(Debug)]
-pub struct ProxyUser {
+pub struct ProducedUser {
     pub user: ValidUser,
-    pub proxy: Proxy,
-    pub mojang: Mojang,
+    pub proxy: Option<Proxy>,
+    pub mojang: MojangApi,
 }
 
 fn time() -> u64 {
@@ -111,12 +112,12 @@ impl UserCache {
     async fn get_or_put(
         &mut self,
         user: &CSVUser,
-        iter: &mut impl Iterator<Item = Proxy>,
-    ) -> Option<(Mojang, Proxy, ValidUser)> {
+        iter: &mut impl Iterator<Item = Option<Proxy>>,
+    ) -> Option<(MojangApi, Option<Proxy>, ValidUser)> {
         match self.cache.get_mut(&user.email) {
             None => {
                 let proxy = iter.next().unwrap();
-                let mojang = Mojang::socks5(&proxy).unwrap();
+                let mojang = MojangApi::try_from(proxy.as_ref()).unwrap();
                 match mojang.authenticate(&user.email, &user.password).await {
                     Ok(res) => {
                         let valid_user = ValidUser {
@@ -151,7 +152,7 @@ impl UserCache {
                 match cached {
                     User::Valid(valid) => {
                         let proxy = iter.next().unwrap();
-                        let mojang = Mojang::socks5(&proxy).unwrap();
+                        let mojang = MojangApi::try_from(proxy.as_ref()).unwrap();
 
                         // if verified in last day don't even check to verify
                         if time() - valid.last_checked < 3600 * 24 {
@@ -221,8 +222,8 @@ impl UserCache {
         mut self,
         count: usize,
         users: Vec<CSVUser>,
-        proxies: Vec<Proxy>,
-    ) -> Receiver<ProxyUser> {
+        proxies: Vec<Option<Proxy>>,
+    ) -> Receiver<ProducedUser> {
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(32);
@@ -235,7 +236,7 @@ impl UserCache {
                 {
                     local_count += 1;
                     println!("valid user {}", user.email);
-                    tx.send(ProxyUser {
+                    tx.send(ProducedUser {
                         user,
                         proxy,
                         mojang,

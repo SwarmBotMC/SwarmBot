@@ -70,6 +70,8 @@ fn main() {
     });
 }
 
+
+
 async fn run() -> ResContext {
     let Opts {
         users_file,
@@ -81,6 +83,7 @@ async fn run() -> ResContext {
         delay,
         load,
         ws_port,
+        proxy,
     } = Opts::get();
 
     let address = normalize_address(&host, port).await;
@@ -90,14 +93,26 @@ async fn run() -> ResContext {
         println!("reading {}", users_file);
         let csv_file = File::open(&users_file)
             .context(|| format!("could not open users file {}", users_file))?;
+
         let csv_users =
             bootstrap::csv::read_users(csv_file).context_str("could not open users file")?;
 
         println!("reading {}", proxies_file);
-        let proxies_file = File::open(&proxies_file)
-            .context(|| format!("could not open proxies file {}", proxies_file))?;
-        let proxies = bootstrap::csv::read_proxies(proxies_file)
-            .context_str("could not open proxies file")?;
+
+        let proxies = match proxy {
+            true => {
+                let proxies_file = File::open(&proxies_file)
+                    .context(|| format!("could not open proxies file {}", proxies_file))?;
+                bootstrap::csv::read_proxies(proxies_file)
+                    .context_str("could not open proxies file")?
+                    .into_iter()
+                    .map(Some)
+                    .collect()
+            }
+            false => {
+                vec![None]
+            }
+        };
 
         println!("reading cache.db");
         let cache = UserCache::load("cache.db".into());

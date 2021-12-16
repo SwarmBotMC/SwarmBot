@@ -12,10 +12,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::convert::TryFrom;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha1::Sha1;
+use std::default::default;
 
 use swarm_bot_packets::types::UUID;
 
@@ -25,12 +27,20 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Mojang {
+pub struct MojangApi {
     client: reqwest::Client,
 }
 
-impl Mojang {
-    pub fn socks5(proxy: &Proxy) -> Res<Mojang> {
+impl Default for MojangApi {
+    fn default() -> Self {
+        MojangApi { client: default() }
+    }
+}
+
+impl TryFrom<&Proxy> for MojangApi {
+    type Error = crate::error::Error;
+
+    fn try_from(proxy: &Proxy) -> Result<Self, Self::Error> {
         let address = proxy.address();
         let user = &proxy.user;
         let pass = &proxy.pass;
@@ -40,7 +50,18 @@ impl Mojang {
 
         let client = reqwest::Client::builder().proxy(proxy).build()?;
 
-        Ok(Mojang { client })
+        Ok(MojangApi { client })
+    }
+}
+
+impl TryFrom<Option<&Proxy>> for MojangApi {
+    type Error = crate::error::Error;
+
+    fn try_from(value: Option<&Proxy>) -> Result<Self, Self::Error> {
+        match value {
+            None => Ok(MojangApi::default()),
+            Some(proxy) => MojangApi::try_from(proxy)
+        }
     }
 }
 
@@ -81,7 +102,7 @@ pub struct AuthResponse {
     pub uuid: UUID,
 }
 
-impl Mojang {
+impl MojangApi {
     pub async fn authenticate(&self, email: &str, password: &str) -> Res<AuthResponse> {
         let payload = json!({
             "agent": {
