@@ -20,31 +20,31 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+use bincode::{config::Configuration, Decode, Encode};
 
-use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Receiver;
 
 use crate::bootstrap::{CSVUser, Proxy};
 use crate::bootstrap::mojang::Mojang;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Encode, Decode, Debug)]
 struct Root {
     users: Vec<User>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Encode, Decode, Debug)]
 enum User {
     Valid(ValidUser),
     Invalid(InvalidUser),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Encode, Decode, Debug)]
 struct InvalidUser {
     email: String,
     password: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Encode, Decode, Clone, Debug)]
 pub struct ValidUser {
     pub email: String,
     pub username: String,
@@ -99,7 +99,7 @@ impl UserCache {
             let file = File::open(&file_path).unwrap();
             let bytes: Result<Vec<_>, _> = file.bytes().collect();
             let bytes = bytes.unwrap();
-            let Root { users } = bincode::deserialize(&bytes).unwrap();
+            let (Root { users }, _) = bincode::decode_from_slice(&bytes, Configuration::standard()).unwrap();
 
             let cache: HashMap<_, _> = users.into_iter().map(|user| (user.email().clone(), user)).collect();
             UserCache {
@@ -246,7 +246,7 @@ impl UserCache {
                 users
             };
 
-            let data = bincode::serialize(&root).unwrap();
+            let data = bincode::encode_to_vec(&root, Configuration::standard()).unwrap();
             file.write_all(&data).unwrap();
             file.flush().unwrap();
         });

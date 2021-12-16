@@ -16,10 +16,10 @@
 
 use rand::random;
 use rand::rngs::OsRng;
-use rsa::{BigUint, PaddingScheme, PublicKey, RSAPublicKey};
+use rsa::{BigUint, PaddingScheme, PublicKey, RsaPublicKey};
 
 pub struct Rsa {
-    key: RSAPublicKey,
+    key: RsaPublicKey,
 }
 
 
@@ -33,7 +33,7 @@ impl Rsa {
         let (n, e) = (BigUint::from_bytes_be(&n), BigUint::from_bytes_be(&e));
 
         Rsa {
-            key: RSAPublicKey::new(n, e).unwrap()
+            key: RsaPublicKey::new(n, e).unwrap()
         }
     }
 
