@@ -22,7 +22,7 @@ csv = "1.1"
 # serialization, deserialization
 serde = { version = "1.0", features = ["derive"] }
 
-# socket5
+# socks5
 tokio-socks = "0.5"
 
 # tokio
@@ -104,14 +104,13 @@ enum_dispatch = "0.3"
 # for errors
 thiserror = "1.0"
 
-#debug_print = "1.0"
-
-#hyper = { version = "0.14", features = ["full"] }
-
+# websockets
 tokio-tungstenite = "0.16"
 
 futures = "0.3"
 #futures-util = "0.3"
+
+interfaces = { path = "interfaces" }
 
 [dev-dependencies]
 assert_matches = "1.5"
@@ -119,7 +118,7 @@ more-asserts = "0.2"
 primes = "0.3"
 
 [workspace]
-members = ["packets"]
+members = ["packets", "interfaces"]
 
 [profile.dev]
 split-debuginfo = "unpacked"

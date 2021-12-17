@@ -767,6 +767,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "interfaces"
+version = "0.1.0"
+dependencies = [
+ "ansi_term",
+ "futures",
+ "itertools",
+ "num",
+ "regex",
+ "serde",
+ "serde_json",
+ "swarm-bot-packets",
+ "tokio",
+ "tokio-tungstenite",
+ "tungstenite",
+]
+
+[[package]]
 name = "ipconfig"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1711,6 +1728,7 @@ dependencies = [
  "futures",
  "hematite-nbt",
  "indexmap",
+ "interfaces",
  "itertools",
  "more-asserts",
  "num",

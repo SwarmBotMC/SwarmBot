@@ -1,0 +1,28 @@
+[package]
+name = "interfaces"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# json parsing (particularly for mojang api)
+serde_json = "1.0"
+# serialization, deserialization
+serde = { version = "1.0", features = ["derive"] }
+
+tokio-tungstenite = "0.16"
+tungstenite = "0.16"
+tokio = { version = "1.15", features = ["rt", "io-std", "io-util", "sync", "parking_lot", "macros"] }
+futures = "0.3"
+
+swarm-bot-packets = { path = "../packets", version = "0.2.0" }
+
+# for coloring terminal
+ansi_term = "0.12"
+
+# chat parsing
+regex = "1.5"
+
+itertools = "0.10.3"
+num = "0.4.0"
