@@ -35,7 +35,7 @@ pub struct Opts {
     pub ws_port: u16,
 
     #[clap(short, long, default_value = "500")]
-    pub delay: u64,
+    pub delay_ms: u64,
 
     #[clap(long, default_value = "users.csv")]
     pub users_file: String,

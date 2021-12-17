@@ -24,7 +24,7 @@ use tokio_socks::tcp::Socks5Stream;
 
 use crate::bootstrap::{
     mojang::MojangApi,
-    storage::{ProducedUser, ValidUser},
+    storage::{BotData, ValidUser},
 };
 
 pub mod block_data;
@@ -56,17 +56,18 @@ pub struct Connection {
 }
 
 impl Connection {
+    /// Generates connections given BotData and an address
     pub fn stream(
-        address: Address,
-        mut users: tokio::sync::mpsc::Receiver<ProducedUser>,
+        server_address: Address,
+        mut users: tokio::sync::mpsc::Receiver<BotData>,
     ) -> Receiver<Connection> {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         tokio::task::spawn_local(async move {
             while let Some(user) = users.recv().await {
                 let tx = tx.clone();
-                let address = address.clone();
+                let address = server_address.clone();
                 tokio::task::spawn_local(async move {
-                    let ProducedUser {
+                    let BotData {
                         proxy,
                         user,
                         mojang,

@@ -24,8 +24,8 @@ use crate::{
     storage::block::{BlockLocation, BlockLocation2D},
 };
 
-pub struct Commands {
-    pub pending: Receiver<Command>,
+pub struct CommandReceiver {
+    pub pending: Receiver<CommandData>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -51,7 +51,7 @@ impl Selection2D {
     }
 }
 
-/// The mine commad.
+/// The mine command.
 /// Mine the given selection.
 /// A global command. The process should allocate appropriately to children.
 #[derive(Serialize, Deserialize, Debug)]
@@ -71,13 +71,13 @@ pub struct Attack {
     pub name: String,
 }
 
-pub enum Command {
+pub enum CommandData {
     Mine(Mine),
     GoTo(GoTo),
     Attack(Attack),
 }
 
-fn process(path: &str, value: Value) -> Option<Command> {
+fn process(path: &str, value: Value) -> Option<CommandData> {
     macro_rules! parse {
         () => {{
             serde_json::from_value(value).unwrap()
@@ -85,9 +85,9 @@ fn process(path: &str, value: Value) -> Option<Command> {
     }
 
     match path {
-        "mine" => Some(Command::Mine(parse!())),
-        "goto" => Some(Command::GoTo(parse!())),
-        "attack" => Some(Command::Attack(parse!())),
+        "mine" => Some(CommandData::Mine(parse!())),
+        "goto" => Some(CommandData::GoTo(parse!())),
+        "attack" => Some(CommandData::Attack(parse!())),
 
         path => {
             println!("invalid {}", path);
@@ -96,7 +96,7 @@ fn process(path: &str, value: Value) -> Option<Command> {
     }
 }
 
-impl Commands {
+impl CommandReceiver {
     pub async fn init(port: u16) -> Res<Self> {
         let (tx, rx) = std::sync::mpsc::channel();
 

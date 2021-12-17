@@ -26,7 +26,7 @@ use crate::{
     bootstrap::Connection,
     client::{
         bot::{run_threaded, ActionState, Bot},
-        commands::{Command, Commands, Selection2D},
+        commands::{CommandData, CommandReceiver, Selection2D},
         processor::SimpleInterfaceIn,
         state::{
             global::{mine_alloc::MinePreference, GlobalState},
@@ -72,7 +72,7 @@ pub struct Runner<T: Minecraft> {
     /// the global state of the program containing chunks and global config
     global_state: GlobalState,
 
-    commands: Commands,
+    command_receiver: CommandReceiver,
 
     /// the bots created by pending logins
     bots: Vec<Bot<T::Queue, T::Interface>>,
@@ -84,7 +84,7 @@ pub struct Runner<T: Minecraft> {
 /// Runner launch options
 pub struct RunnerOptions {
     /// The amount of milliseconds to wait between logging in successive users
-    pub delay_millis: u64,
+    pub delay_ms: u64,
     pub ws_port: u16,
 }
 
@@ -105,9 +105,13 @@ impl<T: Minecraft + 'static> Runner<T> {
         mut connections: tokio::sync::mpsc::Receiver<Connection>,
         opts: RunnerOptions,
     ) -> Res<Runner<T>> {
-        let commands = Commands::init(opts.ws_port).await?;
+        let RunnerOptions {
+            delay_ms: delay_millis,
+            ws_port,
+        } = opts;
 
-        let RunnerOptions { delay_millis, .. } = opts;
+        let commands = CommandReceiver::init(ws_port).await?;
+
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
 
         {
@@ -144,7 +148,7 @@ impl<T: Minecraft + 'static> Runner<T> {
         Ok(Runner {
             pending_logins,
             global_state: GlobalState::init(),
-            commands,
+            command_receiver: commands,
             bots: Vec::new(),
             id_on: 0,
         })
@@ -204,7 +208,7 @@ impl<T: Minecraft + 'static> Runner<T> {
         }
 
         // process pending commands (from forge mod)
-        while let Ok(command) = self.commands.pending.try_recv() {
+        while let Ok(command) = self.command_receiver.pending.try_recv() {
             if let Err(err) = self.process_command(command) {
                 println!("Error processing command: {}", err)
             }
@@ -273,12 +277,12 @@ impl<T: Minecraft + 'static> Runner<T> {
         thread_loop_end.notified().await;
     }
 
-    fn process_command(&mut self, command: Command) -> ResBox {
+    fn process_command(&mut self, command: CommandData) -> ResBox {
         let global = &mut self.global_state;
         let bots = &mut self.bots;
 
         match command {
-            Command::Mine(mine) => {
+            CommandData::Mine(mine) => {
                 let Selection2D { from, to } = mine.sel.normalize();
                 global.mine.mine(from, to, Some(MinePreference::FromDist));
 
@@ -286,13 +290,13 @@ impl<T: Minecraft + 'static> Runner<T> {
                     bot.actions.schedule(LazyStream::from(MineRegion))
                 }
             }
-            Command::GoTo(goto) => {
+            CommandData::GoTo(goto) => {
                 for bot in bots {
                     bot.actions
                         .schedule(BlockTravelTask::new(goto.location, &bot.state));
                 }
             }
-            Command::Attack(attack) => {
+            CommandData::Attack(attack) => {
                 let player = self
                     .global_state
                     .players

@@ -24,7 +24,11 @@ use std::{
 
 use tokio::sync::mpsc::Receiver;
 
-use crate::bootstrap::{mojang::MojangApi, CSVUser, Proxy};
+use crate::{
+    bootstrap,
+    bootstrap::{mojang::MojangApi, CSVUser, Proxy},
+    HasContext, ResContext,
+};
 
 #[derive(Encode, Decode, Debug)]
 struct Root {
@@ -68,14 +72,48 @@ pub struct UserCache {
     cache: HashMap<String, User>,
 }
 
-/// A proxy user holds the "Mojang" object used in cache to verify that the user
+/// A bot data holds the "Mojang" object used in cache to verify that the user
 /// is valid along with data about what the proxy address is and the valid user
 /// information
 #[derive(Debug)]
-pub struct ProducedUser {
+pub struct BotData {
     pub user: ValidUser,
     pub proxy: Option<Proxy>,
     pub mojang: MojangApi,
+}
+
+impl BotData {
+    pub fn load(
+        proxy: bool,
+        users_file: &str,
+        proxies_file: &str,
+        count: usize,
+    ) -> ResContext<Receiver<BotData>> {
+        let csv_file = File::open(&users_file)
+            .context(|| format!("could not open users file {}", users_file))?;
+
+        let csv_users =
+            bootstrap::csv::read_users(csv_file).context_str("could not open users file")?;
+
+        let proxies = match proxy {
+            true => {
+                let proxies_file = File::open(&proxies_file)
+                    .context(|| format!("could not open proxies file {}", proxies_file))?;
+                bootstrap::csv::read_proxies(proxies_file)
+                    .context_str("could not open proxies file")?
+                    .into_iter()
+                    .map(Some)
+                    .collect()
+            }
+            false => {
+                vec![None]
+            }
+        };
+
+        let cache = UserCache::load("cache.db".into());
+
+        Ok(cache.obtain_users(count, csv_users, proxies))
+    }
 }
 
 fn time() -> u64 {
@@ -223,7 +261,7 @@ impl UserCache {
         count: usize,
         users: Vec<CSVUser>,
         proxies: Vec<Option<Proxy>>,
-    ) -> Receiver<ProducedUser> {
+    ) -> Receiver<BotData> {
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(32);
@@ -236,7 +274,7 @@ impl UserCache {
                 {
                     local_count += 1;
                     println!("valid user {}", user.email);
-                    tx.send(ProducedUser {
+                    tx.send(BotData {
                         user,
                         proxy,
                         mojang,

@@ -16,7 +16,7 @@
 #![deny(unused_must_use)]
 #![deny(warnings)]
 #![deny(rustdoc::broken_intra_doc_links)]
-// #![deny(clippy::panic)]
+#![deny(clippy::panic)]
 #![deny(clippy::await_holding_lock)]
 #![deny(clippy::await_holding_refcell_ref)]
 #![deny(clippy::use_debug)]
@@ -42,12 +42,10 @@ extern crate test;
 #[macro_use]
 extern crate thiserror;
 
-use std::fs::File;
-
 use tokio::{runtime::Runtime, task};
 
 use crate::{
-    bootstrap::{dns::normalize_address, opts::Opts, storage::UserCache, Connection},
+    bootstrap::{dns::normalize_address, opts::Opts, storage::BotData, Connection},
     client::runner::{Runner, RunnerOptions},
     error::{HasContext, ResContext},
 };
@@ -84,68 +82,36 @@ async fn run() -> ResContext {
         count,
         version,
         port,
-        delay,
+        delay_ms,
         load,
         ws_port,
         proxy,
     } = Opts::get();
 
-    let address = normalize_address(&host, port).await;
-
     // A list of users we will login
-    let mut proxy_users = {
-        println!("reading {}", users_file);
-        let csv_file = File::open(&users_file)
-            .context(|| format!("could not open users file {}", users_file))?;
-
-        let csv_users =
-            bootstrap::csv::read_users(csv_file).context_str("could not open users file")?;
-
-        println!("reading {}", proxies_file);
-
-        let proxies = match proxy {
-            true => {
-                let proxies_file = File::open(&proxies_file)
-                    .context(|| format!("could not open proxies file {}", proxies_file))?;
-                bootstrap::csv::read_proxies(proxies_file)
-                    .context_str("could not open proxies file")?
-                    .into_iter()
-                    .map(Some)
-                    .collect()
-            }
-            false => {
-                vec![None]
-            }
-        };
-
-        println!("reading cache.db");
-        let cache = UserCache::load("cache.db".into());
-
-        println!("obtaining users from cache");
-        cache.obtain_users(count, csv_users, proxies)
-    };
+    let mut bot_receiver = BotData::load(proxy, &users_file, &proxies_file, count)?;
 
     if load {
-        while proxy_users.recv().await.is_some() {
+        while bot_receiver.recv().await.is_some() {
             // empty
         }
         return Ok(());
-    } else {
-        // taking the users and generating connections to the Minecraft server
-        let connections = Connection::stream(address, proxy_users);
+    }
 
-        let opts = RunnerOptions {
-            delay_millis: delay,
-            ws_port,
-        };
+    // looks up DNS records, etc
+    let server_address = normalize_address(&host, port).await;
 
-        match version {
-            340 => Runner::<protocol::v340::Protocol>::run(connections, opts)
-                .await
-                .context_str("Error starting up 1.12")?, // 1.12
-            _ => {
-                panic!("version {} does not exist", version)
-            }
+    // taking the users and generating connections to the Minecraft server
+    let connections = Connection::stream(server_address, bot_receiver);
+
+    let run_options = RunnerOptions { delay_ms, ws_port };
+
+    match version {
+        340 => Runner::<protocol::v340::Protocol>::run(connections, run_options)
+            .await
+            .context_str("Error starting up 1.12")?, // 1.12
+        _ => {
+            panic!("version {} does not exist", version)
         }
     }
 
