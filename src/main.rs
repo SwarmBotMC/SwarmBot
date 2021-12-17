@@ -14,6 +14,12 @@
 #![allow(dead_code)]
 #![allow(incomplete_features)]
 #![deny(unused_must_use)]
+#![deny(warnings)]
+#![deny(rustdoc::broken_intra_doc_links)]
+// #![deny(clippy::panic)]
+#![deny(clippy::await_holding_lock)]
+#![deny(clippy::await_holding_refcell_ref)]
+#![deny(clippy::use_debug)]
 #![feature(in_band_lifetimes)]
 #![feature(generic_const_exprs)]
 #![feature(path_try_exists)]
@@ -69,8 +75,6 @@ fn main() {
         }
     });
 }
-
-
 
 async fn run() -> ResContext {
     let Opts {

@@ -12,10 +12,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{
-    convert::TryInto,
-    io::{Cursor, Read},
-};
+use std::io::{Cursor, Read};
 
 use bytes::Buf;
 
@@ -62,7 +59,7 @@ impl ByteReader {
     }
 
     pub fn len(&self) -> usize {
-        self.bytes.remaining().try_into().unwrap()
+        self.bytes.remaining()
     }
 
     pub fn is_empty(&self) -> bool {

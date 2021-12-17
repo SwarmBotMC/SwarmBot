@@ -440,14 +440,14 @@ impl ByteReadableLike for ChunkColumnPacket {
         let VarUInt(mut primary_bitmask) = byte_reader.read();
         let _size: VarUInt = byte_reader.read();
 
-        const INIT: Option<HighMemoryChunkSection> = None;
+        const INIT: Option<Box<HighMemoryChunkSection>> = None;
         let mut sections = [INIT; 16];
 
         let mut idx = 0;
         while primary_bitmask != 0 {
             if primary_bitmask & 0b1 == 1 {
                 let section: ChunkSection = byte_reader.read_like(param);
-                sections[idx] = Some(HighMemoryChunkSection::new(section.palette));
+                sections[idx] = Some(box HighMemoryChunkSection::new(section.palette));
             }
             primary_bitmask >>= 1;
             idx += 1;

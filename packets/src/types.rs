@@ -160,7 +160,7 @@ pub struct UUIDHyphenated(pub u128);
 impl ByteReadable for UUIDHyphenated {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let mut str: String = byte_reader.read();
-        str = str.replace("-", "");
+        str = str.replace('-', "");
         UUIDHyphenated(u128::from_str_radix(&str, 16).unwrap())
     }
 }

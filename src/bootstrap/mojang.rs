@@ -12,12 +12,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::convert::TryFrom;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha1::Sha1;
-use std::default::default;
+use std::{convert::TryFrom, default::default};
 
 use swarm_bot_packets::types::UUID;
 
@@ -60,7 +59,7 @@ impl TryFrom<Option<&Proxy>> for MojangApi {
     fn try_from(value: Option<&Proxy>) -> Result<Self, Self::Error> {
         match value {
             None => Ok(MojangApi::default()),
-            Some(proxy) => MojangApi::try_from(proxy)
+            Some(proxy) => MojangApi::try_from(proxy),
         }
     }
 }

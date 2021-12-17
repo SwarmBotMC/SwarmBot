@@ -15,12 +15,12 @@
 use bincode::{config::Configuration, Decode, Encode};
 use std::{
     collections::HashMap,
+    convert::TryFrom,
     fs::{File, OpenOptions},
     io::{Read, Write},
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
-use std::convert::TryFrom;
 
 use tokio::sync::mpsc::Receiver;
 

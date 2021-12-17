@@ -101,7 +101,7 @@ impl LowMemoryChunkSection {
 
 #[derive(Default)]
 pub struct ChunkData<T> {
-    pub sections: [Option<T>; 16],
+    pub sections: [Option<Box<T>>; 16],
 }
 
 impl<T> ChunkData<T> {
@@ -117,11 +117,20 @@ impl<T> ChunkData<T> {
     }
 
     fn highest_mut(&mut self) -> Option<&mut T> {
-        self.sections.iter_mut().rev().flatten().next()
+        self.sections
+            .iter_mut()
+            .rev()
+            .flatten()
+            .next()
+            .map(|x| x.as_mut())
     }
 
     fn lowest_mut(&mut self) -> Option<&mut T> {
-        self.sections.iter_mut().flatten().next()
+        self.sections
+            .iter_mut()
+            .flatten()
+            .next()
+            .map(|x| x.as_mut())
     }
 }
 
