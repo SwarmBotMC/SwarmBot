@@ -14,10 +14,9 @@
 
 use std::collections::VecDeque;
 
+use interfaces::types::{BlockLocation, BlockLocation2D};
 use itertools::Itertools;
 use rayon::prelude::ParallelSliceMut;
-
-use crate::storage::block::{BlockLocation, BlockLocation2D};
 
 /// Represents the bottom left corner of a region
 #[derive(Debug)]

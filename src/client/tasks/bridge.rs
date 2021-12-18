@@ -20,9 +20,9 @@ use crate::{
         tasks::TaskTrait,
     },
     protocol::{Face, InterfaceOut},
-    storage::block::BlockLocation,
     types::{Direction, Displacement},
 };
+use interfaces::types::BlockLocation;
 
 pub struct BridgeTask {
     count: u32,

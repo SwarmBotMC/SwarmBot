@@ -14,6 +14,7 @@
 
 use std::cmp::max;
 
+use interfaces::types::{BlockLocation, BlockState};
 use itertools::Itertools;
 
 use swarm_bot_packets::{
@@ -23,10 +24,7 @@ use swarm_bot_packets::{
 };
 
 use crate::{
-    storage::{
-        block::{BlockLocation, BlockState},
-        chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette},
-    },
+    storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette},
     types::{
         Chat, Dimension, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin,
         Position,

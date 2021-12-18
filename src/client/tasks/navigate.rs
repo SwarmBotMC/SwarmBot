@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use interfaces::types::{BlockLocation, ChunkLocation};
 use std::time::Instant;
 
 use crate::{
@@ -33,7 +34,6 @@ use crate::{
         timing::Increment,
     },
     protocol::InterfaceOut,
-    storage::{block::BlockLocation, blocks::ChunkLocation},
 };
 
 pub type ChunkTravelTask = NavigateProblem<ChunkHeuristic, CenterChunkGoalCheck>;

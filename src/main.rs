@@ -16,7 +16,7 @@
 #![deny(unused_must_use)]
 #![deny(warnings)]
 #![deny(rustdoc::broken_intra_doc_links)]
-#![deny(clippy::panic)]
+// #![deny(clippy::panic)]
 #![deny(clippy::await_holding_lock)]
 #![deny(clippy::await_holding_refcell_ref)]
 #![deny(clippy::use_debug)]

@@ -1,13 +1,12 @@
 #![feature(once_cell)]
 
-use std::ops::Sub;
+use crate::types::{BlockLocation, Selection2D};
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tungstenite::Message;
-use swarm_bot_packets::{Writable, Readable};
 
-mod types;
+pub mod types;
 
 type Id = u64;
 
@@ -85,12 +84,11 @@ fn outgoing(command: Command) -> Res<Message> {
 }
 
 impl Comm {
-
     pub async fn recv(&mut self) -> Command {
         self.rx.recv().await.unwrap()
     }
 
-    pub fn send(&mut self, command: Command){
+    pub fn send(&mut self, command: Command) {
         self.tx.send(command).unwrap();
     }
 
@@ -120,9 +118,8 @@ impl Comm {
 
         Ok(Self {
             rx: recv_rx,
-            tx: send_tx
+            tx: send_tx,
         })
-
     }
 
     pub async fn host<A: ToSocketAddrs>(addr: A) -> Res<Self> {
@@ -159,8 +156,10 @@ impl Comm {
             }
         });
 
-        Ok(Self { rx: recv_rx, tx: send_tx })
-
+        Ok(Self {
+            rx: recv_rx,
+            tx: send_tx,
+        })
     }
 }
 

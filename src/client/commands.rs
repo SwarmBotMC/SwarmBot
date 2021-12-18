@@ -15,14 +15,12 @@
 use std::sync::mpsc::Receiver;
 
 use futures::StreamExt;
+use interfaces::types::{BlockLocation, BlockLocation2D};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::net::TcpListener;
 
-use crate::{
-    error::Res,
-    storage::block::{BlockLocation, BlockLocation2D},
-};
+use crate::error::Res;
 
 pub struct CommandReceiver {
     pub pending: Receiver<CommandData>,

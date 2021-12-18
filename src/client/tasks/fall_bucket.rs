@@ -18,8 +18,8 @@ use crate::{
         tasks::TaskTrait,
     },
     protocol::InterfaceOut,
-    storage::block::{BlockLocation, BlockState, SimpleType},
 };
+use interfaces::types::{BlockLocation, BlockState, SimpleType};
 
 #[derive(Default)]
 pub struct FallBucketTask {

@@ -12,58 +12,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{
-    collections::{BinaryHeap, HashMap},
-    convert::TryFrom,
-};
+use std::collections::{BinaryHeap, HashMap};
 
 use float_ord::FloatOrd;
+use interfaces::types::{
+    BlockApprox, BlockKind, BlockLocation, BlockState, ChunkLocation, SimpleType,
+};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use crate::{
-    client::{
-        bot::{ProcessError, WrongArgCount},
-        pathfind::MinHeapNode,
-    },
+    client::pathfind::MinHeapNode,
     schematic::Schematic,
-    storage::{
-        block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType},
-        chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection},
-    },
-    types::Location,
+    storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection},
 };
-
-pub mod cache;
-
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
-pub struct ChunkLocation(pub i32, pub i32);
-
-impl TryFrom<&[&str]> for ChunkLocation {
-    type Error = ProcessError;
-
-    fn try_from(value: &[&str]) -> Result<Self, Self::Error> {
-        if let [a, b] = value {
-            let x = a.parse()?;
-            let z = b.parse()?;
-            Ok(ChunkLocation(x, z))
-        } else {
-            Err(WrongArgCount::new(2).into())
-        }
-    }
-}
-
-impl From<BlockLocation> for ChunkLocation {
-    fn from(loc: BlockLocation) -> Self {
-        Self(loc.x >> 4, loc.z >> 4)
-    }
-}
-
-impl From<Location> for ChunkLocation {
-    fn from(loc: Location) -> Self {
-        let block_loc = BlockLocation::from(loc);
-        Self::from(block_loc)
-    }
-}
 
 #[derive(Default)]
 pub struct WorldBlocks {
@@ -367,15 +328,10 @@ mod tests {
     use test::{black_box, Bencher};
 
     use assert_matches::assert_matches as am;
+    use interfaces::types::{BlockApprox, BlockLocation, BlockState};
     use rand::Rng;
 
-    use crate::{
-        schematic::Schematic,
-        storage::{
-            block::{BlockApprox, BlockLocation, BlockState},
-            blocks::WorldBlocks,
-        },
-    };
+    use crate::{schematic::Schematic, storage::blocks::WorldBlocks};
 
     #[test]
     fn test_get_set() {

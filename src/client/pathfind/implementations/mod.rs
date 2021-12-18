@@ -12,20 +12,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use interfaces::types::{BlockLocation, BlockState};
 use std::{collections::HashMap, time::Instant};
 
-use crate::{
-    client::{
-        pathfind::{
-            context::{GlobalContext, MoveNode, MoveRecord},
-            incremental::{AStar, Node, PathResult},
-            moves::Movements,
-            traits::{GoalCheck, Heuristic, Progression, Progressor},
-        },
-        state::{global::GlobalState, local::LocalState},
-        timing::Increment,
+use crate::client::{
+    pathfind::{
+        context::{GlobalContext, MoveNode, MoveRecord},
+        incremental::{AStar, Node, PathResult},
+        moves::Movements,
+        traits::{GoalCheck, Heuristic, Progression, Progressor},
     },
-    storage::block::{BlockLocation, BlockState},
+    state::{global::GlobalState, local::LocalState},
+    timing::Increment,
 };
 
 pub mod novehicle;

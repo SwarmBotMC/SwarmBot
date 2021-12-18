@@ -13,6 +13,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use float_ord::FloatOrd;
+use interfaces::types::BlockLocation;
 
 use crate::{
     client::{
@@ -20,7 +21,6 @@ use crate::{
         tasks::{lazy_stream::LazyStream, mine::MineTask, stream::TaskStream, Task},
     },
     protocol::InterfaceOut,
-    storage::block::BlockLocation,
 };
 
 pub type MineLayerTask = LazyStream<MineLayer>;

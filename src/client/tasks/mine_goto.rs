@@ -12,16 +12,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{
-    client::{
-        state::{
-            global::{mine_alloc::MineAlloc, GlobalState},
-            local::LocalState,
-        },
-        tasks::{lazy::Lazy, pillar_and_mine::PillarAndMineTask, Task},
+use crate::client::{
+    state::{
+        global::{mine_alloc::MineAlloc, GlobalState},
+        local::LocalState,
     },
-    storage::block::BlockLocation,
+    tasks::{lazy::Lazy, pillar_and_mine::PillarAndMineTask, Task},
 };
+use interfaces::types::BlockLocation;
 
 pub struct GoMineTop;
 

@@ -22,14 +22,10 @@ use crate::{
         tasks::eat::EatTask,
     },
     protocol::InterfaceOut,
-    storage::{
-        block::{BlockLocation, BlockState},
-        blocks::ChunkLocation,
-        chunk::ChunkColumn,
-        entities::EntityKind,
-    },
+    storage::{chunk::ChunkColumn, entities::EntityKind},
     types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage},
 };
+use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);

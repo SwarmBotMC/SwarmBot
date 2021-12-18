@@ -13,13 +13,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{
-    bootstrap::block_data::BlockData,
     client::{
         pathfind::context::PathConfig,
         state::global::{mine_alloc::MineAlloc, world_players::WorldPlayers},
     },
     storage::{blocks::WorldBlocks, entities::WorldEntities},
 };
+use interfaces::types::block_data::BlockData;
 
 pub mod mine_alloc;
 pub mod world_players;

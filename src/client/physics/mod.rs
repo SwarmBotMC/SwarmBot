@@ -15,16 +15,14 @@
 use std::{collections::HashSet, default::default};
 
 use float_ord::FloatOrd;
+use interfaces::types::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
 use itertools::Itertools;
 use num::traits::Pow;
 
 use crate::{
     client::{physics::speed::Speed, state::local::inventory::PlayerInventory},
     protocol::Face,
-    storage::{
-        block::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType},
-        blocks::WorldBlocks,
-    },
+    storage::blocks::WorldBlocks,
     types::{Direction, Displacement, Location},
 };
 

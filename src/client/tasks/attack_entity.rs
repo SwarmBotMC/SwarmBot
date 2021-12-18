@@ -21,10 +21,8 @@ use crate::{
     protocol::InterfaceOut,
 };
 
-use crate::{
-    client::tasks::{compound::CompoundTask, delay::DelayTask},
-    storage::block::{BlockLocation, BlockLocation2D},
-};
+use crate::client::tasks::{compound::CompoundTask, delay::DelayTask};
+use interfaces::types::{BlockLocation, BlockLocation2D};
 use std::time::Instant;
 
 pub struct AttackEntity {

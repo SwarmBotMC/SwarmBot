@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
 use std::{cell::RefCell, rc::Rc, sync::mpsc::TryRecvError};
 
 use swarm_bot_packets::{
@@ -37,11 +38,7 @@ use crate::{
         },
         ClientInfo, EventQueue, Face, InterfaceOut, InvAction, Login, Mine, Minecraft,
     },
-    storage::{
-        block::{BlockLocation, BlockState},
-        blocks::ChunkLocation,
-        entities::EntityKind,
-    },
+    storage::entities::EntityKind,
     types::{Dimension, Direction, Location, PacketData, Slot},
 };
 

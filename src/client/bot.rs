@@ -19,6 +19,7 @@ use std::{
 };
 
 use float_ord::FloatOrd;
+use interfaces::types::BlockLocation;
 use itertools::Itertools;
 
 use crate::{
@@ -30,7 +31,6 @@ use crate::{
         },
     },
     protocol::{EventQueue, Face, InterfaceOut},
-    storage::block::BlockLocation,
     types::Displacement,
 };
 

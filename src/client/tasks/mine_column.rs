@@ -22,8 +22,8 @@ use crate::{
         },
     },
     protocol::InterfaceOut,
-    storage::block::BlockLocation,
 };
+use interfaces::types::BlockLocation;
 
 pub struct MineColumn;
 

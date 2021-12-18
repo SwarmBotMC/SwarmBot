@@ -15,9 +15,9 @@
 use crate::{
     client::{physics::Physics, state::local::inventory::PlayerInventory},
     protocol::{ClientInfo, Face},
-    storage::block::BlockLocation,
     types::Dimension,
 };
+use interfaces::types::BlockLocation;
 
 pub mod inventory;
 

@@ -12,25 +12,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{
-    client::{
-        state::{
-            global::{mine_alloc::MineAlloc, GlobalState},
-            local::LocalState,
-        },
-        tasks::{
-            center::CenterTask,
-            compound::CompoundTask,
-            delay::DelayTask,
-            lazy::{Lazy, LazyTask},
-            lazy_stream::LazyStream,
-            mine_column::MineColumn,
-            mine_goto::GoMineTop,
-            Task,
-        },
+use crate::client::{
+    state::{
+        global::{mine_alloc::MineAlloc, GlobalState},
+        local::LocalState,
     },
-    storage::block::{BlockLocation, BlockLocation2D},
+    tasks::{
+        center::CenterTask,
+        compound::CompoundTask,
+        delay::DelayTask,
+        lazy::{Lazy, LazyTask},
+        lazy_stream::LazyStream,
+        mine_column::MineColumn,
+        mine_goto::GoMineTop,
+        Task,
+    },
 };
+use interfaces::types::{BlockLocation, BlockLocation2D};
 
 pub struct SafeMineRegion;
 

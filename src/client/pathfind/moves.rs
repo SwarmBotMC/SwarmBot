@@ -15,18 +15,16 @@
 use crate::{
     client::pathfind::{
         context::{GlobalContext, MoveNode},
-        moves::cenetered_arr::CenteredArray,
+        moves::centered_arr::CenteredArray,
         traits::{Neighbor, Progression},
     },
-    storage::{
-        block::{BlockLocation, SimpleType},
-        blocks::WorldBlocks,
-    },
+    storage::blocks::WorldBlocks,
 };
+use interfaces::types::{BlockLocation, Change, SimpleType, SimpleType::*};
 
 pub const MAX_FALL: i32 = 3;
 
-mod cenetered_arr;
+mod centered_arr;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum State {
@@ -81,8 +79,6 @@ impl Movements {
                 (inner, multiplier)
             }
         };
-
-        use crate::storage::block::SimpleType::*;
 
         // cache adjacent leg block types
         let mut adj_legs = [WalkThrough; 4];
@@ -347,18 +343,6 @@ impl CardinalDirection {
         use CardinalDirection::*;
         [North, South, East, West]
     };
-}
-
-pub struct Change {
-    pub dx: i32,
-    pub dy: i16,
-    pub dz: i32,
-}
-
-impl Change {
-    fn new(dx: i32, dy: i16, dz: i32) -> Change {
-        Change { dx, dy, dz }
-    }
 }
 
 impl CardinalDirection {

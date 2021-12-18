@@ -12,17 +12,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{
-    client::pathfind::{
-        context::MoveNode,
-        implementations::PlayerProblem,
-        traits::{GoalCheck, Heuristic},
-    },
-    storage::{
-        block::{BlockLocation, BlockLocation2D},
-        blocks::ChunkLocation,
-    },
+use crate::client::pathfind::{
+    context::MoveNode,
+    implementations::PlayerProblem,
+    traits::{GoalCheck, Heuristic},
 };
+use interfaces::types::{BlockLocation, BlockLocation2D, ChunkLocation};
 
 pub struct BlockGoalCheck {
     goal: BlockLocation,

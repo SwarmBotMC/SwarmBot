@@ -27,7 +27,6 @@ use crate::bootstrap::{
     storage::{BotData, ValidUser},
 };
 
-pub mod block_data;
 pub mod csv;
 pub mod dns;
 pub mod mojang;

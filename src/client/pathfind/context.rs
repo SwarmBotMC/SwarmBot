@@ -12,15 +12,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use interfaces::types::{BlockLocation, BlockState};
 use std::hash::{Hash, Hasher};
 
-use crate::{
-    client::pathfind::incremental::Node,
-    storage::{
-        block::{BlockLocation, BlockState},
-        blocks::WorldBlocks,
-    },
-};
+use crate::{client::pathfind::incremental::Node, storage::blocks::WorldBlocks};
 
 #[derive(Clone)]
 pub struct Costs {

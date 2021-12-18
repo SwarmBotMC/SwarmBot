@@ -12,12 +12,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use interfaces::types::{BlockApprox, BlockLocation, BlockState, ChunkLocation, SimpleType};
 use std::collections::HashMap;
-
-use crate::storage::{
-    block::{BlockApprox, BlockLocation, BlockState, SimpleType},
-    blocks::ChunkLocation,
-};
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
@@ -484,12 +480,10 @@ impl ChunkColumn {
 mod tests {
     use std::collections::HashMap;
 
+    use interfaces::types::BlockState;
     use itertools::Itertools;
 
-    use crate::storage::{
-        block::BlockState,
-        chunk::{bits_needed, Palette},
-    };
+    use crate::storage::chunk::{bits_needed, Palette};
 
     #[test]
     fn test_bits_needed() {

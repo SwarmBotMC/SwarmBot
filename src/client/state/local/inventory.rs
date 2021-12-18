@@ -13,12 +13,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{
-    bootstrap::block_data::BlockData,
     client::physics::tools::{Tool, ToolMat},
     protocol::{InterfaceOut, InvAction},
-    storage::block::BlockKind,
     types::{ItemNbt, Slot},
 };
+use interfaces::types::{block_data::BlockData, BlockKind};
 
 #[derive(Debug)]
 pub struct ItemStack {

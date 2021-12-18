@@ -14,9 +14,8 @@
 
 use std::io::Read;
 
+use interfaces::types::{BlockLocation, BlockState};
 use serde::{Deserialize, Serialize};
-
-use crate::storage::block::{BlockLocation, BlockState};
 
 /// https://minecraft.fandom.com/wiki/Schematic_file_format
 #[derive(Serialize, Deserialize, Debug)]
@@ -157,9 +156,10 @@ impl Schematic {
 mod tests {
     use std::{collections::HashMap, fs::OpenOptions};
 
+    use interfaces::types::BlockLocation;
     use more_asserts::*;
 
-    use crate::{schematic::Schematic, storage::block::BlockLocation};
+    use crate::schematic::Schematic;
 
     #[test]
     fn test_load() {

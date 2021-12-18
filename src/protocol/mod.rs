@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use interfaces::types::BlockLocation;
 use swarm_bot_packets::types::UUID;
 
 use crate::{
@@ -21,7 +22,6 @@ use crate::{
         state::local::inventory::ItemStack,
     },
     error::Res,
-    storage::block::BlockLocation,
     types::{Direction, Location},
 };
 

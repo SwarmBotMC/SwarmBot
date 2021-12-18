@@ -12,11 +12,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{
-    bootstrap::block_data::{BlockData, Material},
-    client::state::local::inventory::ItemStack,
-    storage::block::BlockKind,
-    types::Enchantment,
+use crate::{client::state::local::inventory::ItemStack, types::Enchantment};
+use interfaces::types::{
+    block_data::{BlockData, Material},
+    BlockKind,
 };
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -205,11 +204,8 @@ impl Tool {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        bootstrap::block_data::BlockData,
-        client::physics::tools::{Tool, ToolKind, ToolMat},
-        storage::block::BlockKind,
-    };
+    use crate::client::physics::tools::{Tool, ToolKind, ToolMat};
+    use interfaces::types::{block_data::BlockData, BlockKind};
 
     #[test]
     fn test_break_time() {

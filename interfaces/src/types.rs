@@ -14,7 +14,7 @@
 
 use std::{
     f32::consts::PI,
-    fmt::{Display, Formatter},
+    fmt::{Debug, Display, Formatter},
     lazy::SyncLazy,
     ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub},
 };
@@ -30,9 +30,12 @@ use swarm_bot_packets::{
     *,
 };
 
-use crate::{
-    types::Origin::{Abs, Rel},
+use crate::types::{
+    block_data::{Block, BlockData},
+    Origin::{Abs, Rel},
 };
+
+pub mod block_data;
 
 #[derive(Clone)]
 pub struct PacketData {
@@ -221,7 +224,7 @@ impl Location {
 impl From<Location> for BlockLocation {
     fn from(location: Location) -> Self {
         let Location { x, y, z } = location;
-        BlockLocation::new_(x, y, z)
+        BlockLocation::from_flts(x, y, z)
     }
 }
 
@@ -266,23 +269,6 @@ impl Enchantment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ItemNbt {
-    pub ench: Option<Vec<Enchantment>>,
-}
-
-impl ByteReadable for ItemNbt {
-    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        nbt::from_reader(byte_reader).unwrap()
-    }
-}
-
-impl ByteWritable for ItemNbt {
-    fn write_to_bytes(self, writer: &mut ByteWriter) {
-        nbt::to_writer(writer, &self, None).unwrap();
-    }
-}
-
 pub struct ShortVec<T>(pub Vec<T>);
 
 impl<T: ByteReadable> ByteReadable for ShortVec<T> {
@@ -297,85 +283,15 @@ impl<T: ByteReadable> ByteReadable for ShortVec<T> {
     }
 }
 
-/// https://wiki.vg/Slot_Data
-#[derive(Debug)]
-pub struct Slot {
-    pub block_id: i16,
-    pub item_count: Option<u8>,
-    pub item_damage: Option<u16>,
-    pub nbt: Option<ItemNbt>,
+pub struct Change {
+    pub dx: i32,
+    pub dy: i16,
+    pub dz: i32,
 }
 
-impl From<ItemStack> for Slot {
-    fn from(stack: ItemStack) -> Self {
-        Self {
-            block_id: stack.kind.0 as i16,
-            item_count: Some(stack.count),
-            item_damage: Some(stack.damage),
-            nbt: stack.nbt,
-        }
-    }
-}
-
-impl Slot {
-    pub const EMPTY: Slot = {
-        Slot {
-            block_id: -1,
-            item_count: None,
-            item_damage: None,
-            nbt: None,
-        }
-    };
-
-    pub fn present(&self) -> bool {
-        self.block_id != -1
-    }
-}
-
-impl ByteWritable for Slot {
-    fn write_to_bytes(self, writer: &mut ByteWriter) {
-        writer.write(self.block_id);
-
-        if self.block_id != -1 {
-            writer.write(self.item_count.unwrap());
-            writer.write(self.item_damage.unwrap());
-
-            match self.nbt {
-                None => writer.write(0_u8),
-                Some(nbt) => writer.write(nbt),
-            };
-        }
-    }
-}
-
-impl ByteReadable for Slot {
-    fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        let block_id: i16 = byte_reader.read();
-
-        if block_id != -1 {
-            let item_count = byte_reader.read();
-            let item_damage = byte_reader.read();
-
-            let first: u8 = byte_reader.read();
-            let nbt = (first != 0).then(|| {
-                byte_reader.back(1);
-                byte_reader.read()
-            });
-
-            Slot {
-                block_id,
-                item_count: Some(item_count),
-                item_damage: Some(item_damage),
-                nbt,
-            }
-        } else {
-            Slot {
-                block_id,
-                item_count: None,
-                item_damage: None,
-                nbt: None,
-            }
-        }
+impl Change {
+    pub fn new(dx: i32, dy: i16, dz: i32) -> Change {
+        Change { dx, dy, dz }
     }
 }
 
@@ -436,8 +352,6 @@ impl Displacement {
     }
 
     pub fn zero_if_reachable(&self) -> Displacement {
-        const EPSILON: f64 = 0.01;
-
         let dx = if self.dx.abs() < 0.5 { 0. } else { self.dx };
         let dy = if self.dy.abs() < 0.5 { 0. } else { self.dy };
         let dz = if self.dz.abs() < 0.5 { 0. } else { self.dz };
@@ -876,7 +790,6 @@ impl From<BlockLocation> for ChunkLocation {
     }
 }
 
-
 impl From<Location> for ChunkLocation {
     fn from(loc: Location) -> Self {
         let block_loc = BlockLocation::from(loc);
@@ -884,28 +797,11 @@ impl From<Location> for ChunkLocation {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct BlockLocation2D {
-    pub x: i32,
-    pub z: i32,
-}
-
-impl BlockLocation2D {
-    pub fn new(x: i32, z: i32) -> Self {
-        Self { x, z }
-    }
-    pub fn dist2(self, other: BlockLocation2D) -> u64 {
-        let dx = (self.x - other.x).abs() as u64;
-        let dz = (self.z - other.z).abs() as u64;
-        dx * dx + dz * dz
-    }
-}
-
 /// A block location stored by (x,z) = i32, y = i16. y is signed to preserve
 /// compatibility with 1.17, where the world height can be much higher and goes
 /// to negative values.
 #[derive(
-Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default, Serialize, Deserialize,
+    Copy, Clone, Debug, Hash, PartialOrd, PartialEq, Ord, Eq, Default, Serialize, Deserialize,
 )]
 pub struct BlockLocation {
     pub x: i32,
@@ -926,6 +822,42 @@ impl From<BlockLocation2D> for BlockLocation {
             y: 0,
             z: loc.z,
         }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct BlockLocation2D {
+    pub x: i32,
+    pub z: i32,
+}
+
+impl BlockLocation2D {
+    pub fn new(x: i32, z: i32) -> Self {
+        Self { x, z }
+    }
+    pub fn dist2(self, other: BlockLocation2D) -> u64 {
+        let dx = (self.x - other.x).abs() as u64;
+        let dz = (self.z - other.z).abs() as u64;
+        dx * dx + dz * dz
+    }
+}
+
+impl From<Change> for BlockLocation {
+    fn from(change: Change) -> Self {
+        Self {
+            x: change.dx,
+            y: change.dy,
+            z: change.dz,
+        }
+    }
+}
+
+impl Add for BlockLocation {
+    type Output = BlockLocation;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let BlockLocation { x, y, z } = self;
+        BlockLocation::new(x + rhs.x, y + rhs.y, z + rhs.z)
     }
 }
 
@@ -1016,5 +948,258 @@ impl BlockLocation {
             y: self.y as f64 + 0.5,
             z: self.z as f64 + 0.5,
         }
+    }
+}
+
+impl BlockLocation {
+    pub fn dist2(&self, other: BlockLocation) -> f64 {
+        let dx = (self.x - other.x).abs() as f64;
+        let dy = (self.y - other.y).abs() as f64;
+        let dz = (self.z - other.z).abs() as f64;
+        dx * dx + dy * dy + dz * dz
+    }
+
+    pub fn manhatten(&self, other: BlockLocation) -> u64 {
+        let dx = (self.x - other.x).abs() as u64;
+        let dy = (self.y - other.y).abs() as u64;
+        let dz = (self.z - other.z).abs() as u64;
+        dx + dy + dz
+    }
+
+    pub fn dist(&self, other: BlockLocation) -> f64 {
+        (self.dist2(other) as f64).sqrt()
+    }
+}
+
+impl Display for BlockLocation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("[{}, {}, {}]", self.x, self.y, self.z))
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum BlockApprox {
+    Realized(BlockState),
+    Estimate(SimpleType),
+}
+
+impl BlockApprox {
+    pub const AIR: BlockApprox = BlockApprox::Estimate(SimpleType::WalkThrough);
+
+    pub fn s_type(&self) -> SimpleType {
+        match self {
+            BlockApprox::Realized(x) => x.simple_type(),
+            BlockApprox::Estimate(x) => *x,
+        }
+    }
+
+    pub fn as_real(&self) -> BlockState {
+        match self {
+            BlockApprox::Realized(inner) => *inner,
+            _ => panic!("was not relized"),
+        }
+    }
+
+    pub fn is_solid(&self) -> bool {
+        self.s_type() == SimpleType::Solid
+    }
+
+    pub fn is_walkable(&self) -> bool {
+        self.s_type() == SimpleType::WalkThrough
+    }
+}
+
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub enum SimpleType {
+    Solid,
+    Water,
+    Avoid,
+    WalkThrough,
+}
+
+impl SimpleType {
+    pub fn id(&self) -> u8 {
+        match self {
+            SimpleType::Solid => 0,
+            SimpleType::Water => 1,
+            SimpleType::Avoid => 2,
+            SimpleType::WalkThrough => 3,
+        }
+    }
+}
+
+impl From<u8> for SimpleType {
+    fn from(id: u8) -> Self {
+        match id {
+            0 => SimpleType::Solid,
+            1 => SimpleType::Water,
+            2 => SimpleType::Avoid,
+            3 => SimpleType::WalkThrough,
+            _ => panic!("invalid id"),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
+#[repr(transparent)]
+pub struct BlockKind(pub u32);
+
+impl From<u32> for BlockKind {
+    fn from(id: u32) -> Self {
+        Self(id)
+    }
+}
+
+impl BlockKind {
+    pub const DEFAULT_SLIP: f64 = 0.6;
+    pub const LADDER: BlockKind = BlockKind(65);
+    pub const LEAVES: BlockKind = BlockKind(18);
+    pub const FLOWING_WATER: BlockKind = BlockKind(8);
+    pub const STONE: BlockKind = BlockKind(1);
+    pub const DIRT: BlockKind = BlockKind(3);
+    pub const GLASS: BlockKind = BlockKind(20);
+
+    #[inline]
+    pub fn id(self) -> u32 {
+        self.0
+    }
+
+    pub fn hardness(&self, blocks: &BlockData) -> Option<f64> {
+        let block = blocks
+            .by_id(self.0)
+            .unwrap_or_else(|| panic!("no block for id {}", self.0));
+        block.hardness
+    }
+
+    pub fn data<'a>(&self, blocks: &'a BlockData) -> &'a Block {
+        blocks
+            .by_id(self.0)
+            .unwrap_or_else(|| panic!("no block for id {}", self.0))
+    }
+
+    pub fn throw_away_block(self) -> bool {
+        // cobblestone
+        matches!(self.id(), 4)
+    }
+
+    pub fn mineable(&self, blocks: &BlockData) -> bool {
+        // we can't mine air
+        if self.0 == 0 {
+            return false;
+        }
+
+        match self.hardness(blocks) {
+            None => false,
+            Some(val) => val < 100.0,
+        }
+    }
+
+    pub fn slip(&self) -> f64 {
+        match self.0 {
+            266 => 0.989,           // blue ice
+            79 | 174 | 212 => 0.98, // ice, packed ice, or frosted ice
+            37 => 0.8,              // slime block
+            _ => Self::DEFAULT_SLIP,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Default)]
+#[repr(transparent)]
+pub struct BlockState(pub u32);
+
+impl Debug for BlockState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}:{}", self.0 >> 4, self.0 % 16))
+    }
+}
+
+impl BlockState {
+    pub const AIR: BlockState = BlockState(0);
+    pub const WATER: BlockState = BlockState(9);
+    pub const STONE: BlockState = BlockState(16);
+
+    pub fn from(id: u32, data: u16) -> BlockState {
+        BlockState((id << 4) + data as u32)
+    }
+
+    pub fn id(&self) -> u32 {
+        self.0 >> 4
+    }
+
+    pub fn kind(&self) -> BlockKind {
+        BlockKind(self.id())
+    }
+
+    pub fn simple_type(&self) -> SimpleType {
+        if self.full_block() {
+            return SimpleType::Solid;
+        }
+
+        if self.is_water() {
+            return SimpleType::Water;
+        }
+
+        if self.walk_through() {
+            return SimpleType::WalkThrough;
+        }
+
+        SimpleType::Avoid
+    }
+
+    pub fn metadata(&self) -> u8 {
+        (self.0 & 0b1111) as u8
+    }
+
+    pub fn full_block(&self) -> bool {
+        // consider 54 |
+        matches!(self.id(),
+            1..=5 |7 | 12..=25 | 29 | 33 |35 | 41 ..=43 | 45..=49 | 52 | 56..=58 | 60..=62 | 73 | 74 |
+            78..=80| // snow, ice
+            82| // clay
+            84|86|87|89|91|95|
+            97| // TODO: avoid this is a monster egg
+            98..=100|
+            // TODO: account panes
+            103|110|112|118|121|123..=125|
+            129|133|137..=138|155|159|161|162|
+            165| // TODO: slime block special fall logic
+            166|
+            168..=170| // TODO: special haybale logic
+            172..=174|
+            179|181|199..=202|
+            204|206|208..=212|214..=255
+
+        )
+    }
+
+    pub fn is_water(&self) -> bool {
+        matches!(
+            self.id(),
+            8 | 9 | 65 // ladder ... this is VERY jank
+        )
+    }
+
+    pub fn walk_through(&self) -> bool {
+        self.is_water() || self.no_motion_effect()
+    }
+
+    pub fn no_motion_effect(&self) -> bool {
+        matches!(
+            self.id(),
+            0| // air
+            6|// sapling
+            27|28| //  rail
+            31| // grass/fern/dead shrub
+            38|37|// flower
+            39|40| //mushroom
+            50|//torch
+            59|// wheat
+            66|68|69|70|72|75|76|77|83|
+            90| // portal
+            104|105|106|
+            115|119|
+            175..=177
+        )
     }
 }

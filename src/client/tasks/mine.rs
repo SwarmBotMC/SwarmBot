@@ -18,8 +18,8 @@ use crate::{
         tasks::TaskTrait,
     },
     protocol::{Face, InterfaceOut, Mine},
-    storage::block::{BlockLocation, BlockState},
 };
+use interfaces::types::{BlockLocation, BlockState};
 
 pub struct MineTask {
     ticks: usize,

@@ -57,7 +57,7 @@ impl<T, const SIZE: usize> IndexMut<(i32, i32)> for ConstCenteredArray<T, SIZE> 
 
 #[cfg(test)]
 mod test {
-    use crate::client::pathfind::moves::cenetered_arr::CenteredArray;
+    use crate::client::pathfind::moves::centered_arr::CenteredArray;
 
     #[test]
     fn test_values() {

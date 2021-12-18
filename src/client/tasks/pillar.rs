@@ -18,9 +18,9 @@ use crate::{
         tasks::TaskTrait,
     },
     protocol::InterfaceOut,
-    storage::block::{BlockLocation, SimpleType},
     types::{Direction, Displacement},
 };
+use interfaces::types::{BlockLocation, SimpleType};
 
 pub struct PillarTask {
     dest_y: u32,

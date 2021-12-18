@@ -267,6 +267,7 @@ mod tests {
         time::{Duration, Instant},
     };
 
+    use interfaces::types::BlockLocation;
     use more_asserts::*;
 
     use crate::{
@@ -280,7 +281,6 @@ mod tests {
             timing::Increment,
         },
         schematic::Schematic,
-        storage::block::BlockLocation,
     };
 
     #[test]
