@@ -43,7 +43,7 @@ impl<T: Ord> Iterator for HeapIter<T> {
     }
 }
 
-fn block_chunk_iter(
+fn block_chunk_iter<'a>(
     loc: &'a ChunkLocation,
     column: &'a ChunkData<HighMemoryChunkSection>,
     selector: impl FnMut(BlockState) -> bool + 'a,
@@ -198,7 +198,7 @@ impl WorldBlocks {
         Some(block)
     }
 
-    pub fn closest_in_chunk(
+    pub fn closest_in_chunk<'a>(
         &'a self,
         origin: BlockLocation,
         selector: impl FnMut(BlockState) -> bool + 'a + Copy,
@@ -214,7 +214,7 @@ impl WorldBlocks {
         }
     }
 
-    pub fn closest(
+    pub fn closest<'a>(
         &'a self,
         origin: BlockLocation,
         max_chunks: usize,
@@ -224,7 +224,7 @@ impl WorldBlocks {
             .min_by_key(|loc| FloatOrd(loc.dist2(origin)))
     }
 
-    pub fn closest_iter(
+    pub fn closest_iter<'a>(
         &'a self,
         origin: BlockLocation,
         selector: impl FnMut(BlockState) -> bool + 'a + Copy,
@@ -250,7 +250,7 @@ impl WorldBlocks {
             })
     }
 
-    pub fn select(
+    pub fn select<'a>(
         &'a self,
         _around: BlockLocation,
         max_chunks: usize,

@@ -54,7 +54,7 @@ pub struct SimpleInterfaceIn<'a, I: InterfaceOut> {
     out: &'a mut I,
 }
 
-impl<I: InterfaceOut> SimpleInterfaceIn<'a, I> {
+impl<'a, I: InterfaceOut> SimpleInterfaceIn<'a, I> {
     pub fn new(
         local: &'a mut LocalState,
         actions: &'a mut ActionState,
@@ -86,7 +86,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                     self.actions,
                     self.out,
                 ) {
-                    println!("could not process command. Reason: {}", err);
+                    println!("could not process command. Reason: {:?}", err);
                 }
             }
         };
