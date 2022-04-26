@@ -20,7 +20,6 @@
 #![deny(clippy::await_holding_lock)]
 #![deny(clippy::await_holding_refcell_ref)]
 #![deny(clippy::use_debug)]
-#![feature(in_band_lifetimes)]
 #![feature(generic_const_exprs)]
 #![feature(path_try_exists)]
 #![feature(type_alias_impl_trait)]

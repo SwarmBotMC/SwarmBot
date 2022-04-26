@@ -154,7 +154,7 @@ impl ChunkData<HighMemoryChunkSection> {
 
         res
     }
-    pub fn select_up(
+    pub fn select_up<'a>(
         &'a self,
         mut selector: impl FnMut(BlockState) -> bool + 'a,
     ) -> impl Iterator<Item = usize> + 'a {
@@ -171,7 +171,7 @@ impl ChunkData<HighMemoryChunkSection> {
             .map(|(idx, _)| idx)
     }
 
-    pub fn select_locs(
+    pub fn select_locs<'a>(
         &'a self,
         location: ChunkLocation,
         selector: impl FnMut(BlockState) -> bool + 'a,
@@ -181,7 +181,7 @@ impl ChunkData<HighMemoryChunkSection> {
     }
 
     // TODO: remove duplicate code... is it even possible?
-    pub fn select_down(
+    pub fn select_down<'a>(
         &'a self,
         mut selector: impl FnMut(BlockState) -> bool + 'a,
     ) -> impl Iterator<Item = usize> + 'a {
