@@ -204,7 +204,7 @@ impl Movements {
             'check_loop: for dx in -RADIUS..=RADIUS {
                 for dz in -RADIUS..=RADIUS {
                     let adj_above = get_block!(x + dx, y + 2, z + dz);
-                    if adj_above == None {
+                    if adj_above.is_none() {
                         edge = true;
                         break 'check_loop;
                     }
@@ -282,8 +282,7 @@ impl Movements {
                     const MAX_RAD: f64 = 4.5;
 
                     if same_y_possible
-                        && rad2 <= MAX_RAD * MAX_RAD
-                        && rad2 >= MIN_RAD * MIN_RAD
+                        && (MIN_RAD * MIN_RAD..=MAX_RAD * MAX_RAD).contains(&rad2)
                         && is_open
                     {
                         res.push(Neighbor {
@@ -313,7 +312,7 @@ fn drop_y(start: BlockLocation, world: &WorldBlocks) -> Option<i16> {
         let block_type = world.get_block_simple(loc).unwrap();
         match block_type {
             SimpleType::Solid => {
-                return (travelled <= MAX_FALL).then(|| y);
+                return (travelled <= MAX_FALL).then_some(y);
             }
             SimpleType::Water => {
                 return Some(y);

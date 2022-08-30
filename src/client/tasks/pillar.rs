@@ -67,8 +67,9 @@ impl TaskTrait for PillarTask {
         let below_block = BlockLocation::from(location).below();
         let two_below = below_block.below();
 
+        let below_type = global.blocks.get_block_simple(below_block);
         let below_valid = matches!(
-            global.blocks.get_block_simple(below_block),
+            below_type,
             Some(SimpleType::Water) | Some(SimpleType::WalkThrough)
         );
 

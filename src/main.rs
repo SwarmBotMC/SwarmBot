@@ -21,7 +21,6 @@
 #![deny(clippy::await_holding_refcell_ref)]
 #![deny(clippy::use_debug)]
 #![feature(generic_const_exprs)]
-#![feature(path_try_exists)]
 #![feature(type_alias_impl_trait)]
 #![feature(once_cell)]
 #![feature(step_trait)]
@@ -30,7 +29,7 @@
 #![feature(test)]
 #![feature(box_syntax)]
 #![feature(default_free_fn)]
-#![feature(bool_to_option)]
+#![feature(fs_try_exists)]
 
 #[macro_use]
 extern crate enum_dispatch;

@@ -118,7 +118,7 @@ impl<T> ChunkData<T> {
             .rev()
             .flatten()
             .next()
-            .map(|x| x.as_mut())
+            .map(std::convert::AsMut::as_mut)
     }
 
     fn lowest_mut(&mut self) -> Option<&mut T> {
@@ -126,7 +126,7 @@ impl<T> ChunkData<T> {
             .iter_mut()
             .flatten()
             .next()
-            .map(|x| x.as_mut())
+            .map(std::convert::AsMut::as_mut)
     }
 }
 

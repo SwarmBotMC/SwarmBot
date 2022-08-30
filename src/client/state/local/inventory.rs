@@ -118,7 +118,7 @@ impl PlayerInventory {
     }
 
     pub fn switch_block(&mut self, out: &mut impl InterfaceOut) {
-        self.switch_selector(out, |kind| kind.throw_away_block());
+        self.switch_selector(out, interfaces::types::BlockKind::throw_away_block);
     }
 
     /// true if successful
@@ -172,7 +172,7 @@ impl PlayerInventory {
             .enumerate()
             .filter_map(|(idx, item_stack)| {
                 let item_stack = item_stack.as_ref()?;
-                block(item_stack.kind).then(|| idx)
+                block(item_stack.kind).then_some(idx)
             })
             .next();
 

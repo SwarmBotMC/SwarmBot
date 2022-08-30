@@ -773,6 +773,7 @@ dependencies = [
  "ansi_term",
  "futures",
  "itertools",
+ "lazy_static",
  "num",
  "regex",
  "serde",

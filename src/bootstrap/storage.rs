@@ -16,6 +16,7 @@ use bincode::{config::Configuration, Decode, Encode};
 use std::{
     collections::HashMap,
     convert::TryFrom,
+    fs,
     fs::{File, OpenOptions},
     io::{Read, Write},
     path::PathBuf,
@@ -126,7 +127,7 @@ fn time() -> u64 {
 
 impl UserCache {
     pub fn load(file_path: PathBuf) -> UserCache {
-        let exists = std::fs::try_exists(&file_path).unwrap();
+        let exists = fs::try_exists(&file_path).unwrap();
         if !exists {
             UserCache {
                 file_path,

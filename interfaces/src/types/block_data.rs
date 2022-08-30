@@ -80,7 +80,7 @@ impl From<RawBlock> for Block {
                 .harvest_tools
                 .unwrap_or_default()
                 .into_iter()
-                .filter_map(|(k, v)| v.then(|| k))
+                .filter_map(|(k, v)| v.then_some(k))
                 .collect(),
             material: block.material.unwrap_or_default(),
         }

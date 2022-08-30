@@ -90,7 +90,7 @@ impl WorldBlocks {
     /// (950, 950)
     pub fn set_random_floor(&mut self) {
         const RADIUS: i32 = 1000;
-        let mut rdm = StdRng::seed_from_u64(12338971);
+        let mut rdm = StdRng::seed_from_u64(12_338_971);
         for x in -RADIUS..=RADIUS {
             for z in -RADIUS..=RADIUS {
                 let res = rdm.gen_range(0..5);

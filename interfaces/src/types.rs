@@ -15,12 +15,12 @@
 use std::{
     f32::consts::PI,
     fmt::{Debug, Display, Formatter},
-    lazy::SyncLazy,
     ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub},
 };
 
 use ansi_term::Style;
 use itertools::Itertools;
+use lazy_static::lazy_static;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 
@@ -130,7 +130,9 @@ pub struct PlayerMessage {
 
 impl PlayerMessage {
     pub fn into_cmd(self) -> Option<Command> {
-        static RE: SyncLazy<Regex> = SyncLazy::new(|| Regex::new(r"^#(\S+)\s?(.*)").unwrap());
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^#(\S+)\s?(.*)").unwrap();
+        }
         let capture = RE.captures(&self.message)?;
 
         let command = capture.get(1)?.as_str().to_string();
@@ -152,8 +154,9 @@ impl PlayerMessage {
 
 impl Chat {
     pub fn player_dm(&self) -> Option<PlayerMessage> {
-        static RE: SyncLazy<Regex> =
-            SyncLazy::new(|| Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap());
+        lazy_static::lazy_static! {
+            static ref RE: Regex =Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap();
+        }
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
 
@@ -164,8 +167,9 @@ impl Chat {
         Some(PlayerMessage { player, message })
     }
     pub fn player_message(&self) -> Option<PlayerMessage> {
-        static RE: SyncLazy<Regex> =
-            SyncLazy::new(|| Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap());
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap();
+        }
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
 
@@ -533,9 +537,9 @@ pub enum Origin<T> {
 impl<T> Origin<T> {
     fn from(value: T, relative: bool) -> Origin<T> {
         if relative {
-            Origin::Rel(value)
+            Rel(value)
         } else {
-            Origin::Abs(value)
+            Abs(value)
         }
     }
 }
@@ -543,8 +547,8 @@ impl<T> Origin<T> {
 impl Origin<f64> {
     pub fn apply(&self, other: &mut f64) {
         match self {
-            Origin::Rel(x) => *other += *x,
-            Origin::Abs(x) => *other = *x,
+            Rel(x) => *other += *x,
+            Abs(x) => *other = *x,
         }
     }
 }
@@ -552,8 +556,8 @@ impl Origin<f64> {
 impl Origin<f32> {
     pub fn apply(&self, other: &mut f32) {
         match self {
-            Origin::Rel(x) => *other += *x,
-            Origin::Abs(x) => *other = *x,
+            Rel(x) => *other += *x,
+            Abs(x) => *other = *x,
         }
     }
 }
@@ -836,8 +840,9 @@ impl BlockLocation2D {
         Self { x, z }
     }
     pub fn dist2(self, other: BlockLocation2D) -> u64 {
-        let dx = (self.x - other.x).abs() as u64;
-        let dz = (self.z - other.z).abs() as u64;
+        // TODO: potential bug here with unsigned abs
+        let dx = (self.x as i64 - other.x as i64).unsigned_abs() as u64;
+        let dz = (self.z as i64 - other.z as i64).unsigned_abs() as u64;
         dx * dx + dz * dz
     }
 }
@@ -960,9 +965,9 @@ impl BlockLocation {
     }
 
     pub fn manhatten(&self, other: BlockLocation) -> u64 {
-        let dx = (self.x - other.x).abs() as u64;
-        let dy = (self.y - other.y).abs() as u64;
-        let dz = (self.z - other.z).abs() as u64;
+        let dx = (self.x as i64 - other.x as i64).unsigned_abs() as u64;
+        let dy = (self.y as i64 - other.y as i64).unsigned_abs() as u64;
+        let dz = (self.z as i64 - other.z as i64).unsigned_abs() as u64;
         dx + dy + dz
     }
 
