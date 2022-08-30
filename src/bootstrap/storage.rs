@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use bincode::{config::Configuration, Decode, Encode};
+use bincode::{Decode, Encode};
 use std::{
     collections::HashMap,
     convert::TryFrom,
@@ -137,8 +137,9 @@ impl UserCache {
             let file = File::open(&file_path).unwrap();
             let bytes: Result<Vec<_>, _> = file.bytes().collect();
             let bytes = bytes.unwrap();
+            let config = bincode::config::standard();
             let (Root { users }, _) =
-                bincode::decode_from_slice(&bytes, Configuration::standard()).unwrap();
+                bincode::decode_from_slice(&bytes, config).unwrap();
 
             let cache: HashMap<_, _> = users
                 .into_iter()
@@ -302,7 +303,7 @@ impl UserCache {
 
             let root = Root { users };
 
-            let data = bincode::encode_to_vec(&root, Configuration::standard()).unwrap();
+            let data = bincode::encode_to_vec(&root,  bincode::config::standard()).unwrap();
             file.write_all(&data).unwrap();
             file.flush().unwrap();
         });

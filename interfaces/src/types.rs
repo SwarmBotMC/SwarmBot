@@ -841,8 +841,8 @@ impl BlockLocation2D {
     }
     pub fn dist2(self, other: BlockLocation2D) -> u64 {
         // TODO: potential bug here with unsigned abs
-        let dx = (self.x as i64 - other.x as i64).unsigned_abs() as u64;
-        let dz = (self.z as i64 - other.z as i64).unsigned_abs() as u64;
+        let dx = self.x.abs_diff(other.x) as u64;
+        let dz = self.z.abs_diff(other.z) as u64;
         dx * dx + dz * dz
     }
 }
@@ -958,16 +958,21 @@ impl BlockLocation {
 
 impl BlockLocation {
     pub fn dist2(&self, other: BlockLocation) -> f64 {
-        let dx = (self.x - other.x).abs() as f64;
-        let dy = (self.y - other.y).abs() as f64;
-        let dz = (self.z - other.z).abs() as f64;
+        let (dx, dy, dz) = self.abs_dif(other);
+        let (dx, dy, dz) = (dx as f64, dy as f64, dz as f64);
         dx * dx + dy * dy + dz * dz
     }
 
+    pub fn abs_dif(&self, other: BlockLocation) -> (u32, u16, u32) {
+        let dx = self.x.abs_diff(other.x);
+        let dy = self.y.abs_diff(other.y);
+        let dz = self.z.abs_diff(other.z);
+        (dx, dy, dz)
+    }
+
     pub fn manhatten(&self, other: BlockLocation) -> u64 {
-        let dx = (self.x as i64 - other.x as i64).unsigned_abs() as u64;
-        let dy = (self.y as i64 - other.y as i64).unsigned_abs() as u64;
-        let dz = (self.z as i64 - other.z as i64).unsigned_abs() as u64;
+        let (dx, dy, dz) = self.abs_dif(other);
+        let (dx, dy, dz) = (dx as u64, dy as u64, dz as u64);
         dx + dy + dz
     }
 
@@ -1001,7 +1006,7 @@ impl BlockApprox {
     pub fn as_real(&self) -> BlockState {
         match self {
             BlockApprox::Realized(inner) => *inner,
-            _ => panic!("was not relized"),
+            _ => panic!("was not realized"),
         }
     }
 
