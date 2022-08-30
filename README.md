@@ -1,7 +1,7 @@
 # SwarmBot — tested on 2b2t
 
 [![Build Status](https://travis-ci.com/andrewgazelka/SwarmBot.svg?branch=master)](https://travis-ci.com/andrewgazelka/SwarmBot)
-[[Discord Shield](https://discordapp.com/api/guilds/877280790596165702/widget.png?style=shield)](https://discord.gg/64z2nkGxDu)
+[![Discord Shield](https://discordapp.com/api/guilds/877280790596165702/widget.png?style=shield)](https://discord.gg/64z2nkGxDu)
 
 
 <p align="center">
