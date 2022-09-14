@@ -23,7 +23,7 @@ use std::{
 use tokio::sync::Notify;
 
 use crate::{
-    bootstrap::Connection,
+    bootstrap::BotConnection,
     client::{
         bot::{run_threaded, ActionState, Bot},
         commands::{CommandData, CommandReceiver, Selection2D},
@@ -91,7 +91,7 @@ pub struct RunnerOptions {
 impl<T: Minecraft + 'static> Runner<T> {
     /// Start the runner process
     pub async fn run(
-        connections: tokio::sync::mpsc::Receiver<Connection>,
+        connections: tokio::sync::mpsc::Receiver<BotConnection>,
         opts: RunnerOptions,
     ) -> Res {
         let mut runner = Runner::<T>::init(connections, opts).await?;
@@ -102,7 +102,7 @@ impl<T: Minecraft + 'static> Runner<T> {
     /// Initialize the runner. Go through the handshake process for each
     /// [`Connection`]
     async fn init(
-        mut connections: tokio::sync::mpsc::Receiver<Connection>,
+        mut connections: tokio::sync::mpsc::Receiver<BotConnection>,
         opts: RunnerOptions,
     ) -> Res<Runner<T>> {
         let RunnerOptions {

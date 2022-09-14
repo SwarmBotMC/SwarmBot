@@ -27,7 +27,7 @@ use tokio::sync::mpsc::Receiver;
 
 use crate::{
     bootstrap,
-    bootstrap::{mojang::MojangApi, CSVUser, Proxy},
+    bootstrap::{mojang::MojangClient, CSVUser, Proxy},
     HasContext, ResContext,
 };
 
@@ -38,7 +38,7 @@ struct Root {
 
 #[derive(Encode, Decode, Debug)]
 enum User {
-    Valid(ValidUser),
+    Valid(OnlineUser),
     Invalid(InvalidUser),
 }
 
@@ -49,7 +49,7 @@ struct InvalidUser {
 }
 
 #[derive(Encode, Decode, Clone, Debug)]
-pub struct ValidUser {
+pub struct OnlineUser {
     pub email: String,
     pub username: String,
     pub password: String,
@@ -62,7 +62,7 @@ pub struct ValidUser {
 impl User {
     fn email(&self) -> &String {
         match self {
-            User::Valid(ValidUser { email, .. }) => email,
+            User::Valid(OnlineUser { email, .. }) => email,
             User::Invalid(InvalidUser { email, .. }) => email,
         }
     }
@@ -77,19 +77,19 @@ pub struct UserCache {
 /// is valid along with data about what the proxy address is and the valid user
 /// information
 #[derive(Debug)]
-pub struct BotData {
-    pub user: ValidUser,
+pub struct BotDataLoader {
+    pub user: OnlineUser,
     pub proxy: Option<Proxy>,
-    pub mojang: MojangApi,
+    pub mojang: MojangClient,
 }
 
-impl BotData {
+impl BotDataLoader {
     pub fn load(
         proxy: bool,
         users_file: &str,
         proxies_file: &str,
         count: usize,
-    ) -> ResContext<Receiver<BotData>> {
+    ) -> ResContext<Receiver<BotDataLoader>> {
         let csv_file = File::open(&users_file)
             .context(|| format!("could not open users file {}", users_file))?;
 
@@ -149,18 +149,20 @@ impl UserCache {
         }
     }
 
+    /// Takes a [CSVUser] and returns the user's data along with the proxy
+    /// associated with it
     async fn get_or_put(
         &mut self,
         user: &CSVUser,
         iter: &mut impl Iterator<Item = Option<Proxy>>,
-    ) -> Option<(MojangApi, Option<Proxy>, ValidUser)> {
+    ) -> Option<(MojangClient, Option<Proxy>, OnlineUser)> {
         match self.cache.get_mut(&user.email) {
             None => {
                 let proxy = iter.next().unwrap();
-                let mojang = MojangApi::try_from(proxy.as_ref()).unwrap();
+                let mojang = MojangClient::try_from(proxy.as_ref()).unwrap();
                 match mojang.authenticate(&user.email, &user.password).await {
                     Ok(res) => {
-                        let valid_user = ValidUser {
+                        let valid_user = OnlineUser {
                             email: user.email.clone(),
                             username: res.username,
                             password: user.password.clone(),
@@ -192,7 +194,7 @@ impl UserCache {
                 match cached {
                     User::Valid(valid) => {
                         let proxy = iter.next().unwrap();
-                        let mojang = MojangApi::try_from(proxy.as_ref()).unwrap();
+                        let mojang = MojangClient::try_from(proxy.as_ref()).unwrap();
 
                         // if verified in last day don't even check to verify
                         if time() - valid.last_checked < 3600 * 24 {
@@ -263,11 +265,12 @@ impl UserCache {
         count: usize,
         users: Vec<CSVUser>,
         proxies: Vec<Option<Proxy>>,
-    ) -> Receiver<BotData> {
+    ) -> Receiver<BotDataLoader> {
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(32);
 
+        // spawn the receiver that will yield players
         tokio::task::spawn_local(async move {
             let mut local_count = 0;
 
@@ -276,7 +279,7 @@ impl UserCache {
                 {
                     local_count += 1;
                     println!("valid user {}", user.email);
-                    tx.send(BotData {
+                    tx.send(BotDataLoader {
                         user,
                         proxy,
                         mojang,

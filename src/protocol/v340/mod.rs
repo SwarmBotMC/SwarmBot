@@ -21,7 +21,7 @@ use swarm_bot_packets::{
 };
 
 use crate::{
-    bootstrap::{mojang::calc_hash, storage::ValidUser, Address, Connection},
+    bootstrap::{mojang::calc_hash, storage::OnlineUser, Address, BotConnection},
     client::processor::InterfaceIn,
     error::{err, Error::WrongPacket, Res},
     protocol::{
@@ -415,15 +415,15 @@ impl Minecraft for Protocol {
     type Queue = EventQueue340;
     type Interface = Interface340;
 
-    async fn login(conn: Connection) -> Res<Login<EventQueue340, Interface340>> {
-        let Connection {
+    async fn login(conn: BotConnection) -> Res<Login<EventQueue340, Interface340>> {
+        let BotConnection {
             user,
-            address,
+            server_address: address,
             mojang,
             read,
             write,
         } = conn;
-        let ValidUser {
+        let OnlineUser {
             username,
             uuid,
             access_id,

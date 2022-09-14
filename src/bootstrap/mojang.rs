@@ -26,17 +26,17 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct MojangApi {
+pub struct MojangClient {
     client: reqwest::Client,
 }
 
-impl Default for MojangApi {
+impl Default for MojangClient {
     fn default() -> Self {
-        MojangApi { client: default() }
+        MojangClient { client: default() }
     }
 }
 
-impl TryFrom<&Proxy> for MojangApi {
+impl TryFrom<&Proxy> for MojangClient {
     type Error = crate::error::Error;
 
     fn try_from(proxy: &Proxy) -> Result<Self, Self::Error> {
@@ -49,17 +49,17 @@ impl TryFrom<&Proxy> for MojangApi {
 
         let client = reqwest::Client::builder().proxy(proxy).build()?;
 
-        Ok(MojangApi { client })
+        Ok(MojangClient { client })
     }
 }
 
-impl TryFrom<Option<&Proxy>> for MojangApi {
+impl TryFrom<Option<&Proxy>> for MojangClient {
     type Error = crate::error::Error;
 
     fn try_from(value: Option<&Proxy>) -> Result<Self, Self::Error> {
         match value {
-            None => Ok(MojangApi::default()),
-            Some(proxy) => MojangApi::try_from(proxy),
+            None => Ok(MojangClient::default()),
+            Some(proxy) => MojangClient::try_from(proxy),
         }
     }
 }
@@ -101,7 +101,7 @@ pub struct AuthResponse {
     pub uuid: UUID,
 }
 
-impl MojangApi {
+impl MojangClient {
     pub async fn authenticate(&self, email: &str, password: &str) -> Res<AuthResponse> {
         let payload = json!({
             "agent": {

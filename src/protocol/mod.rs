@@ -16,7 +16,7 @@ use interfaces::types::BlockLocation;
 use swarm_bot_packets::types::UUID;
 
 use crate::{
-    bootstrap::Connection,
+    bootstrap::BotConnection,
     client::{
         pathfind::moves::CardinalDirection, processor::InterfaceIn,
         state::local::inventory::ItemStack,
@@ -146,7 +146,7 @@ pub trait InterfaceOut {
 pub trait Minecraft: Sized {
     type Queue: EventQueue;
     type Interface: InterfaceOut;
-    async fn login(conn: Connection) -> Res<Login<Self::Queue, Self::Interface>>;
+    async fn login(conn: BotConnection) -> Res<Login<Self::Queue, Self::Interface>>;
 }
 
 pub trait EventQueue {

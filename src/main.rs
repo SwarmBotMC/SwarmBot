@@ -16,7 +16,6 @@
 #![deny(unused_must_use)]
 #![deny(warnings)]
 #![deny(rustdoc::broken_intra_doc_links)]
-// #![deny(clippy::panic)]
 #![deny(clippy::await_holding_lock)]
 #![deny(clippy::await_holding_refcell_ref)]
 #![deny(clippy::use_debug)]
@@ -43,7 +42,7 @@ extern crate thiserror;
 use tokio::{runtime::Runtime, task};
 
 use crate::{
-    bootstrap::{dns::normalize_address, opts::Opts, storage::BotData, Connection},
+    bootstrap::{dns::normalize_address, opts::CliOptions, storage::BotDataLoader, BotConnection},
     client::runner::{Runner, RunnerOptions},
     error::{HasContext, ResContext},
 };
@@ -73,7 +72,7 @@ fn main() {
 }
 
 async fn run() -> ResContext {
-    let Opts {
+    let CliOptions {
         users_file,
         proxies_file,
         host,
@@ -84,11 +83,12 @@ async fn run() -> ResContext {
         load,
         ws_port,
         proxy,
-    } = Opts::get();
+    } = CliOptions::get();
 
     // A list of users we will login
-    let mut bot_receiver = BotData::load(proxy, &users_file, &proxies_file, count)?;
+    let mut bot_receiver = BotDataLoader::load(proxy, &users_file, &proxies_file, count)?;
 
+    // if we only load the data but do not login
     if load {
         while bot_receiver.recv().await.is_some() {
             // empty
@@ -96,14 +96,16 @@ async fn run() -> ResContext {
         return Ok(());
     }
 
-    // looks up DNS records, etc
+    // looks up DNS records, etc. This is important where there is a redirect
+    // for instance, 2b2t has a DNS redirect
     let server_address = normalize_address(&host, port).await;
 
     // taking the users and generating connections to the Minecraft server
-    let connections = Connection::stream(server_address, bot_receiver);
+    let connections = BotConnection::stream(server_address, bot_receiver);
 
     let run_options = RunnerOptions { delay_ms, ws_port };
 
+    // launch the runner with the appropriate protocol version
     match version {
         340 => Runner::<protocol::v340::Protocol>::run(connections, run_options)
             .await
