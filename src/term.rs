@@ -93,9 +93,11 @@ impl Term {
                             }
                             KeyCode::Null => {}
                             KeyCode::Esc => {}
+                            _ => {}
                         },
                         Event::Mouse(_) => {}
                         Event::Resize(_, _) => {}
+                        _ => {}
                     }
                 }
             });

@@ -14,8 +14,8 @@ serde = { version = "1.0", features = ["derive"] }
 lazy_static = "1.4"
 
 
-tokio-tungstenite = "0.16"
-tungstenite = "0.16"
+tokio-tungstenite = "0.17"
+tungstenite = "0.17"
 tokio = { version = "1.20", features = ["rt", "io-std", "io-util", "sync", "parking_lot", "macros"] }
 futures = "0.3"
 

@@ -53,7 +53,7 @@ reqwest = { version = "0.11", features = ["json", "socks"] }
 
 # for minecraft auth RSA response
 rsa-der = "0.3"
-rsa = "0.5"
+rsa = "0.6"
 
 # used for RSA and random generation
 rand = "0.8"
@@ -85,7 +85,7 @@ float-ord = "0.3"
 num = "0.4"
 
 # for printing stuff out
-crossterm = "0.22"
+crossterm = "0.25"
 
 colored = "2.0"
 
@@ -104,7 +104,7 @@ enum_dispatch = "0.3"
 thiserror = "1.0"
 
 # websockets
-tokio-tungstenite = "0.16"
+tokio-tungstenite = "0.17"
 
 futures = "0.3"
 #futures-util = "0.3"
@@ -114,7 +114,7 @@ interfaces = { path = "interfaces" }
 
 [dev-dependencies]
 assert_matches = "1.5"
-more-asserts = "0.2"
+more-asserts = "0.3"
 primes = "0.3"
 
 [workspace]
