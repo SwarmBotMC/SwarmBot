@@ -84,11 +84,10 @@ float-ord = "0.3"
 # for num casting
 num = "0.4"
 
-# for coloring terminal
-ansi_term = "0.12"
-
 # for printing stuff out
 crossterm = "0.22"
+
+colored = "2.0"
 
 # for small stack-allocated arrays
 smallvec = { version = "1.7", features = ["const_generics"] }

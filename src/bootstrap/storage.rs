@@ -138,8 +138,7 @@ impl UserCache {
             let bytes: Result<Vec<_>, _> = file.bytes().collect();
             let bytes = bytes.unwrap();
             let config = bincode::config::standard();
-            let (Root { users }, _) =
-                bincode::decode_from_slice(&bytes, config).unwrap();
+            let (Root { users }, _) = bincode::decode_from_slice(&bytes, config).unwrap();
 
             let cache: HashMap<_, _> = users
                 .into_iter()
@@ -306,7 +305,7 @@ impl UserCache {
 
             let root = Root { users };
 
-            let data = bincode::encode_to_vec(&root,  bincode::config::standard()).unwrap();
+            let data = bincode::encode_to_vec(&root, bincode::config::standard()).unwrap();
             file.write_all(&data).unwrap();
             file.flush().unwrap();
         });

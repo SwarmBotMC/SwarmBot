@@ -12,13 +12,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use colored::Colorize;
 use std::{
     f32::consts::PI,
     fmt::{Debug, Display, Formatter},
     ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub},
 };
 
-use ansi_term::Style;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
@@ -78,13 +78,13 @@ impl Chat {
 
 impl ChatSection {
     fn colorize(self) -> String {
-        use ansi_term::Color::*;
+        use colored::Color::*;
 
         let color = match self.color.unwrap_or_default().as_str() {
             "dark_blue" | "blue" => Blue,
             "dark_aqua" | "aqua" => Cyan,
             "red" | "dark_red" => Red,
-            "purple" | "light_purple" => Purple,
+            "purple" | "light_purple" => Magenta,
             "gold" | "yellow" => Yellow,
             "gray" => White,
             "dark_gray" => Black,
@@ -93,7 +93,7 @@ impl ChatSection {
             _ => Black,
         };
 
-        let mut res = Style::from(color);
+        let mut res = self.text.color(color);
 
         if self.bold.unwrap_or_default() {
             res = res.bold();
@@ -111,7 +111,7 @@ impl ChatSection {
             res = res.strikethrough();
         }
 
-        res.paint(self.text).to_string()
+        res.to_string()
     }
 }
 

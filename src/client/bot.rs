@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crossterm::style::Stylize;
 use std::{
     fmt::{Display, Formatter},
     num::ParseIntError,
@@ -135,14 +136,13 @@ pub fn process_command(
     actions: &mut ActionState,
     out: &mut impl InterfaceOut,
 ) -> Result<(), ProcessError> {
-    // println! but bold
     macro_rules! msg {
         () => {{
             println!();
         }};
         ($($msg: expr),*) => {{
             let to_print_raw = format!($($msg),*);
-            let to_print = ansi_term::Color::Black.bold().paint(to_print_raw).to_string();
+            let to_print = to_print_raw.bold().to_string();
             println!("{}", to_print);
         }};
     }

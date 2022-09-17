@@ -21,8 +21,7 @@ futures = "0.3"
 
 swarm-bot-packets = { path = "../packets", version = "0.2.0" }
 
-# for coloring terminal
-ansi_term = "0.12"
+colored = "2.0"
 
 # chat parsing
 regex = "1.5"
