@@ -26,6 +26,7 @@ use crate::{
 };
 
 use crate::{
+    client::commands,
     error::{Res, ResBox},
     protocol::{EventQueue, Login, Minecraft},
 };
@@ -71,6 +72,7 @@ pub struct Runner<T: Minecraft> {
 pub struct RunnerOptions {
     /// The amount of milliseconds to wait between logging in successive users
     pub delay_ms: u64,
+    /// the websocket port
     pub ws_port: u16,
 }
 
@@ -268,25 +270,25 @@ impl<T: Minecraft + 'static> Runner<T> {
         let bots = &mut self.bots;
 
         match command {
-            CommandData::Mine(mine) => {
-                let Selection2D { from, to } = mine.sel.normalize();
+            CommandData::Mine(commands::Mine { sel }) => {
+                let Selection2D { from, to } = sel.normalize();
                 global.mine.mine(from, to, Some(MinePreference::FromDist));
 
                 for bot in bots {
                     bot.actions.schedule(LazyStream::from(MineRegion))
                 }
             }
-            CommandData::GoTo(goto) => {
+            CommandData::GoTo(commands::GoTo { location }) => {
                 for bot in bots {
                     bot.actions
-                        .schedule(BlockTravelTask::new(goto.location, &bot.state));
+                        .schedule(BlockTravelTask::new(location, &bot.state));
                 }
             }
-            CommandData::Attack(attack) => {
+            CommandData::Attack(commands::Attack { name }) => {
                 let player = self
                     .global_state
                     .players
-                    .by_name(&attack.name)
+                    .by_name(&name)
                     .ok_or("player does not exist")?;
                 let entity_id = self
                     .global_state

@@ -8,6 +8,7 @@ pub type Res<T = ()> = Result<T, Error>;
 pub type ResBox<T = ()> = Result<T, Box<dyn std::error::Error>>;
 pub type ResContext<T = ()> = Result<T, ErrorContext<Error>>;
 
+/// all possible errors that can be received
 #[derive(Debug)]
 pub enum Error {
     IO(std::io::Error),

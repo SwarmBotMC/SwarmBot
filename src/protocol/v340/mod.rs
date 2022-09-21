@@ -180,7 +180,7 @@ impl EventQueue340 {
             }
 
             // need to do this because the chunk packet is read differently based on dimension
-            clientbound::CHUNK_PKT_ID => {
+            CHUNK_PKT_ID => {
                 let overworld = self.dimension == Dimension::Overworld;
                 let ChunkColumnPacket {
                     chunk_x,
@@ -482,7 +482,7 @@ impl Minecraft for Protocol {
 
                 reader.read_exact_packet().await?
             }
-            clientbound::LoginSuccess::ID => data.reader.read(),
+            LoginSuccess::ID => data.reader.read(),
             actual => {
                 return Err(WrongPacket {
                     state: PacketState::Login,
@@ -499,7 +499,7 @@ impl Minecraft for Protocol {
             let mut oneshot = Some(os_tx);
             loop {
                 let packet = reader.read().await.unwrap();
-                if packet.id == clientbound::JoinGame::ID {
+                if packet.id == JoinGame::ID {
                     if let Some(os_tx) = oneshot.take() {
                         let mut packet = packet.clone();
                         let processed: JoinGame = packet.read();

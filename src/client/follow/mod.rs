@@ -27,7 +27,7 @@ pub enum FollowResult {
     Finished,
 }
 
-/// Given a path the follower decides which moves (analagous to keys a real
+/// Given a path the follower decides which moves (analogous to keys a real
 /// player would press) the bot should take. Currently the follower is totally
 /// legit---it interfaces with the [Physics] struct which only allows for moves
 /// a real player could do* * = probably not as precisely.
@@ -347,7 +347,7 @@ mod tests {
 
         let mut problem = TravelProblem::navigate_block(start, end);
 
-        // so we can get determininistic tests
+        // so we can get deterministic tests
         problem.set_max_millis(u128::MAX);
 
         let increment = problem.iterate_until(

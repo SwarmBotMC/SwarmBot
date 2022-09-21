@@ -20,6 +20,6 @@ impl Speed {
     pub const STOP: Speed = Speed::new(0.);
 
     pub fn multiplier(&self) -> f64 {
-        self.multiplier * 0.98 // TODO: differnet at 45 degree angle
+        self.multiplier * 0.98 // TODO: different at 45 degree angle
     }
 }

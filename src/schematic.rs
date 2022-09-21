@@ -3,7 +3,8 @@ use std::io::Read;
 use interfaces::types::{BlockLocation, BlockState};
 use serde::{Deserialize, Serialize};
 
-/// https://minecraft.fandom.com/wiki/Schematic_file_format
+/// The WorldEdit schematic format
+/// <https://minecraft.fandom.com/wiki/Schematic_file_format>
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Schematic {
@@ -81,61 +82,6 @@ impl Schematic {
             (location, state)
         })
     }
-
-    // pub fn trim(self) -> Schematic {
-    //     let mut min = BlockLocation::new(self.width as i32, self.height,
-    // self.length as i32);     let mut max = BlockLocation::default();
-    //     for (location, state) in self.blocks() {
-    //         if state.id() != 0 {
-    //             for i in 0..3 {
-    //                 if location.get(i) < min.get(i) {
-    //                     min.set(i, location.get(i));
-    //                 }
-    //
-    //                 if location.get(i) > max.get(i) {
-    //                     max.set(i, location.get(i));
-    //                 }
-    //             }
-    //         };
-    //     };
-    //
-    //     let width = ((max.x - min.x) + 1) as i16;
-    //     let length = ((max.z - min.z) + 1) as i16;
-    //     let height = (max.y - min.y) + 1;
-    //
-    //     let new_volume = (width * length * height) as usize;
-    //
-    //     let mut blocks = Vec::with_capacity(new_volume);
-    //     let mut data = Vec::with_capacity(new_volume);
-    //
-    //     for x in min.x..=max.x {
-    //         for z in min.z..=max.z {
-    //             for y in min.y..=max.y {
-    //                 let x = x as i16;
-    //                 let z = z as i16;
-    //                 let index = (x + (z * self.width) + (y * self.width *
-    // self.length)) as usize;                 blocks.push(self.blocks[index]);
-    //                 data.push(self.data[index]);
-    //             }
-    //         }
-    //     }
-    //
-    //     Schematic {
-    //         width,
-    //         height,
-    //         length,
-    //         materials: self.materials,
-    //         blocks,
-    //         add_blocks: self.add_blocks,
-    //         data,
-    //         w_e_origin_x: self.w_e_origin_x,
-    //         w_e_origin_y: self.w_e_origin_y,
-    //         w_e_origin_z: self.w_e_origin_z,
-    //         w_e_offset_x: self.w_e_offset_x,
-    //         w_e_offset_y: self.w_e_offset_y,
-    //         w_e_offset_z: self.w_e_offset_z,
-    //     }
-    // }
 }
 
 #[cfg(test)]

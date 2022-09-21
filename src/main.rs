@@ -45,6 +45,8 @@ mod types;
 
 fn main() {
     // create the single-threaded async runtime
+    // multiple threads will still be used—however, they will only be
+    // used in non-async context as they are resource heavy
     let rt = Runtime::new().unwrap();
     let local = task::LocalSet::new();
     local.block_on(&rt, async move {
@@ -59,6 +61,7 @@ fn main() {
 }
 
 async fn run() -> ResContext {
+    // grab options from CLI
     let CliOptions {
         users_file,
         proxies_file,
@@ -84,7 +87,7 @@ async fn run() -> ResContext {
     }
 
     // looks up DNS records, etc. This is important where there is a redirect
-    // for instance, 2b2t has a DNS redirect
+    // for instance, 2b2t.org has a DNS redirect
     let server_address = normalize_address(&host, port).await;
 
     // taking the users and generating connections to the Minecraft server

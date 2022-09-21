@@ -36,7 +36,7 @@ impl TaskStream for MineLayer {
                     // blocks
                     f64::INFINITY
                 } else {
-                    // else sort closest to furthes away
+                    // else sort closest to furthest away
                     loc.dist2(origin_loc)
                 };
                 FloatOrd(priority)
