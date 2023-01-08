@@ -66,8 +66,7 @@ impl Display for Error {
                 actual,
                 expected,
             } => f.write_fmt(format_args!(
-                "wrong packet. Expected ID {}, got {} in state {}",
-                expected, actual, state
+                "wrong packet. Expected ID {expected}, got {actual} in state {state}"
             )),
             Error::Resolve(r) => std::fmt::Display::fmt(r, f),
             Error::Serde(s) => std::fmt::Display::fmt(s, f),

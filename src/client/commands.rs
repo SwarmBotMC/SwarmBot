@@ -74,7 +74,7 @@ fn process(path: &str, value: Value) -> Option<CommandData> {
         "attack" => Some(CommandData::Attack(parse!())),
 
         path => {
-            println!("invalid {}", path);
+            println!("invalid {path}");
             None
         }
     }
@@ -84,7 +84,7 @@ impl CommandReceiver {
     pub async fn init(port: u16) -> Res<Self> {
         let (tx, rx) = std::sync::mpsc::channel();
 
-        let server = TcpListener::bind(format!("127.0.0.1:{}", port)).await?;
+        let server = TcpListener::bind(format!("127.0.0.1:{port}")).await?;
 
         tokio::task::spawn_local(async move {
             loop {

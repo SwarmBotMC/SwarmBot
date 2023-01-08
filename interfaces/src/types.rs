@@ -664,7 +664,7 @@ impl ByteReadable for Dimension {
             -1 => Nether,
             0 => Overworld,
             1 => End,
-            val => panic!("dimension {} is not valid", val),
+            val => panic!("dimension {val} is not valid"),
         }
     }
 }
@@ -963,7 +963,7 @@ impl BlockLocation {
     }
 
     pub fn dist(&self, other: BlockLocation) -> f64 {
-        (self.dist2(other) as f64).sqrt()
+        self.dist2(other).sqrt()
     }
 }
 

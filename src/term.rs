@@ -36,7 +36,7 @@ impl Term {
                         .unwrap()
                         .execute(crossterm::cursor::MoveToColumn(0))
                         .unwrap()
-                        .execute(crossterm::style::Print(format!("{}\n", msg)))
+                        .execute(crossterm::style::Print(format!("{msg}\n")))
                         .unwrap()
                         .execute(crossterm::style::Print(format!(
                             "> {}",

@@ -285,7 +285,7 @@ impl Palette {
                             let indv_value_mask = (1 << required_bits) - 1;
 
                             assert!(required_bits >= 4);
-                            let new_data_size = 4096 * (required_bits as usize) / 64;
+                            let new_data_size = 4096 * required_bits / 64;
                             let mut storage = vec![0_u64; new_data_size];
 
                             for (block_number, state) in IntoIterator::into_iter(states).enumerate()
@@ -422,7 +422,7 @@ impl ChunkColumn {
     }
 
     pub fn set_block(&mut self, x: u8, y: u8, z: u8, state: BlockState) {
-        let section_idx = (y >> 4) as u8;
+        let section_idx = y >> 4;
         let y_offset = y - (section_idx << 4);
 
         let section_idx = section_idx as usize;
@@ -438,7 +438,7 @@ impl ChunkColumn {
         }
     }
     pub fn get_block(&self, x: u8, y: u8, z: u8) -> BlockApprox {
-        let section_idx = (y >> 4) as u8;
+        let section_idx = y >> 4;
         let y_offset = y - (section_idx << 4);
 
         let section_idx = section_idx as usize;
@@ -544,10 +544,7 @@ mod tests {
             assert_eq!(
                 palette.get_block(x as u8, y as u8, z as u8),
                 block_state,
-                "not eq at {} {} {}",
-                x,
-                y,
-                z
+                "not eq at {x} {y} {z}"
             );
         }
     }

@@ -13,7 +13,7 @@ async fn dns_lookup(host: &str) -> Result<Address, ResolveError> {
 
     println!("performing srv lookup");
     resolver
-        .srv_lookup(format!("_minecraft._tcp.{}", host))
+        .srv_lookup(format!("_minecraft._tcp.{host}"))
         .await
         .map(|res| {
             let srv = res.iter().next().unwrap();

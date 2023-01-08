@@ -5,7 +5,6 @@
 #![deny(rustdoc::broken_intra_doc_links)]
 #![deny(clippy::await_holding_lock)]
 #![deny(clippy::await_holding_refcell_ref)]
-#![deny(clippy::use_debug)]
 #![feature(generic_const_exprs)]
 #![feature(type_alias_impl_trait)]
 #![feature(once_cell)]
@@ -55,7 +54,7 @@ fn main() {
             Ok(_) => println!("Program exited without errors somehow"),
 
             // print the error in non-debug fashion
-            Err(err) => println!("{}", err),
+            Err(err) => println!("{err}"),
         }
     });
 }
@@ -101,7 +100,7 @@ async fn run() -> ResContext {
             .await
             .context_str("Error starting up 1.12")?, // 1.12
         _ => {
-            panic!("version {} does not exist", version)
+            panic!("version {version} does not exist")
         }
     }
 

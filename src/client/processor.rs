@@ -73,7 +73,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
                     self.actions,
                     self.out,
                 ) {
-                    println!("could not process command. Reason: {:?}", err);
+                    println!("could not process command. Reason: {err:?}");
                 }
             }
         };
@@ -102,7 +102,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         self.local.health = health;
         self.local.food = food;
 
-        println!("updated health {} food is {}", health, food);
+        println!("updated health {health} food is {food}");
 
         // we should probably eat something
         if food < 10 {
@@ -168,7 +168,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     }
 
     fn on_disconnect(&mut self, reason: &str) {
-        println!("disconnecting because {}", reason);
+        println!("disconnecting because {reason}");
         self.local.disconnected = true;
     }
 

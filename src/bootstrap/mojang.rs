@@ -29,7 +29,7 @@ impl TryFrom<&Proxy> for MojangClient {
         let address = proxy.address();
         let user = &proxy.user;
         let pass = &proxy.pass;
-        let full_address = format!("socks5://{}", address);
+        let full_address = format!("socks5://{address}");
 
         let proxy = reqwest::Proxy::https(full_address)?.basic_auth(user, pass);
 
@@ -61,7 +61,7 @@ pub fn calc_hash(server_id: &str, shared_secret: &[u8], public_key_encoded: &[u8
 
 fn hexdigest(bytes: &[u8]) -> String {
     let bigint = BigInt::from_signed_bytes_be(bytes);
-    format!("{:x}", bigint)
+    format!("{bigint:x}")
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -190,15 +190,20 @@ impl MojangClient {
             .await?;
 
         let status = res.status();
+
         if status != 204 {
-            println!("uuid invalid {}", uuid_str);
+            println!("uuid invalid {uuid_str}");
             let err = Err(MojangErr::InvalidCredentials {
                 error_code: status,
                 info: res.text().await.ok(),
             }
             .into());
 
-            println!("err {:?}", err);
+            #[allow(clippy::use_debug)]
+            {
+                println!("err {err:?}");
+            }
+
             return err;
         }
 

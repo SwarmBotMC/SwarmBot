@@ -116,11 +116,11 @@ impl<T: Minecraft + 'static> Runner<T> {
                         let username = connection.user.username.clone();
                         let login = match T::login(connection).await {
                             Ok(res) => {
-                                println!("Finished logging in {}", username);
+                                println!("Finished logging in {username}");
                                 res
                             }
                             Err(err) => {
-                                println!("Error logging in {} -- {}", username, err);
+                                println!("Error logging in {username} -- {err}");
                                 return;
                             }
                         };
@@ -156,7 +156,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
             // log if we are wayyyy off
             if millis_off > 100 {
-                println!("off by {}ms", millis_off);
+                println!("off by {millis_off}ms");
             }
 
             previous_goal = end_by;
@@ -192,13 +192,13 @@ impl<T: Minecraft + 'static> Runner<T> {
 
         // log clients if they have changed
         if new_count != old_count {
-            println!("{} clients", new_count);
+            println!("{new_count} clients");
         }
 
         // process pending commands (from forge mod)
         while let Ok(command) = self.command_receiver.pending.try_recv() {
             if let Err(err) = self.process_command(command) {
-                println!("Error processing command: {}", err)
+                println!("Error processing command: {err}")
             }
         }
 

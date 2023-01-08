@@ -351,10 +351,11 @@ impl Physics {
         let in_block_loc = BlockLocation::from(self.location);
 
         let in_block = world.get_block_simple(in_block_loc) == Some(SimpleType::Solid);
+
+        #[allow(clippy::use_debug)]
         if in_block {
             println!(
-                "was in block at {} of type {:?}",
-                in_block_loc,
+                "was in block at {in_block_loc} of type {:?}",
                 world.get_block(in_block_loc)
             );
 

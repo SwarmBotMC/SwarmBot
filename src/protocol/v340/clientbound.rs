@@ -40,7 +40,7 @@ impl ByteReadable for GameMode {
             1 => Creative,
             2 => Adventure,
             3 => Spectator,
-            val => panic!("gamemode {} is not valid", val),
+            val => panic!("gamemode {val} is not valid"),
         }
     }
 }

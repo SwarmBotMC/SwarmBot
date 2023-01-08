@@ -124,7 +124,7 @@ impl WorldBlocks {
                         let dx = (idx % 16) as i32;
                         let dz = (idx / 16) as i32;
                         (
-                            BlockLocation::new(chunk_start_x + dx, y as i16, chunk_start_z + dz),
+                            BlockLocation::new(chunk_start_x + dx, y, chunk_start_z + dz),
                             state,
                         )
                     })
@@ -167,8 +167,8 @@ impl WorldBlocks {
         let x = (x - (chunk_x << 4)) as u8;
         let z = (z - (chunk_z << 4)) as u8;
 
-        let chunk_x = chunk_x as i32;
-        let chunk_z = chunk_z as i32;
+        let chunk_x = chunk_x;
+        let chunk_z = chunk_z;
 
         let loc = ChunkLocation(chunk_x, chunk_z);
         let column = self.storage.get(&loc)?;
@@ -280,8 +280,8 @@ impl WorldBlocks {
         let x = (x - (chunk_x << 4)) as u8;
         let z = (z - (chunk_z << 4)) as u8;
 
-        let chunk_x = chunk_x as i32;
-        let chunk_z = chunk_z as i32;
+        let chunk_x = chunk_x;
+        let chunk_z = chunk_z;
 
         let loc = ChunkLocation(chunk_x, chunk_z);
 
@@ -369,8 +369,7 @@ mod tests {
             let actual = world.get_block_exact(loc).unwrap();
             assert_eq!(
                 actual, state,
-                "block at {} was supposed to be {:?} but was actually {:?} @ index {}",
-                loc, state, actual, idx
+                "block at {loc} was supposed to be {state:?} but was actually {actual:?} @ index {idx}"
             );
         }
     }

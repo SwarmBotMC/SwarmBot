@@ -76,16 +76,16 @@ impl BotDataLoader {
         proxies_file: &str,
         count: usize,
     ) -> ResContext<Receiver<BotDataLoader>> {
-        let csv_file = File::open(&users_file)
-            .context(|| format!("could not open users file {}", users_file))?;
+        let csv_file = File::open(users_file)
+            .context(|| format!("could not open users file {users_file}"))?;
 
         let csv_users =
             bootstrap::csv::read_users(csv_file).context_str("could not open users file")?;
 
         let proxies = match proxy {
             true => {
-                let proxies_file = File::open(&proxies_file)
-                    .context(|| format!("could not open proxies file {}", proxies_file))?;
+                let proxies_file = File::open(proxies_file)
+                    .context(|| format!("could not open proxies file {proxies_file}"))?;
                 bootstrap::csv::read_proxies(proxies_file)
                     .context_str("could not open proxies file")?
                     .into_iter()
