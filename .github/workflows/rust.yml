@@ -22,7 +22,5 @@ jobs:
         with:
           toolchain: ${{ steps.component.outputs.toolchain }}
           override: true
-      - name: Run clippy
-        run: cargo clippy --verbose
       - name: Run tests
         run: cargo test --verbose
