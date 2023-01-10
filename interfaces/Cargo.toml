@@ -16,7 +16,14 @@ lazy_static = "1.4"
 
 tokio-tungstenite = "0.17"
 tungstenite = "0.17"
-tokio = { version = "1.20", features = ["rt", "io-std", "io-util", "sync", "parking_lot", "macros"] }
+tokio = { version = "1.24", features = [
+    "rt",
+    "io-std",
+    "io-util",
+    "sync",
+    "parking_lot",
+    "macros",
+] }
 futures = "0.3"
 
 swarm-bot-packets = { path = "../packets", version = "0.2.0" }
