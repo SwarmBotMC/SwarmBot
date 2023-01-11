@@ -1,11 +1,9 @@
+pub use interfaces::types::*;
 use serde::{Deserialize, Serialize};
-
 use swarm_bot_packets::{
     read::{ByteReadable, ByteReader},
     write::{ByteWritable, ByteWriter},
 };
-
-pub use interfaces::types::*;
 
 use crate::client::state::local::inventory::ItemStack;
 
@@ -26,7 +24,7 @@ impl ByteWritable for ItemNbt {
     }
 }
 
-/// https://wiki.vg/Slot_Data
+/// <https://wiki.vg/Slot_Data>
 #[derive(Debug)]
 pub struct Slot {
     pub block_id: i16,
@@ -47,8 +45,8 @@ impl From<ItemStack> for Slot {
 }
 
 impl Slot {
-    pub const EMPTY: Slot = {
-        Slot {
+    pub const EMPTY: Self = {
+        Self {
             block_id: -1,
             item_count: None,
             item_damage: None,
@@ -56,7 +54,7 @@ impl Slot {
         }
     };
 
-    pub fn present(&self) -> bool {
+    pub const fn present(&self) -> bool {
         self.block_id != -1
     }
 }
@@ -81,7 +79,14 @@ impl ByteReadable for Slot {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let block_id: i16 = byte_reader.read();
 
-        if block_id != -1 {
+        if block_id == -1 {
+            Self {
+                block_id,
+                item_count: None,
+                item_damage: None,
+                nbt: None,
+            }
+        } else {
             let item_count = byte_reader.read();
             let item_damage = byte_reader.read();
 
@@ -91,18 +96,11 @@ impl ByteReadable for Slot {
                 byte_reader.read()
             });
 
-            Slot {
+            Self {
                 block_id,
                 item_count: Some(item_count),
                 item_damage: Some(item_damage),
                 nbt,
-            }
-        } else {
-            Slot {
-                block_id,
-                item_count: None,
-                item_damage: None,
-                nbt: None,
             }
         }
     }

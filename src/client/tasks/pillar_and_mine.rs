@@ -10,7 +10,9 @@ use crate::{
     protocol::{Face, InterfaceOut},
     types::Displacement,
 };
+use crate::client::physics::Physics;
 
+#[allow(clippy::module_name_repetitions)]
 pub type PillarAndMineTask = LazyStream<PillarOrMine>;
 
 impl PillarAndMineTask {
@@ -31,7 +33,7 @@ impl TaskStream for PillarOrMine {
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> Option<Task> {
-        let current_height = (local.physics.location().y).floor() as u32;
+        let current_height = u32::try_from((local.physics.location().y).floor() as i64).unwrap_or_default();
 
         // > not >= because we are considering block height
         if current_height > self.height {
@@ -40,9 +42,7 @@ impl TaskStream for PillarOrMine {
 
         let above1 = local.physics.location() + Displacement::new(0., 2.5, 0.);
         let mut set = HashSet::new();
-        local
-            .physics
-            .in_cross_section(above1, &global.blocks, &mut set);
+        Physics::in_cross_section(above1, &global.blocks, &mut set);
 
         macro_rules! mine_task {
             ($position:expr) => {{
@@ -56,9 +56,7 @@ impl TaskStream for PillarOrMine {
             mine_task!(position)
         } else {
             let above2 = local.physics.location() + Displacement::new(0., 3.5, 0.);
-            local
-                .physics
-                .in_cross_section(above2, &global.blocks, &mut set);
+            Physics::in_cross_section(above2, &global.blocks, &mut set);
             if let Some(&position) = set.iter().next() {
                 mine_task!(position)
             } else {

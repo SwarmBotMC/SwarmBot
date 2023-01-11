@@ -1,14 +1,10 @@
-use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::mpsc::UnboundedSender};
-
 use swarm_bot_packets::{
     types::{Packet, RawVec, VarInt},
     write::{ByteWritable, ByteWritableLike, ByteWriter},
 };
+use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::mpsc::UnboundedSender};
 
-use crate::{
-    error::Res,
-    protocol::io::{Aes, ZLib},
-};
+use crate::protocol::io::{Aes, ZLib};
 
 pub struct PacketWriter {
     writer: EncryptedWriter,
@@ -21,7 +17,7 @@ struct EncryptedWriter {
 }
 
 impl EncryptedWriter {
-    pub async fn write_all(&mut self, data: &mut [u8]) -> Res<()> {
+    pub async fn write_all(&mut self, data: &mut [u8]) -> anyhow::Result<()> {
         if let Some(cipher) = self.cipher.as_mut() {
             cipher.encrypt(data);
         }
@@ -31,27 +27,27 @@ impl EncryptedWriter {
 }
 
 impl From<OwnedWriteHalf> for PacketWriter {
-    fn from(writer: OwnedWriteHalf) -> PacketWriter {
+    fn from(writer: OwnedWriteHalf) -> Self {
         let writer = EncryptedWriter {
             writer,
             cipher: None,
         };
 
-        PacketWriter {
+        Self {
             writer,
             compression: None,
         }
     }
 }
 
-fn data<T: Packet + ByteWritable>(packet: T, compression: &Option<ZLib>) -> Vec<u8> {
+fn data<T: Packet + ByteWritable>(packet: T, compression: Option<ZLib>) -> Vec<u8> {
     let data = PktData::from(packet);
 
     let complete_packet = CompletePacket { data };
 
     let mut writer = ByteWriter::new();
 
-    complete_packet.write_to_bytes_like(&mut writer, compression);
+    complete_packet.write_to_bytes_like(&mut writer, &compression);
     writer.freeze()
 }
 
@@ -62,7 +58,7 @@ pub struct PacketWriteChannel {
 
 impl PacketWriteChannel {
     pub fn write<T: Packet + ByteWritable>(&mut self, packet: T) {
-        let data = data(packet, &self.compression);
+        let data = data(packet, self.compression);
 
         self.tx.send(data).unwrap();
     }
@@ -74,11 +70,11 @@ impl PacketWriter {
     }
 
     pub fn compression(&mut self, threshold: u32) {
-        self.compression = Some(ZLib::new(threshold))
+        self.compression = Some(ZLib::new(threshold));
     }
 
-    pub async fn write<T: Packet + ByteWritable>(&mut self, packet: T) -> Res {
-        let mut data = data(packet, &self.compression);
+    pub async fn write<T: Packet + ByteWritable>(&mut self, packet: T) -> anyhow::Result<()> {
+        let mut data = data(packet, self.compression);
         self.writer.write_all(&mut data).await
     }
 
@@ -107,7 +103,7 @@ impl<T: Packet + ByteWritable> From<T> for PktData {
         let mut writer = ByteWriter::new();
         writer.write(packet);
 
-        PktData {
+        Self {
             id: VarInt(T::ID as i32),
             data: writer.freeze().into(),
         }

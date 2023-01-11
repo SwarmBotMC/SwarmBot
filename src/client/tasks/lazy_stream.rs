@@ -31,7 +31,7 @@ impl<T: TaskStream> LazyStream<T> {
     ) -> Option<&mut Task> {
         if self.current.is_none() {
             let next = self.create_task.poll(out, local, global)?;
-            self.current = Some(box next)
+            self.current = Some(box next);
         }
 
         self.current.as_deref_mut()
@@ -58,10 +58,7 @@ impl<T: TaskStream> TaskTrait for LazyStream<T> {
     }
 
     fn expensive(&mut self, end_by: Instant, local: &mut LocalState, global: &GlobalState) {
-        let current = match self.current.as_mut() {
-            None => return,
-            Some(inner) => inner,
-        };
+        let Some(current) = self.current.as_mut() else { return };
         current.expensive(end_by, local, global);
     }
 }

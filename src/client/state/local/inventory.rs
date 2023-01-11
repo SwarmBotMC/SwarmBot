@@ -1,9 +1,10 @@
+use interfaces::types::{block_data::BlockData, BlockKind};
+
 use crate::{
     client::physics::tools::{Tool, ToolMat},
     protocol::{InterfaceOut, InvAction},
     types::{ItemNbt, Slot},
 };
-use interfaces::types::{block_data::BlockData, BlockKind};
 
 #[derive(Debug)]
 pub struct ItemStack {
@@ -32,7 +33,7 @@ impl From<Slot> for Option<ItemStack> {
 }
 
 impl ItemStack {
-    pub fn new(kind: BlockKind, count: u8, damage: u16, nbt: Option<ItemNbt>) -> ItemStack {
+    pub const fn new(kind: BlockKind, count: u8, damage: u16, nbt: Option<ItemNbt>) -> Self {
         Self {
             kind,
             count,
@@ -63,19 +64,15 @@ impl PlayerInventory {
         &self.slots[36..45]
     }
 
-    pub fn hotbar_mut(&mut self) -> &mut [Option<ItemStack>] {
-        &mut self.slots[36..45]
-    }
-
     /// drop a single item in the hotbar (not multiple because anti cheat does
     /// not like this) returns if dropped all
     pub fn drop_hotbar(&mut self, out: &mut impl InterfaceOut) -> bool {
         let idx = (36..45)
-            .filter_map(|idx| {
+            .find_map(|idx| {
+                #[allow(clippy::indexing_slicing)]
                 self.slots[idx].take()?;
                 Some(idx)
-            })
-            .next();
+            });
 
         if let Some(idx) = idx {
             out.inventory_action(InvAction::CtrlQ(idx as u16));
@@ -85,6 +82,7 @@ impl PlayerInventory {
         }
     }
 
+    #[allow(unused)]
     pub fn current_tool(&self) -> Tool {
         match &self.hotbar()[self.selected as usize] {
             Some(item) => Tool::from(item),
@@ -104,7 +102,7 @@ impl PlayerInventory {
     }
 
     pub fn switch_block(&mut self, out: &mut impl InterfaceOut) {
-        self.switch_selector(out, interfaces::types::BlockKind::throw_away_block);
+        self.switch_selector(out, BlockKind::throw_away_block);
     }
 
     /// true if successful
@@ -156,11 +154,10 @@ impl PlayerInventory {
             .hotbar()
             .iter()
             .enumerate()
-            .filter_map(|(idx, item_stack)| {
+            .find_map(|(idx, item_stack)| {
                 let item_stack = item_stack.as_ref()?;
                 block(item_stack.kind).then_some(idx)
-            })
-            .next();
+            });
 
         if let Some(idx) = block_idx {
             self.change_slot(idx as u8, out);

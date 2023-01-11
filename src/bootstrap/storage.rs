@@ -1,4 +1,5 @@
-use bincode::{Decode, Encode};
+//! Utils to store information
+
 use std::{
     collections::HashMap,
     convert::TryFrom,
@@ -9,12 +10,13 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use anyhow::Context;
+use bincode::{Decode, Encode};
 use tokio::sync::mpsc::Receiver;
 
 use crate::{
     bootstrap,
     bootstrap::{mojang::MojangClient, CSVUser, Proxy},
-    HasContext, ResContext,
 };
 
 #[derive(Encode, Decode, Debug)]
@@ -46,10 +48,11 @@ pub struct OnlineUser {
 }
 
 impl User {
-    fn email(&self) -> &String {
+    const fn email(&self) -> &String {
         match self {
-            User::Valid(OnlineUser { email, .. }) => email,
-            User::Invalid(InvalidUser { email, .. }) => email,
+            Self::Invalid(InvalidUser { email, .. }) | Self::Valid(OnlineUser { email, .. }) => {
+                email
+            }
         }
     }
 }
@@ -75,29 +78,26 @@ impl BotDataLoader {
         users_file: &str,
         proxies_file: &str,
         count: usize,
-    ) -> ResContext<Receiver<BotDataLoader>> {
+    ) -> anyhow::Result<Receiver<Self>> {
         let csv_file = File::open(users_file)
-            .context(|| format!("could not open users file {users_file}"))?;
+            .with_context(|| format!("could not open users file {users_file}"))?;
 
         let csv_users =
-            bootstrap::csv::read_users(csv_file).context_str("could not open users file")?;
+            bootstrap::csv::read_users(csv_file).context("could not open users file")?;
 
-        let proxies = match proxy {
-            true => {
-                let proxies_file = File::open(proxies_file)
-                    .context(|| format!("could not open proxies file {proxies_file}"))?;
-                bootstrap::csv::read_proxies(proxies_file)
-                    .context_str("could not open proxies file")?
-                    .into_iter()
-                    .map(Some)
-                    .collect()
-            }
-            false => {
-                vec![None]
-            }
+        let proxies = if proxy {
+            let proxies_file = File::open(proxies_file)
+                .with_context(|| format!("could not open proxies file {proxies_file}"))?;
+            bootstrap::csv::read_proxies(proxies_file)
+                .context("could not open proxies file")?
+                .into_iter()
+                .map(Some)
+                .collect()
+        } else {
+            vec![None]
         };
 
-        let cache = UserCache::load("cache.db".into());
+        let cache = UserCache::load("cache.db".into())?;
 
         Ok(cache.obtain_users(count, csv_users, proxies))
     }
@@ -105,36 +105,37 @@ impl BotDataLoader {
 
 fn time() -> u64 {
     let start = SystemTime::now();
-    let since_the_epoch = start
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
+    let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap_or_default();
     since_the_epoch.as_secs()
 }
 
 impl UserCache {
-    pub fn load(file_path: PathBuf) -> UserCache {
-        let exists = fs::try_exists(&file_path).unwrap();
-        if !exists {
-            UserCache {
-                file_path,
-                cache: HashMap::new(),
-            }
-        } else {
-            let file = File::open(&file_path).unwrap();
+    pub fn load(file_path: PathBuf) -> anyhow::Result<Self> {
+        let exists = fs::try_exists(&file_path)
+            .with_context(|| format!("cannot load user from: {file_path:?} (DNE)"))?;
+        let res = if exists {
+            let file = File::open(&file_path).context("could not load file")?;
             let bytes: Result<Vec<_>, _> = file.bytes().collect();
-            let bytes = bytes.unwrap();
+            let bytes = bytes.context("could not load bytes")?;
             let config = bincode::config::standard();
-            let (Root { users }, _) = bincode::decode_from_slice(&bytes, config).unwrap();
+            let (Root { users }, _) = bincode::decode_from_slice(&bytes, config)
+                .context("could not decode from slice")?;
 
             let cache: HashMap<_, _> = users
                 .into_iter()
                 .map(|user| (user.email().clone(), user))
                 .collect();
-            UserCache { file_path, cache }
-        }
+            Self { file_path, cache }
+        } else {
+            Self {
+                file_path,
+                cache: HashMap::new(),
+            }
+        };
+        Ok(res)
     }
 
-    /// Takes a [CSVUser] and returns the user's data along with the proxy
+    /// Takes a [`CSVUser`] and returns the user's data along with the proxy
     /// associated with it
     async fn get_or_put(
         &mut self,
@@ -193,47 +194,43 @@ impl UserCache {
                             .await
                             .unwrap();
 
-                        if !is_valid {
-                            println!("failed validating {}", user.email);
-                            match mojang.refresh(&valid.access_id, &valid.client_id).await {
-                                Ok(auth) => {
-                                    valid.access_id = auth.access_token;
-                                    valid.username = auth.username;
-                                    valid.uuid = auth.uuid.to_string();
-                                    valid.client_id = auth.client_token;
-                                    valid.last_checked = time();
-                                    return Some((mojang, proxy, valid.clone()));
-                                }
+                        if is_valid {
+                            return Some((mojang, proxy, valid.clone()));
+                        }
+                        println!("failed validating {}", user.email);
+                        match mojang.refresh(&valid.access_id, &valid.client_id).await {
+                            Ok(auth) => {
+                                valid.access_id = auth.access_token;
+                                valid.username = auth.username;
+                                valid.uuid = auth.uuid.to_string();
+                                valid.client_id = auth.client_token;
+                                valid.last_checked = time();
+                                return Some((mojang, proxy, valid.clone()));
+                            }
 
-                                // we could not refresh -> try to authenticate
-                                Err(e) => {
-                                    println!("failed refreshing {} .. {}", user.email, e);
-                                    match mojang.authenticate(&valid.email, &valid.password).await {
-                                        Ok(auth) => {
-                                            valid.access_id = auth.access_token;
-                                            valid.username = auth.username;
-                                            valid.uuid = auth.uuid.to_string();
-                                            valid.client_id = auth.client_token;
-                                            valid.last_checked = time();
-                                            return Some((mojang, proxy, valid.clone()));
-                                        }
+                            // we could not refresh -> try to authenticate
+                            Err(e) => {
+                                println!("failed refreshing {} .. {}", user.email, e);
+                                match mojang.authenticate(&valid.email, &valid.password).await {
+                                    Ok(auth) => {
+                                        valid.access_id = auth.access_token;
+                                        valid.username = auth.username;
+                                        valid.uuid = auth.uuid.to_string();
+                                        valid.client_id = auth.client_token;
+                                        valid.last_checked = time();
+                                        return Some((mojang, proxy, valid.clone()));
+                                    }
 
-                                        // we cannot do anything more -> change to invalid
-                                        Err(e) => {
-                                            println!(
-                                                "failed authenticating {} .. {}",
-                                                user.email, e
-                                            );
-                                            *cached = User::Invalid(InvalidUser {
-                                                email: valid.email.clone(),
-                                                password: valid.password.clone(),
-                                            })
-                                        }
+                                    // we cannot do anything more -> change to invalid
+                                    Err(e) => {
+                                        println!("failed authenticating {} .. {}", user.email, e);
+                                        *cached = User::Invalid(InvalidUser {
+                                            email: valid.email.clone(),
+                                            password: valid.password.clone(),
+                                        });
                                     }
                                 }
                             }
-                        } else {
-                            return Some((mojang, proxy, valid.clone()));
                         }
                     }
                     User::Invalid(_invalid) => {}
@@ -259,7 +256,7 @@ impl UserCache {
         tokio::task::spawn_local(async move {
             let mut local_count = 0;
 
-            'user_loop: for csv_user in users.into_iter() {
+            'user_loop: for csv_user in users {
                 if let Some((mojang, proxy, user)) = self.get_or_put(&csv_user, &mut proxies).await
                 {
                     local_count += 1;

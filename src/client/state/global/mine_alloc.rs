@@ -16,6 +16,7 @@ pub struct MineAlloc {
 
 pub enum MinePreference {
     FromDist,
+    #[allow(unused)]
     ToDist,
 }
 
@@ -24,10 +25,6 @@ pub type Locations = impl Iterator<Item = BlockLocation>;
 impl MineAlloc {
     pub const REGION_R: i32 = 3;
     pub const REGION_WIDTH: i32 = Self::REGION_R * 2 + 1;
-
-    pub fn cancel(&mut self) {
-        self.regions.clear();
-    }
 
     pub fn obtain_region(&mut self) -> Option<BlockLocation2D> {
         let BlockLocation2D { x, z } = self.regions.pop_front()?.0;
@@ -40,10 +37,6 @@ impl MineAlloc {
             .cartesian_product(-rad..=rad)
             .cartesian_product(-rad..=rad)
             .map(move |((y, z), x)| BlockLocation::new(center.x + x, y as i16, center.z + z))
-    }
-
-    pub fn locations(center: BlockLocation2D) -> Locations {
-        Self::locations_rad(center, Self::REGION_R)
     }
 
     // locations plus 1 block extra
@@ -77,7 +70,7 @@ impl MineAlloc {
         if let Some(preference) = preference {
             match preference {
                 MinePreference::FromDist => {
-                    vec.par_sort_unstable_by_key(|region| region.0.dist2(from))
+                    vec.par_sort_unstable_by_key(|region| region.0.dist2(from));
                 }
                 MinePreference::ToDist => vec.par_sort_unstable_by_key(|region| region.0.dist2(to)),
             }

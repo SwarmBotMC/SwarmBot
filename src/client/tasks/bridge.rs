@@ -1,3 +1,5 @@
+use interfaces::types::BlockLocation;
+
 use crate::{
     client::{
         pathfind::moves::CardinalDirection,
@@ -8,7 +10,6 @@ use crate::{
     protocol::{Face, InterfaceOut},
     types::{Direction, Displacement},
 };
-use interfaces::types::BlockLocation;
 
 pub struct BridgeTask {
     count: u32,
@@ -17,7 +18,8 @@ pub struct BridgeTask {
 }
 
 impl BridgeTask {
-    pub fn new(count: u32, direction: CardinalDirection, local: &LocalState) -> BridgeTask {
+    #[allow(unused)]
+    pub fn new(count: u32, direction: CardinalDirection, local: &LocalState) -> Self {
         let start = BlockLocation::from(local.physics.location()).below();
         Self {
             count,

@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::net::TcpListener;
 
-use crate::error::Res;
-
 pub struct CommandReceiver {
     pub pending: Receiver<CommandData>,
 }
@@ -28,7 +26,7 @@ impl Selection2D {
         let max_x = self.from.x.max(self.to.x);
         let max_z = self.from.z.max(self.to.z);
 
-        Selection2D {
+        Self {
             from: BlockLocation2D::new(min_x, min_z),
             to: BlockLocation2D::new(max_x, max_z),
         }
@@ -81,7 +79,7 @@ fn process(path: &str, value: Value) -> Option<CommandData> {
 }
 
 impl CommandReceiver {
-    pub async fn init(port: u16) -> Res<Self> {
+    pub async fn init(port: u16) -> anyhow::Result<Self> {
         let (tx, rx) = std::sync::mpsc::channel();
 
         let server = TcpListener::bind(format!("127.0.0.1:{port}")).await?;
@@ -104,15 +102,9 @@ impl CommandReceiver {
                             Err(_e) => continue 'wloop,
                         };
 
-                        let map = match &mut v {
-                            Value::Object(map) => map,
-                            _ => panic!("invalid value"),
-                        };
+                        let Value::Object(map) = &mut v else { panic!("invalid value") };
 
-                        let path = match map.remove("path").expect("no path elem") {
-                            Value::String(path) => path,
-                            _ => panic!("invalid path"),
-                        };
+                        let Value::String(path) = map.remove("path").expect("no path elem") else { panic!("invalid path") };
 
                         let command = process(&path, v).expect("invalid command");
                         tx.send(command).unwrap();

@@ -1,3 +1,7 @@
+#![allow(clippy::indexing_slicing)]
+#![allow(clippy::unwrap_used)]
+#![allow(clippy::panic)]
+
 use std::{
     collections::{BinaryHeap, HashMap},
     fmt::{Debug, Formatter},
@@ -16,7 +20,6 @@ use crate::client::{
 /// credit baritone
 const COEFFICIENTS: [f64; 7] = [1.5, 2.0, 2.5, 3., 4., 5., 10.];
 const MIN_DIST: f64 = 5.0;
-const MIN_DIST2: f64 = MIN_DIST * MIN_DIST;
 
 /// An A-star Node
 pub trait Node: Clone {
@@ -36,8 +39,8 @@ pub trait Node: Clone {
     /// from the open set and in the path returned we will only need to record
     /// each block mined at an individual node. When progressing the parents
     /// of each node we can get the total state, but this is expensive so in the
-    /// open set we will probably want to have some type of [HashSet] or
-    /// [HashMap].
+    /// open set we will probably want to have some type of [`HashSet`] or
+    /// [`HashMap`].
     ///
     /// ```
     /// For any node pair (Node_a, Node_b)
@@ -47,7 +50,7 @@ pub trait Node: Clone {
     /// ```
     type Record: PartialEq + Hash + Eq + Clone;
 
-    /// Takes the node and turns it into a record see [Self::Record]
+    /// Takes the node and turns it into a record see [`Self::Record`]
     fn get_record(&self) -> Self::Record;
 }
 
@@ -55,8 +58,10 @@ pub struct AStar<T: Node> {
     state: Option<AStarState<T>>,
 }
 
-/// The state of AStar. This is a separate object so that when the iteration is
-/// done the state can be moved
+/// The state of `AStar`. This is a separate object so that when the iteration
+/// is done the state can be moved
+///
+/// TODO: what?????
 struct AStarState<T: Node> {
     /// given an idx return a record
     idx_to_record: Vec<T::Record>,
@@ -87,15 +92,13 @@ struct AStarState<T: Node> {
     meta_heuristics_ids: [usize; 7],
 }
 
-pub type Path<T> = Vec<T>;
-
-/// Takes ownership of all nodes and returns a path ending at goal_idx which
-/// will start at a starting idx determined by tracing parent_map
+/// Takes ownership of all nodes and returns a path ending at `goal_idx` which
+/// will start at a starting idx determined by tracing `parent_map`
 /// HashMap<idx,idx> until there is no parent (i.e., the root node). This is the
 /// most efficient path, so there should be no circles assuming non-negative
 /// weights.
 fn reconstruct_path<T: Clone>(
-    vec: Vec<T>,
+    vec: &[T],
     goal_idx: usize,
     parent_map: &HashMap<usize, usize>,
 ) -> Vec<T> {
@@ -129,15 +132,15 @@ impl<T: Debug> Debug for PathResult<T> {
 }
 
 impl<T> PathResult<T> {
-    fn complete(value: Vec<T>) -> PathResult<T> {
-        PathResult {
+    fn complete(value: Vec<T>) -> Self {
+        Self {
             complete: true,
             value,
         }
     }
 
-    fn incomplete(value: Vec<T>) -> PathResult<T> {
-        PathResult {
+    fn incomplete(value: Vec<T>) -> Self {
+        Self {
             complete: false,
             value,
         }
@@ -145,7 +148,7 @@ impl<T> PathResult<T> {
 }
 
 impl<T: Node> AStar<T> {
-    pub fn new(init_node: T) -> AStar<T> {
+    pub fn new(init_node: T) -> Self {
         let init_record = init_node.get_record();
 
         let mut record_to_idx = HashMap::new();
@@ -168,13 +171,13 @@ impl<T: Node> AStar<T> {
             g_scores,
             open_set,
             total_duration_ms: 0,
-            parent_map: Default::default(),
+            parent_map: nbt::Map::default(),
             valid: false,
             meta_heuristics_ids: [0; 7],
             max_duration_ms: 5000,
         });
 
-        AStar { state }
+        Self { state }
     }
 
     pub fn set_max_millis(&mut self, value: u128) {
@@ -193,11 +196,11 @@ impl<T: Node> AStar<T> {
             let g_score = state.g_scores[&id];
             if g_score > MIN_DIST {
                 println!("larger than min dist");
-                let path = reconstruct_path(state.idx_to_record, id, &state.parent_map);
+                let path = reconstruct_path(&state.idx_to_record, id, &state.parent_map);
                 return Increment::Finished(PathResult::incomplete(path));
             }
         }
-        let path = reconstruct_path(state.idx_to_record, best.1, &state.parent_map);
+        let path = reconstruct_path(&state.idx_to_record, best.1, &state.parent_map);
         Increment::Finished(PathResult::incomplete(path))
     }
 
@@ -242,10 +245,7 @@ impl<T: Node> AStar<T> {
     ) -> Increment<PathResult<T::Record>> {
         // obtain the state. If we have already finished the state is Option as we did
         // Option#take(..). We should not ever call this in that state.
-        let state = match self.state.as_mut() {
-            None => panic!("called after finished"),
-            Some(state) => state,
-        };
+        let Some(state) = self.state.as_mut() else { panic!("called after finished") };
 
         if let Some(node) = state.open_set.pop() {
             let parent = node.contents;
@@ -255,18 +255,12 @@ impl<T: Node> AStar<T> {
                 let record = parent.get_record();
                 let record_idx = state.record_to_idx[&record];
                 let state = self.state.take().unwrap();
-                let path = reconstruct_path(state.idx_to_record, record_idx, &state.parent_map);
+                let path = reconstruct_path(&state.idx_to_record, record_idx, &state.parent_map);
+
                 return Increment::Finished(PathResult::complete(path));
             }
 
-            let neighbors = match progressor.progressions(&parent) {
-                Progression::Movements(neighbors) => {
-                    neighbors // we have neighbors that we can process
-                }
-                _ => return Increment::InProgress, /* there are no neighbors. Each iteration we
-                                                    * just look at the neighbors of one open node
-                                                    * so we return */
-            };
+            let Progression::Movements(neighbors) = progressor.progressions(&parent) else { return Increment::InProgress };
 
             let parent_record = parent.get_record();
             let parent_record_idx = state.record_to_idx[&parent_record];
@@ -279,23 +273,20 @@ impl<T: Node> AStar<T> {
                 let value = neighbor.value.clone();
                 let record = value.get_record();
 
-                let (record_idx, _g_score) = match state.record_to_idx.get(&record) {
-                    Some(idx) => {
-                        let prev_g_score = state.g_scores.get_mut(idx).unwrap();
-                        if tentative_g_score < *prev_g_score {
-                            *prev_g_score = tentative_g_score
-                        } else {
-                            continue 'neighbor_loop;
-                        }
-                        (*idx, tentative_g_score)
+                let (record_idx, _g_score) = if let Some(idx) = state.record_to_idx.get(&record) {
+                    let prev_g_score = state.g_scores.get_mut(idx).unwrap();
+                    if tentative_g_score < *prev_g_score {
+                        *prev_g_score = tentative_g_score;
+                    } else {
+                        continue 'neighbor_loop;
                     }
-                    None => {
-                        let value_idx = state.idx_to_record.len();
-                        state.idx_to_record.push(record.clone());
-                        state.record_to_idx.insert(record, value_idx);
-                        state.g_scores.insert(value_idx, tentative_g_score);
-                        (value_idx, tentative_g_score)
-                    }
+                    (*idx, tentative_g_score)
+                } else {
+                    let value_idx = state.idx_to_record.len();
+                    state.idx_to_record.push(record.clone());
+                    state.record_to_idx.insert(record, value_idx);
+                    state.g_scores.insert(value_idx, tentative_g_score);
+                    (value_idx, tentative_g_score)
                 };
 
                 state.parent_map.insert(record_idx, parent_record_idx);

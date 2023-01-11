@@ -1,13 +1,14 @@
-use interfaces::types::{BlockLocation, ChunkLocation};
 use std::time::Instant;
+
+use interfaces::types::{BlockLocation, ChunkLocation};
 
 use crate::{
     client::{
-        follow::{FollowResult, Follower},
+        follow::{Result, Follower},
         pathfind::{
             context::MoveNode,
             implementations::{
-                novehicle::{
+                no_vehicle::{
                     BlockGoalCheck, BlockHeuristic, BlockNearGoalCheck, CenterChunkGoalCheck,
                     ChunkHeuristic, TravelProblem,
                 },
@@ -27,6 +28,7 @@ pub type BlockTravelTask = NavigateProblem<BlockHeuristic, BlockGoalCheck>;
 pub type BlockTravelNearTask = NavigateProblem<BlockHeuristic, BlockNearGoalCheck>;
 
 impl ChunkTravelTask {
+    #[allow(unused)]
     pub fn new(goal: ChunkLocation, local: &LocalState) -> Self {
         let start = local.physics.location().into();
         let problem = TravelProblem::navigate_center_chunk(start, goal);
@@ -65,10 +67,7 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {
-        let follower = match self.follower.as_mut() {
-            None => return false,
-            Some(inner) => inner,
-        };
+        let Some(follower) = self.follower.as_mut() else { return false };
 
         if follower.should_recalc() {
             println!("recalc");
@@ -77,8 +76,8 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
             self.calculate = true;
         }
 
-        match follower.follow(local, global) {
-            FollowResult::Failed => {
+        match follower.follow_iteration(local, global) {
+            Result::Failed => {
                 println!("failed");
                 self.follower = None;
                 self.problem
@@ -86,8 +85,8 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
                 self.calculate = true;
                 false
             }
-            FollowResult::InProgress => false,
-            FollowResult::Finished => {
+            Result::InProgress => false,
+            Result::Finished => {
                 println!("finished!");
                 true
             }

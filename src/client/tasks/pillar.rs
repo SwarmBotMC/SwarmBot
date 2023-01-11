@@ -1,3 +1,5 @@
+use interfaces::types::{BlockLocation, SimpleType};
+
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
@@ -6,19 +8,16 @@ use crate::{
     protocol::InterfaceOut,
     types::{Direction, Displacement},
 };
-use interfaces::types::{BlockLocation, SimpleType};
 
 pub struct PillarTask {
     dest_y: u32,
-    jumped: bool,
 }
 
 impl PillarTask {
-    pub fn new(dest_y: u32) -> PillarTask {
+    pub fn new(dest_y: u32) -> Self {
         println!("pillar dest {dest_y}");
         Self {
             dest_y,
-            jumped: false,
         }
     }
 }
@@ -34,7 +33,7 @@ impl TaskTrait for PillarTask {
 
         // equal OR GREATER because we don't want to pillar if we are higher than we
         // need to be
-        if local.physics.location().y as u32 >= self.dest_y {
+        if u32::try_from(local.physics.location().y as i64).unwrap_or_default() >= self.dest_y {
             let below_loc = BlockLocation::from(local.physics.location()).below();
 
             // return true if block below us is solid
@@ -56,7 +55,7 @@ impl TaskTrait for PillarTask {
         let below_type = global.blocks.get_block_simple(below_block);
         let below_valid = matches!(
             below_type,
-            Some(SimpleType::Water) | Some(SimpleType::WalkThrough)
+            Some(SimpleType::Water | SimpleType::WalkThrough)
         );
 
         let two_below_valid = matches!(

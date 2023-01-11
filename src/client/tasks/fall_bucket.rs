@@ -1,3 +1,5 @@
+use interfaces::types::{BlockLocation, BlockState, SimpleType};
+
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
@@ -5,7 +7,6 @@ use crate::{
     },
     protocol::InterfaceOut,
 };
-use interfaces::types::{BlockLocation, BlockState, SimpleType};
 
 #[derive(Default)]
 pub struct FallBucketTask {
@@ -51,17 +52,17 @@ impl TaskTrait for FallBucketTask {
         match below {
             None => {}
             Some((location, _)) => {
-                if !self.iter {
+                if self.iter {
+                    local.inventory.switch_bucket(out);
+                } else {
                     let height = local.physics.location().y;
-                    if height - (location.y as f64 + 1.0) < 3.0 {
+                    if height - (f64::from(location.y) + 1.0) < 3.0 {
                         return true;
                     }
-                } else {
-                    local.inventory.switch_bucket(out);
                 }
 
                 local.physics.look_at(location.center_bottom());
-                let dy = current_loc.y - (location.y as f64 + 1.0);
+                let dy = current_loc.y - (f64::from(location.y) + 1.0);
                 if dy < 3.4 {
                     // we don't have to place when going into water
                     if global.blocks.get_block_simple(location) == Some(SimpleType::Water) {

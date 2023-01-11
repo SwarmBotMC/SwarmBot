@@ -1,3 +1,5 @@
+use interfaces::types::BlockLocation;
+
 use crate::{
     client::{
         physics::{speed::Speed, Line},
@@ -6,7 +8,6 @@ use crate::{
     },
     protocol::InterfaceOut,
 };
-use interfaces::types::BlockLocation;
 
 pub struct CenterTask;
 

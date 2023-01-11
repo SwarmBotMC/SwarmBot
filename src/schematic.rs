@@ -1,9 +1,10 @@
 use std::io::Read;
+use anyhow::Context;
 
 use interfaces::types::{BlockLocation, BlockState};
 use serde::{Deserialize, Serialize};
 
-/// The WorldEdit schematic format
+/// The `WorldEdit` schematic format
 /// <https://minecraft.fandom.com/wiki/Schematic_file_format>
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
@@ -24,19 +25,25 @@ pub struct Schematic {
 }
 
 impl Schematic {
-    pub fn volume(&self) -> u64 {
-        (self.width as u64) * (self.height as u64) * (self.length as u64)
+    #[allow(unused)]
+    pub const fn volume(&self) -> u64 {
+        let v = (self.width as i64) * (self.height as i64) * (self.length as i64);
+        v.abs_diff(0)
     }
 
-    pub fn load(reader: &mut impl Read) -> Schematic {
-        let res: Result<Schematic, _> = nbt::from_gzip_reader(reader);
-        res.unwrap()
+    #[allow(unused)]
+    pub fn load(reader: &mut impl Read) -> anyhow::Result<Self> {
+        let res: Result<Self, _> = nbt::from_gzip_reader(reader).context("could not load schematic");
+
+        res
     }
 
+    #[allow(unused)]
     pub fn is_valid(&self) -> bool {
         self.volume() == self.blocks.len() as u64
     }
 
+    #[allow(unused)]
     pub fn origin(&self) -> Option<BlockLocation> {
         match (self.w_e_origin_x, self.w_e_origin_y, self.w_e_origin_z) {
             (Some(x), Some(y), Some(z)) => Some(BlockLocation::new(x, y as i16, z)),
@@ -44,6 +51,7 @@ impl Schematic {
         }
     }
 
+    #[allow(unused)]
     pub fn offset(&self) -> Option<BlockLocation> {
         match (self.w_e_offset_x, self.w_e_offset_y, self.w_e_offset_z) {
             (Some(x), Some(y), Some(z)) => Some(BlockLocation::new(x, y as i16, z)),
@@ -51,17 +59,23 @@ impl Schematic {
         }
     }
 
+
+    #[allow(unused, clippy::unwrap_used)]
     pub fn width(&self) -> u64 {
-        self.width as u64
+        u64::try_from(self.width).unwrap()
     }
 
+    #[allow(unused, clippy::unwrap_used)]
     pub fn height(&self) -> u64 {
-        self.height as u64
-    }
-    pub fn length(&self) -> u64 {
-        self.length as u64
+        u64::try_from(self.width).unwrap()
     }
 
+    #[allow(unused, clippy::unwrap_used)]
+    pub fn length(&self) -> u64 {
+        u64::try_from(self.length).unwrap()
+    }
+
+    #[allow(unused, clippy::unwrap_used, clippy::indexing_slicing)]
     pub fn blocks(&self) -> impl Iterator<Item = (BlockLocation, BlockState)> + '_ {
         let origin = self.origin().unwrap_or_default();
 
@@ -75,9 +89,9 @@ impl Schematic {
 
             let location = BlockLocation::new(x as i32, y as i16, z as i32) + origin;
 
-            let id = self.blocks[idx as usize];
-            let data = self.data[idx as usize];
-            let state = BlockState::from(id as u32, data as u16);
+            let id = self.blocks[idx as usize].abs_diff(0);
+            let data = self.data[idx as usize].abs_diff(0);
+            let state = BlockState::from(u32::from(id), u16::from(data));
 
             (location, state)
         })
@@ -100,7 +114,7 @@ mod tests {
             .open("test-data/parkour.schematic")
             .unwrap();
 
-        let schematic = Schematic::load(&mut reader);
+        let schematic = Schematic::load(&mut reader).unwrap();
 
         assert!(schematic.is_valid());
 

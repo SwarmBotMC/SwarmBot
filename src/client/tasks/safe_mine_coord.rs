@@ -1,3 +1,5 @@
+use interfaces::types::{BlockLocation, BlockLocation2D};
+
 use crate::client::{
     state::{
         global::{mine_alloc::MineAlloc, GlobalState},
@@ -14,7 +16,6 @@ use crate::client::{
         Task,
     },
 };
-use interfaces::types::{BlockLocation, BlockLocation2D};
 
 pub struct SafeMineRegion;
 

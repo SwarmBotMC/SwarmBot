@@ -6,12 +6,15 @@ use std::{
     time::{Duration, Instant},
 };
 
+use anyhow::Context;
 use tokio::sync::Notify;
+use tokio_stream::{Stream, StreamExt};
 
 use crate::{
     bootstrap::BotConnection,
     client::{
         bot::{run_threaded, ActionState, Bot},
+        commands,
         commands::{CommandData, CommandReceiver, Selection2D},
         processor::SimpleInterfaceIn,
         state::{
@@ -23,30 +26,38 @@ use crate::{
             navigate::BlockTravelTask,
         },
     },
-};
-
-use crate::{
-    client::commands,
-    error::{Res, ResBox},
     protocol::{EventQueue, Login, Minecraft},
 };
 
+/// A wrapper around a raw pointer of [`GlobalState`] that is sync
 struct SyncGlobal(*const GlobalState);
 
 impl SyncGlobal {
-    fn state(&self) -> &GlobalState {
+    /// # Safety
+    ///
+    /// Access the state
+    const unsafe fn state(&self) -> &GlobalState {
+        // SAFETY:
         unsafe { &*self.0 }
     }
 }
 
 struct SyncLocal((*mut LocalState, *mut ActionState));
 
+/// Safety:
+/// TODO
 unsafe impl Sync for SyncGlobal {}
 
+/// Safety:
+/// TODO
 unsafe impl Send for SyncGlobal {}
 
+/// Safety:
+/// TODO
 unsafe impl Sync for SyncLocal {}
 
+/// Safety:
+/// TODO
 unsafe impl Send for SyncLocal {}
 
 pub type Logins<T> = Rc<RefCell<Vec<Login<<T as Minecraft>::Queue, <T as Minecraft>::Interface>>>>;
@@ -79,10 +90,10 @@ pub struct RunnerOptions {
 impl<T: Minecraft + 'static> Runner<T> {
     /// Start the runner process
     pub async fn run(
-        connections: tokio::sync::mpsc::Receiver<BotConnection>,
+        connections: impl Stream<Item = BotConnection> + 'static,
         opts: RunnerOptions,
-    ) -> Res {
-        let mut runner = Runner::<T>::init(connections, opts).await?;
+    ) -> anyhow::Result<()> {
+        let mut runner = Self::init(connections, opts).await?;
         runner.game_loop().await;
         Ok(())
     }
@@ -90,13 +101,15 @@ impl<T: Minecraft + 'static> Runner<T> {
     /// Initialize the runner. Go through the handshake process for each
     /// [`Connection`]
     async fn init(
-        mut connections: tokio::sync::mpsc::Receiver<BotConnection>,
+        connections: impl Stream<Item = BotConnection> + 'static,
         opts: RunnerOptions,
-    ) -> Res<Runner<T>> {
+    ) -> anyhow::Result<Self> {
         let RunnerOptions {
             delay_ms: delay_millis,
             ws_port,
         } = opts;
+
+        let mut connections = Box::pin(connections);
 
         let commands = CommandReceiver::init(ws_port).await?;
 
@@ -107,7 +120,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
             // login task for all users
             tokio::task::spawn_local(async move {
-                while let Some(connection) = connections.recv().await {
+                while let Some(connection) = connections.next().await {
                     let logins = pending_logins.clone();
 
                     // login task for an individual user
@@ -133,7 +146,7 @@ impl<T: Minecraft + 'static> Runner<T> {
             });
         }
 
-        Ok(Runner {
+        Ok(Self {
             pending_logins,
             global_state: GlobalState::init(),
             command_receiver: commands,
@@ -198,7 +211,7 @@ impl<T: Minecraft + 'static> Runner<T> {
         // process pending commands (from forge mod)
         while let Ok(command) = self.command_receiver.pending.try_recv() {
             if let Err(err) = self.process_command(command) {
-                println!("Error processing command: {err}")
+                println!("Error processing command: {err}");
             }
         }
 
@@ -242,11 +255,15 @@ impl<T: Minecraft + 'static> Runner<T> {
                 .collect();
 
             rayon::spawn(move || {
-                let global_state = global_state_sync.state();
+                // Safety:
+                // TODO
+                let global_state = unsafe { global_state_sync.state() };
                 let states_sync = states_sync;
                 rayon::scope(|s| {
                     for state_sync in states_sync {
                         let (state, actions) = state_sync.0;
+                        // Safety:
+                        // TODO
                         let (state, actions) = unsafe { (&mut *state, &mut *actions) };
 
                         s.spawn(move |inner_scope| {
@@ -265,7 +282,7 @@ impl<T: Minecraft + 'static> Runner<T> {
         thread_loop_end.notified().await;
     }
 
-    fn process_command(&mut self, command: CommandData) -> ResBox {
+    fn process_command(&mut self, command: CommandData) -> anyhow::Result<()> {
         let global = &mut self.global_state;
         let bots = &mut self.bots;
 
@@ -275,7 +292,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                 global.mine.mine(from, to, Some(MinePreference::FromDist));
 
                 for bot in bots {
-                    bot.actions.schedule(LazyStream::from(MineRegion))
+                    bot.actions.schedule(LazyStream::from(MineRegion));
                 }
             }
             CommandData::GoTo(commands::GoTo { location }) => {
@@ -289,16 +306,16 @@ impl<T: Minecraft + 'static> Runner<T> {
                     .global_state
                     .players
                     .by_name(&name)
-                    .ok_or("player does not exist")?;
+                    .context("player does not exist")?;
                 let entity_id = self
                     .global_state
                     .entities
                     .by_player_uuid(player.uuid)
-                    .ok_or("could not find entity id for player")?;
+                    .context("could not find entity id for player")?;
 
                 for bot in bots {
                     let task = LazyStream::from(AttackEntity::new(entity_id));
-                    bot.actions.schedule(task)
+                    bot.actions.schedule(task);
                 }
             }
         }

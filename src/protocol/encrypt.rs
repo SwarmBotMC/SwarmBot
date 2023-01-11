@@ -6,14 +6,14 @@ pub struct Rsa {
 }
 
 impl Rsa {
-    pub fn from_der(der: &[u8]) -> Rsa {
+    pub fn from_der(der: &[u8]) -> Self {
         // https://wiki.vg/Protocol_Encryption
         let (n, e) = rsa_der::public_key_from_der(der).unwrap();
 
         // might be wrong endian
         let (n, e) = (BigUint::from_bytes_be(&n), BigUint::from_bytes_be(&e));
 
-        Rsa {
+        Self {
             key: RsaPublicKey::new(n, e).unwrap(),
         }
     }

@@ -9,7 +9,8 @@ use crate::{
 pub struct DelayTask(pub u32);
 
 impl DelayTask {
-    pub fn new(ticks: u32) -> Self {
+    #[allow(unused)]
+    pub const fn new(ticks: u32) -> Self {
         Self(ticks)
     }
 }

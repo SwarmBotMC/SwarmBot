@@ -1,5 +1,4 @@
-use interfaces::types::{BlockLocation, BlockState};
-use std::{collections::HashMap, time::Instant};
+use std::{time::Instant};
 
 use crate::client::{
     pathfind::{
@@ -12,7 +11,7 @@ use crate::client::{
     timing::Increment,
 };
 
-pub mod novehicle;
+pub mod no_vehicle;
 
 pub trait Problem: Send + Sync {
     type Node: Node;
@@ -25,8 +24,6 @@ pub trait Problem: Send + Sync {
     fn recalc(&mut self, context: Self::Node);
 }
 
-type BlockLookup = HashMap<BlockLocation, BlockState>;
-
 pub struct PlayerProblem<H: Heuristic<MoveNode>, G: GoalCheck<MoveNode>> {
     a_star: AStar<MoveNode>,
     heuristic: H,
@@ -36,15 +33,12 @@ pub struct PlayerProblem<H: Heuristic<MoveNode>, G: GoalCheck<MoveNode>> {
 impl<H: Heuristic<MoveNode> + Send + Sync, G: GoalCheck<MoveNode> + Send + Sync>
     PlayerProblem<H, G>
 {
-    pub fn new(start: MoveNode, heuristic: H, goal_checker: G) -> PlayerProblem<H, G> {
+    pub fn new(start: MoveNode, heuristic: H, goal_checker: G) -> Self {
         let a_star = AStar::new(start);
-        Self {
-            heuristic,
-            a_star,
-            goal_checker,
-        }
+        Self { a_star, heuristic, goal_checker }
     }
 
+    #[allow(unused)]
     pub fn set_max_millis(&mut self, value: u128) {
         self.a_star.set_max_millis(value);
     }

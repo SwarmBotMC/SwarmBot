@@ -1,17 +1,16 @@
 use crate::{
     client::{physics::Physics, state::local::inventory::PlayerInventory},
-    protocol::{ClientInfo, Face},
+    protocol::ClientInfo,
     types::Dimension,
 };
-use interfaces::types::BlockLocation;
 
 pub mod inventory;
 
-pub enum TaskKind {
-    Mine(BlockLocation, Face),
-    Eat,
-}
-
+/// The local state which only each bot knows
+///
+/// - this can be mutably modified by each bot at any time because it is the
+///   only one who
+/// owns the [`LocalState`]
 pub struct LocalState {
     pub ticks: usize,
     pub health: f32,
@@ -27,7 +26,8 @@ pub struct LocalState {
 }
 
 impl LocalState {
-    pub fn mock() -> LocalState {
+    #[allow(unused)]
+    pub fn mock() -> Self {
         Self::new(
             0,
             ClientInfo {
@@ -37,9 +37,11 @@ impl LocalState {
             },
         )
     }
+}
 
-    pub fn new(bot_id: u32, info: ClientInfo) -> LocalState {
-        LocalState {
+impl LocalState {
+    pub fn new(bot_id: u32, info: ClientInfo) -> Self {
+        Self {
             ticks: 0,
             health: 0.0,
             food: 0,

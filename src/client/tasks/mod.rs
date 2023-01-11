@@ -1,21 +1,21 @@
 use std::time::Instant;
 
-use bridge::*;
+use bridge::BridgeTask;
 use center::CenterTask;
-use compound::*;
-use delay::*;
-use eat::*;
-use fall_bucket::*;
-use hit_entity::*;
-use lazy::*;
-use mine::*;
-use mine_column::*;
-use mine_goto::*;
-use mine_layer::*;
-use mine_region::*;
-use navigate::*;
-use pillar::*;
-use pillar_and_mine::*;
+use compound::CompoundTask;
+use delay::DelayTask;
+use eat::EatTask;
+use fall_bucket::FallBucketTask;
+use hit_entity::HitEntityTask;
+use lazy::LazyTask;
+use mine::MineTask;
+use mine_column::MineColumnTask;
+use mine_goto::GoMineTop;
+use mine_layer::MineLayerTask;
+use mine_region::MineRegion;
+use navigate::BlockTravelNearTask;
+use pillar::PillarTask;
+use pillar_and_mine::PillarAndMineTask;
 
 use crate::{
     client::{
@@ -64,9 +64,9 @@ pub trait TaskTrait {
     /// Do an expensive part of the task. This is done in a multi-threaded
     /// environment. An example of This has a default implementation of
     /// nothing. However, tasks like pathfinding use this. The task MUST end
-    /// by the given {end_by} duration else the game loop is held up. This is
+    /// by the given {`end_by`} duration else the game loop is held up. This is
     /// called every game loop cycle so if the task hasn't finished it by
-    /// {end_by} it should instead until this function is called again.
+    /// {`end_by`} it should instead until this function is called again.
     fn expensive(&mut self, _end_by: Instant, _local: &mut LocalState, _global: &GlobalState) {}
 }
 

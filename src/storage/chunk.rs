@@ -1,11 +1,12 @@
-use interfaces::types::{BlockApprox, BlockLocation, BlockState, ChunkLocation, SimpleType};
+#![allow(clippy::unwrap_used, clippy::cast_possible_wrap)]
+
 use std::collections::HashMap;
+
+use interfaces::types::{BlockApprox, BlockLocation, BlockState, ChunkLocation, SimpleType};
 
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
 const SECTION_BYTES: usize = SECTION_ELEMENTS * BITS_PER_ENUM / 8;
-
-const ONE_MASK: u64 = !0;
 
 #[derive(Default)]
 pub struct HighMemoryChunkSection {
@@ -13,8 +14,8 @@ pub struct HighMemoryChunkSection {
 }
 
 impl HighMemoryChunkSection {
-    pub fn new(palette: Palette) -> Self {
-        HighMemoryChunkSection { palette }
+    pub const fn new(palette: Palette) -> Self {
+        Self { palette }
     }
 }
 
@@ -31,7 +32,7 @@ impl Default for LowMemoryChunkSection {
     }
 }
 
-pub fn bits_needed(number: usize) -> u8 {
+pub const fn bits_needed(number: usize) -> u8 {
     // 1 bit can encode 2
     let mut start = 2;
     let mut bits_needed = 1;
@@ -45,6 +46,7 @@ pub fn bits_needed(number: usize) -> u8 {
 }
 
 impl LowMemoryChunkSection {
+    #[allow(clippy::indexing_slicing)]
     fn get_simple_type(&self, x: u8, y: u8, z: u8) -> SimpleType {
         let block_number =
             (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
@@ -60,6 +62,7 @@ impl LowMemoryChunkSection {
         SimpleType::from(res)
     }
 
+    #[allow(unused, clippy::indexing_slicing)]
     fn set_simple_type(&mut self, x: u8, y: u8, z: u8, input: SimpleType) {
         let block_number =
             (((y as usize * SECTION_HEIGHT) + z as usize) * SECTION_WIDTH) + x as usize;
@@ -87,7 +90,8 @@ pub struct ChunkData<T> {
 }
 
 impl<T> ChunkData<T> {
-    pub fn block_location(&self, location: ChunkLocation, idx: usize) -> BlockLocation {
+    #[allow(unused)]
+    pub fn block_location(location: ChunkLocation, idx: usize) -> BlockLocation {
         let base_x = location.0 << 4;
         let base_z = location.1 << 4;
 
@@ -98,6 +102,7 @@ impl<T> ChunkData<T> {
         BlockLocation::new(base_x + x as i32, y as i16, base_z + z as i32)
     }
 
+    #[allow(unused)]
     fn highest_mut(&mut self) -> Option<&mut T> {
         self.sections
             .iter_mut()
@@ -107,6 +112,7 @@ impl<T> ChunkData<T> {
             .map(std::convert::AsMut::as_mut)
     }
 
+    #[allow(unused)]
     fn lowest_mut(&mut self) -> Option<&mut T> {
         self.sections
             .iter_mut()
@@ -117,16 +123,14 @@ impl<T> ChunkData<T> {
 }
 
 impl ChunkData<HighMemoryChunkSection> {
+    #[allow(clippy::indexing_slicing)]
     pub fn all_at(&self, y: u8) -> [BlockState; 256] {
         let section_idx = y >> 4;
 
         let chunk_y = y - (section_idx << 4);
 
         let mut res = [BlockState::AIR; 16 * 16];
-        let section = match self.sections[section_idx as usize].as_ref() {
-            Some(inner) => inner,
-            None => return res,
-        };
+        let Some(section) = self.sections[section_idx as usize].as_ref() else { return res };
 
         let mut idx = 0;
 
@@ -157,16 +161,18 @@ impl ChunkData<HighMemoryChunkSection> {
             .map(|(idx, _)| idx)
     }
 
+    #[allow(unused)]
     pub fn select_locs<'a>(
         &'a self,
         location: ChunkLocation,
         selector: impl FnMut(BlockState) -> bool + 'a,
     ) -> impl Iterator<Item = BlockLocation> + 'a {
         self.select_up(selector)
-            .map(move |idx| self.block_location(location, idx))
+            .map(move |idx| Self::block_location(location, idx))
     }
 
     // TODO: remove duplicate code... is it even possible?
+    #[allow(unused)]
     pub fn select_down<'a>(
         &'a self,
         mut selector: impl FnMut(BlockState) -> bool + 'a,
@@ -211,29 +217,26 @@ impl Default for Palette {
 }
 
 impl Palette {
-    pub fn direct(storage: Vec<u64>) -> Palette {
-        Palette {
+    pub fn direct(storage: Vec<u64>) -> Self {
+        Self {
             bits_per_block: 13,
             id_to_state: None,
             storage,
         }
     }
 
-    pub fn indirect(
-        bits_per_block: u8,
-        id_to_state: Vec<BlockState>,
-        storage: Vec<u64>,
-    ) -> Palette {
+    pub fn indirect(bits_per_block: u8, id_to_state: Vec<BlockState>, storage: Vec<u64>) -> Self {
         assert!(bits_per_block >= 4);
         assert!(bits_per_block <= 8);
         assert_eq!(storage.len(), 4096 / 64 * bits_per_block as usize);
-        Palette {
+        Self {
             bits_per_block,
             id_to_state: Some(id_to_state),
             storage,
         }
     }
 
+    #[allow(unused, clippy::indexing_slicing)]
     pub fn all_states(&self) -> [BlockState; 4096] {
         let mut res = [BlockState::AIR; 4096];
         (0..4096).for_each(|i| res[i] = self.get_block_by_idx(i));
@@ -295,7 +298,7 @@ impl Palette {
                                 let end_long = ((block_number + 1) * required_bits - 1) / 64;
 
                                 let value = match reverse_map.as_ref() {
-                                    None => state.0 as u64,
+                                    None => u64::from(state.0),
                                     Some(reverse_map) => *reverse_map.get(&state).unwrap() as u64,
                                 };
 
@@ -317,7 +320,7 @@ impl Palette {
             }
         };
 
-        let value = value as u64;
+        let value = u64::from(value);
         let indv_value_mask = (1 << self.bits_per_block) - 1;
 
         let block_number =
@@ -389,16 +392,22 @@ impl Palette {
     // }
 }
 
-pub enum ChunkColumn {
+/// A chunk storage module
+pub enum Column {
+    /// low memory data. each block takes 2 bits
+    #[allow(unused)]
     LowMemory {
+        /// the data
         data: ChunkData<LowMemoryChunkSection>,
     },
+    /// high memory (yet still compressed data)
     HighMemory {
+        /// the data
         data: ChunkData<HighMemoryChunkSection>,
     },
 }
 
-impl Default for ChunkColumn {
+impl Default for Column {
     fn default() -> Self {
         Self::HighMemory {
             data: ChunkData::default(),
@@ -406,10 +415,11 @@ impl Default for ChunkColumn {
     }
 }
 
-impl ChunkColumn {
-    pub fn modify(&mut self, column: ChunkColumn) {
-        if let (ChunkColumn::HighMemory { data: left }, ChunkColumn::HighMemory { data: right }) =
-            (self, column)
+impl Column {
+    /// modify a column
+    /// TODO: is this needed? can we just use *
+    pub fn modify(&mut self, column: Self) {
+        if let (Self::HighMemory { data: left }, Self::HighMemory { data: right }) = (self, column)
         {
             for (idx, new_section) in IntoIterator::into_iter(right.sections).enumerate() {
                 if let Some(section) = new_section {
@@ -421,22 +431,25 @@ impl ChunkColumn {
         }
     }
 
+    /// set a block in the column
     pub fn set_block(&mut self, x: u8, y: u8, z: u8, state: BlockState) {
         let section_idx = y >> 4;
         let y_offset = y - (section_idx << 4);
 
         let section_idx = section_idx as usize;
         match self {
-            ChunkColumn::LowMemory { data } => {
+            Self::LowMemory { data } => {
                 let section = data.sections[section_idx].get_or_insert_default();
                 section.set_simple_type(x, y_offset, z, state.simple_type());
             }
-            ChunkColumn::HighMemory { data } => {
+            Self::HighMemory { data } => {
                 let section = data.sections[section_idx].get_or_insert_default();
                 section.palette.set_block(x, y_offset, z, state);
             }
         }
     }
+
+    /// get a block in the column
     pub fn get_block(&self, x: u8, y: u8, z: u8) -> BlockApprox {
         let section_idx = y >> 4;
         let y_offset = y - (section_idx << 4);
@@ -444,14 +457,14 @@ impl ChunkColumn {
         let section_idx = section_idx as usize;
 
         match self {
-            ChunkColumn::LowMemory { data: sections } => {
+            Self::LowMemory { data: sections } => {
                 let section = &sections.sections[section_idx];
                 BlockApprox::Estimate(match section {
                     None => SimpleType::WalkThrough,
                     Some(section) => section.get_simple_type(x, y_offset, z),
                 })
             }
-            ChunkColumn::HighMemory { data: sections } => {
+            Self::HighMemory { data: sections } => {
                 let section = &sections.sections[section_idx];
                 BlockApprox::Realized(match section {
                     None => BlockState(0),

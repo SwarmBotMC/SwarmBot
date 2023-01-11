@@ -1,7 +1,7 @@
 use swarm_bot_packets::{
     types::VarInt,
     write::{ByteWritable, ByteWriter},
-    *,
+    AdtWritable, EnumWritable, Packet, Writable,
 };
 
 use crate::types::{Direction, Location, Position, Slot};
@@ -169,7 +169,7 @@ pub struct PlayerDig {
 }
 
 impl PlayerDig {
-    pub fn status(status: DigStatus) -> PlayerDig {
+    pub fn status(status: DigStatus) -> Self {
         Self {
             status,
             position: Position::default(),

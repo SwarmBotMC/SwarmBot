@@ -1,10 +1,6 @@
-use crossterm::style::Stylize;
-use std::{
-    fmt::{Display, Formatter},
-    num::ParseIntError,
-    time::Instant,
-};
+use std::time::Instant;
 
+use crossterm::style::Stylize;
 use float_ord::FloatOrd;
 use interfaces::types::BlockLocation;
 use itertools::Itertools;
@@ -21,24 +17,37 @@ use crate::{
     types::Displacement,
 };
 
+/// The current [`Task`] we are trying to achieve. If we are not aiming at
+/// achieving a task, this is [`None`].
 #[derive(Default)]
 pub struct ActionState {
+    /// the task. In the future, this might change to be a priority queue of
+    /// tasks
     task: Option<Task>,
 }
 
 impl ActionState {
+    /// schedule a task
     pub fn schedule<T: Into<Task>>(&mut self, task: T) {
         self.task = Some(task.into());
     }
+    /// clear the task list
     pub fn clear(&mut self) {
         self.task = None;
     }
 }
 
+/// The bot instance we are dealing with
 pub struct Bot<Queue: EventQueue, Out: InterfaceOut> {
+    /// the [`LocalState`] of the bot (i.e., things that are part of its mind
+    /// but not shared by other bots)
     pub state: LocalState,
+    /// The state of actions ([`ActionState`]) of the bot
     pub actions: ActionState,
+
+    /// TODO: idk what this is
     pub queue: Queue,
+    /// The [`InterfaceOut`] we use to communicate with the world
     pub out: Out,
 }
 
@@ -84,34 +93,6 @@ impl<Queue: EventQueue, Out: InterfaceOut> Bot<Queue, Out> {
     }
 }
 
-#[derive(Error, Debug)]
-pub enum ProcessError {
-    #[error(transparent)]
-    Parse(#[from] ParseIntError),
-
-    #[error(transparent)]
-    Count(#[from] WrongArgCount),
-}
-
-#[derive(Debug)]
-pub struct WrongArgCount {
-    required: u32,
-}
-
-impl std::error::Error for WrongArgCount {}
-
-impl WrongArgCount {
-    pub fn new(required: u32) -> Self {
-        Self { required }
-    }
-}
-
-impl Display for WrongArgCount {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str("wrong arg count")
-    }
-}
-
 /// Always returns None.
 #[allow(clippy::many_single_char_names)]
 pub fn process_command(
@@ -121,7 +102,7 @@ pub fn process_command(
     global: &mut GlobalState,
     actions: &mut ActionState,
     out: &mut impl InterfaceOut,
-) -> Result<(), ProcessError> {
+) -> anyhow::Result<()> {
     macro_rules! msg {
         () => {{
             println!();
@@ -166,9 +147,9 @@ pub fn process_command(
         "follow" => {
             local.follow_closest = true;
         }
-        "kys" => {
-            // TODO: try to kill themself by fall damage/lava/etc
-        }
+        // "kys" => {
+        //     // TODO: try to kill themself by fall damage/lava/etc
+        // }
         "eat" => {
             let eat_task = EatTask::default();
             actions.task = Some(eat_task.into());
@@ -192,22 +173,6 @@ pub fn process_command(
             local.inventory.drop_hotbar(out);
         }
         "goto" => {
-            // if let [id] = args {
-            //     let id: u32 = id.parse().unwrap();
-            //     let kind = BlockKind::from(id);
-            //
-            //     let loc = BlockLocation::from(local.physics.location());
-            //
-            //     let closest = global.blocks.closest(loc, usize::MAX, |state| state.kind()
-            // == kind);
-            //
-            //     if let Some(closest) = closest {
-            //         actions.schedule(BlockTravelTask::new(closest, local));
-            //     } else {
-            //         msg!("There is no block {} by me", id);
-            //     }
-            // }
-
             if let [a, b, c] = args {
                 let x = a.parse()?;
                 let y = b.parse()?;
