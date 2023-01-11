@@ -16,9 +16,7 @@ pub struct PillarTask {
 impl PillarTask {
     pub fn new(dest_y: u32) -> Self {
         println!("pillar dest {dest_y}");
-        Self {
-            dest_y,
-        }
+        Self { dest_y }
     }
 }
 

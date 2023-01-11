@@ -1,4 +1,4 @@
-use std::{time::Instant};
+use std::time::Instant;
 
 use crate::client::{
     pathfind::{
@@ -35,7 +35,11 @@ impl<H: Heuristic<MoveNode> + Send + Sync, G: GoalCheck<MoveNode> + Send + Sync>
 {
     pub fn new(start: MoveNode, heuristic: H, goal_checker: G) -> Self {
         let a_star = AStar::new(start);
-        Self { a_star, heuristic, goal_checker }
+        Self {
+            a_star,
+            heuristic,
+            goal_checker,
+        }
     }
 
     #[allow(unused)]
