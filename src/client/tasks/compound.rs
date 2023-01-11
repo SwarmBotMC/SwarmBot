@@ -19,6 +19,7 @@ impl CompoundTask {
         self
     }
 
+    #[allow(unused)]
     pub fn prepend(&mut self, task: impl Into<Task>) {
         self.tasks.push_front(task.into());
     }

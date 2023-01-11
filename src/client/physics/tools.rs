@@ -1,8 +1,9 @@
-use crate::{client::state::local::inventory::ItemStack, types::Enchantment};
 use interfaces::types::{
     block_data::{BlockData, Material},
     BlockKind,
 };
+
+use crate::{client::state::local::inventory::ItemStack, types::Enchantment};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ToolMat {
@@ -15,6 +16,7 @@ pub enum ToolMat {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[allow(unused)]
 pub enum ToolKind {
     Generic,
     Pickaxe,
@@ -25,14 +27,14 @@ pub enum ToolKind {
 }
 
 impl ToolMat {
-    pub fn strength(self) -> f64 {
+    pub const fn strength(self) -> f64 {
         match self {
-            ToolMat::Hand => 1.0,
-            ToolMat::Wood => 2.0,
-            ToolMat::Stone => 4.0,
-            ToolMat::Iron => 6.0,
-            ToolMat::Diamond => 8.0,
-            ToolMat::Gold => 12.0,
+            Self::Hand => 1.0,
+            Self::Wood => 2.0,
+            Self::Stone => 4.0,
+            Self::Iron => 6.0,
+            Self::Diamond => 8.0,
+            Self::Gold => 12.0,
         }
     }
 }
@@ -47,38 +49,41 @@ pub struct Tool {
 
 impl From<&ItemStack> for Tool {
     fn from(stack: &ItemStack) -> Self {
-        use crate::client::physics::tools::{ToolKind::*, ToolMat::*};
+        use crate::client::physics::tools::{
+            ToolKind::{Axe, Generic, Pickaxe, Shovel},
+            ToolMat::{Diamond, Gold, Hand, Iron, Stone, Wood},
+        };
 
         let id = stack.kind.id();
 
         let mut simple_tool = match id {
-            256 => Tool::simple(Shovel, Iron),
-            257 => Tool::simple(Pickaxe, Iron),
-            258 => Tool::simple(Axe, Iron),
+            256 => Self::simple(Shovel, Iron),
+            257 => Self::simple(Pickaxe, Iron),
+            258 => Self::simple(Axe, Iron),
 
-            269 => Tool::simple(Shovel, Wood),
-            270 => Tool::simple(Pickaxe, Wood),
-            271 => Tool::simple(Axe, Wood),
+            269 => Self::simple(Shovel, Wood),
+            270 => Self::simple(Pickaxe, Wood),
+            271 => Self::simple(Axe, Wood),
 
-            273 => Tool::simple(Shovel, Stone),
-            274 => Tool::simple(Pickaxe, Stone),
-            275 => Tool::simple(Axe, Stone),
+            273 => Self::simple(Shovel, Stone),
+            274 => Self::simple(Pickaxe, Stone),
+            275 => Self::simple(Axe, Stone),
 
-            277 => Tool::simple(Shovel, Diamond),
-            278 => Tool::simple(Pickaxe, Diamond),
-            279 => Tool::simple(Axe, Diamond),
+            277 => Self::simple(Shovel, Diamond),
+            278 => Self::simple(Pickaxe, Diamond),
+            279 => Self::simple(Axe, Diamond),
 
-            284 => Tool::simple(Shovel, Gold),
-            285 => Tool::simple(Pickaxe, Gold),
-            286 => Tool::simple(Axe, Gold),
+            284 => Self::simple(Shovel, Gold),
+            285 => Self::simple(Pickaxe, Gold),
+            286 => Self::simple(Axe, Gold),
 
-            _ => Tool::simple(Generic, Hand),
+            _ => Self::simple(Generic, Hand),
         };
 
         simple_tool.id = id;
 
         if let Some(nbt) = stack.nbt.as_ref() {
-            simple_tool.enchantments = nbt.ench.clone().unwrap_or_default()
+            simple_tool.enchantments = nbt.ench.clone().unwrap_or_default();
         }
 
         simple_tool
@@ -97,7 +102,7 @@ impl Default for Tool {
 }
 
 impl Tool {
-    pub fn simple(kind: ToolKind, material: ToolMat) -> Self {
+    pub const fn simple(kind: ToolKind, material: ToolMat) -> Self {
         Self {
             material,
             kind,
@@ -132,6 +137,7 @@ impl Tool {
             Material::Rock => block.harvest_tools.contains(&self.id),
         };
 
+        #[allow(clippy::match_same_arms)]
         let best_tool = match (block.material, self.kind) {
             (Material::Rock, ToolKind::Pickaxe) => true,
             (Material::Wood, ToolKind::Axe) => true,
@@ -149,13 +155,13 @@ impl Tool {
 
         if best_tool {
             if can_harvest {
-                d *= self.material.strength()
+                d *= self.material.strength();
             }
 
             let efficiency = self.efficiency().unwrap_or(0);
 
             if efficiency > 0 {
-                d += (efficiency.pow(2) + 1) as f64
+                d += f64::from(efficiency.pow(2) + 1);
             }
         }
 
@@ -175,7 +181,7 @@ impl Tool {
         }
     }
 
-    /// https://minecraft.fandom.com/wiki/Breaking#Speed
+    /// <https://minecraft.fandom.com/wiki/Breaking#Speed>
     pub fn wait_time(
         &self,
         kind: BlockKind,
@@ -190,8 +196,9 @@ impl Tool {
 
 #[cfg(test)]
 mod tests {
-    use crate::client::physics::tools::{Tool, ToolKind, ToolMat};
     use interfaces::types::{block_data::BlockData, BlockKind};
+
+    use crate::client::physics::tools::{Tool, ToolKind, ToolMat};
 
     #[test]
     fn test_break_time() {

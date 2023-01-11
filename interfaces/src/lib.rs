@@ -1,10 +1,11 @@
 #![feature(once_cell)]
 
-use crate::types::{BlockLocation, Selection2D};
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tungstenite::Message;
+
+use crate::types::{BlockLocation, Selection2D};
 
 pub mod types;
 
@@ -98,6 +99,7 @@ impl Comm {
         let (send_tx, mut send_rx) = tokio::sync::mpsc::unbounded_channel();
         let mut ws = tokio_tungstenite::accept_async(stream).await?;
         tokio::spawn(async move {
+            let mut msg_to_send = None;
             tokio::select! {
                 val = ws.next() => {
                     if let Some(Ok(msg)) = val {
@@ -109,10 +111,14 @@ impl Comm {
                 val = send_rx.recv() => {
                     if let Some(cmd) = val {
                         if let Ok(msg) = outgoing(cmd) {
-                            let _ = ws.send(msg);
+                            msg_to_send = Some(msg);
                         }
                     }
                 }
+            }
+
+            if let Some(msg) = msg_to_send {
+                let _ = ws.send(msg).await;
             }
         });
 
@@ -133,6 +139,7 @@ impl Comm {
                     let (stream, _) = server.accept().await?;
                     let mut ws = tokio_tungstenite::accept_async(stream).await?;
 
+                    let mut msg_to_send = None;
                     tokio::select! {
                         val = ws.next() => {
                             if let Some(Ok(msg)) = val {
@@ -144,10 +151,14 @@ impl Comm {
                         val = send_rx.recv() => {
                             if let Some(cmd) = val {
                                 if let Ok(msg) = outgoing(cmd) {
-                                    let _ = ws.send(msg);
+                                    msg_to_send = Some(msg)
                                 }
                             }
                         }
+                    }
+
+                    if let Some(msg) = msg_to_send {
+                        let _ = ws.send(msg).await;
                     }
 
                     Ok(())
@@ -176,7 +187,6 @@ mod tests {
             }),
         };
 
-        let res = serde_json::to_string(&command).unwrap();
-        println!("res {:?}", res);
+        serde_json::to_string(&command).unwrap();
     }
 }

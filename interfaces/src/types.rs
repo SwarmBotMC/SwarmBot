@@ -1,15 +1,14 @@
-use colored::Colorize;
 use std::{
     f32::consts::PI,
     fmt::{Debug, Display, Formatter},
     ops::{Add, AddAssign, Index, Mul, MulAssign, Neg, Sub},
 };
 
+use colored::Colorize;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
-
 use swarm_bot_packets::{
     read::{ByteReadable, ByteReader},
     write::{ByteWritable, ByteWriter},

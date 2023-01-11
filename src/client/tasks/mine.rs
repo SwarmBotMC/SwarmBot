@@ -1,3 +1,5 @@
+use interfaces::types::{BlockLocation, BlockState};
+
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
@@ -5,7 +7,6 @@ use crate::{
     },
     protocol::{Face, InterfaceOut, Mine},
 };
-use interfaces::types::{BlockLocation, BlockState};
 
 pub struct MineTask {
     ticks: usize,
@@ -20,7 +21,7 @@ impl MineTask {
         out: &mut impl InterfaceOut,
         local: &mut LocalState,
         global: &GlobalState,
-    ) -> MineTask {
+    ) -> Self {
         let kind = global.blocks.get_block_kind(location).unwrap();
 
         let tool = local.inventory.switch_tool(kind, &global.block_data, out);

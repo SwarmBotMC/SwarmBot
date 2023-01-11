@@ -1,15 +1,15 @@
-use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
 use std::{cell::RefCell, rc::Rc, sync::mpsc::TryRecvError};
 
+use anyhow::Context;
+use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
 use swarm_bot_packets::{
-    types::{Packet, PacketState, VarInt, UUID},
+    types::{Packet, VarInt, UUID},
     write::ByteWritable,
 };
 
 use crate::{
     bootstrap::{mojang::calc_hash, storage::OnlineUser, Address, BotConnection},
     client::processor::InterfaceIn,
-    error::{err, Error::WrongPacket, Res},
     protocol::{
         encrypt::{rand_bits, Rsa},
         io::{
@@ -207,16 +207,19 @@ impl EventQueue340 {
                     block_state,
                 } in records
                 {
-                    let location =
-                        BlockLocation::new(base_x + x as i32, y as i16, base_z + z as i32);
-                    processor.on_block_change(location, BlockState(block_state.0 as u32))
+                    let location = BlockLocation::new(
+                        base_x + i32::from(x),
+                        i16::from(y),
+                        base_z + i32::from(z),
+                    );
+                    processor.on_block_change(location, BlockState(block_state.0 as u32));
                 }
             }
             PlayerPositionAndLook::ID => {
                 let PlayerPositionAndLook {
                     location,
-                    rotation: _,
                     teleport_id,
+                    ..
                 } = data.read();
 
                 self.location.apply_change(location);
@@ -236,16 +239,14 @@ impl EventQueue340 {
                         PlayerListType::AddPlayer(add) => {
                             processor.on_player_join(uuid.0, add.name);
                         }
-                        PlayerListType::UpdateGamemode(_) => {}
-                        PlayerListType::UpdateLatency(_) => {}
-                        PlayerListType::UpdateDisplayName(_) => {}
                         PlayerListType::RemovePlayer => processor.on_player_leave(uuid.0),
+                        _ => {}
                     }
                 }
             }
             // ignore
             ChatMessage::ID => {
-                let ChatMessage { chat, position: _ } = data.read();
+                let ChatMessage { chat, .. } = data.read();
                 processor.on_chat(chat);
             }
             _ => {}
@@ -260,8 +261,8 @@ pub struct Interface340 {
 }
 
 impl Interface340 {
-    fn new(tx: PacketWriteChannel) -> Interface340 {
-        Interface340 {
+    fn new(tx: PacketWriteChannel) -> Self {
+        Self {
             tx: Rc::new(RefCell::new(tx)),
             inv_action_id: 0,
         }
@@ -285,7 +286,7 @@ impl Interface340 {
 
     #[inline]
     fn write<T: Packet + ByteWritable>(&self, packet: T) {
-        self.tx.borrow_mut().write(packet)
+        self.tx.borrow_mut().write(packet);
     }
 }
 
@@ -309,7 +310,7 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::InteractEntity {
             id: id.into(),
             kind: InteractEntityKind::Attack,
-        })
+        });
     }
 
     fn send_chat(&mut self, message: &str) {
@@ -343,8 +344,8 @@ impl InterfaceOut for Interface340 {
 
     fn change_slot(&mut self, number: u8) {
         self.write(serverbound::ChangeSlot {
-            slot: number as u16,
-        })
+            slot: u16::from(number),
+        });
     }
 
     fn mine(&mut self, position: BlockLocation, mine: Mine, face: Face) {
@@ -382,7 +383,7 @@ impl InterfaceOut for Interface340 {
         self.write(serverbound::PlayerLook {
             direction,
             on_ground: false,
-        })
+        });
     }
 
     fn teleport_and_look(&mut self, location: Location, direction: Direction, on_ground: bool) {
@@ -390,18 +391,17 @@ impl InterfaceOut for Interface340 {
             location,
             direction,
             on_ground,
-        })
+        });
     }
 }
 
 pub struct Protocol;
 
-#[async_trait::async_trait]
 impl Minecraft for Protocol {
     type Queue = EventQueue340;
     type Interface = Interface340;
 
-    async fn login(conn: BotConnection) -> Res<Login<EventQueue340, Interface340>> {
+    async fn login(conn: BotConnection) -> anyhow::Result<Login<EventQueue340, Interface340>> {
         let BotConnection {
             user,
             server_address: address,
@@ -484,11 +484,8 @@ impl Minecraft for Protocol {
             }
             LoginSuccess::ID => data.reader.read(),
             actual => {
-                return Err(WrongPacket {
-                    state: PacketState::Login,
-                    expected: LoginSuccess::ID,
-                    actual,
-                });
+                let expected = LoginSuccess::ID;
+                anyhow::bail!("wrong packet for logging in. Expected {expected}, got {actual}")
             }
         };
 
@@ -522,7 +519,7 @@ impl Minecraft for Protocol {
 
         let (entity_id, dimension) = os_rx
             .await
-            .map_err(|_| err("disconnected before join game packet"))?;
+            .context("disconnected before join game packet")?;
 
         let out = Interface340::new(tx);
 

@@ -1,3 +1,5 @@
+use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
+
 use crate::{
     client::{
         bot::{process_command, ActionState},
@@ -8,10 +10,9 @@ use crate::{
         tasks::eat::EatTask,
     },
     protocol::InterfaceOut,
-    storage::{chunk::ChunkColumn, entities::EntityKind},
+    storage::{chunk::Column, entities::EntityKind},
     types::{Chat, Dimension, Location, LocationOrigin, PlayerMessage},
 };
-use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
 
 pub trait InterfaceIn {
     fn on_chat(&mut self, message: Chat);
@@ -22,7 +23,7 @@ pub trait InterfaceIn {
     fn on_dimension_change(&mut self, dimension: Dimension);
     fn on_join(&mut self);
     fn on_move(&mut self, location: Location);
-    fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool);
+    fn on_recv_chunk(&mut self, location: ChunkLocation, column: Column, new: bool);
     fn on_entity_move(&mut self, id: u32, location: LocationOrigin);
     fn on_block_change(&mut self, location: BlockLocation, state: BlockState);
     fn on_entity_destroy(&mut self, id: u32);
@@ -47,12 +48,7 @@ impl<'a, I: InterfaceOut> SimpleInterfaceIn<'a, I> {
         global: &'a mut GlobalState,
         out: &'a mut I,
     ) -> SimpleInterfaceIn<'a, I> {
-        SimpleInterfaceIn {
-            local,
-            global,
-            out,
-            actions,
-        }
+        SimpleInterfaceIn { global, local, actions, out }
     }
 }
 
@@ -131,7 +127,7 @@ impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
         self.local.physics.teleport(location);
     }
 
-    fn on_recv_chunk(&mut self, location: ChunkLocation, column: ChunkColumn, new: bool) {
+    fn on_recv_chunk(&mut self, location: ChunkLocation, column: Column, new: bool) {
         if new {
             self.global.blocks.add_column(location, column);
         } else {

@@ -5,7 +5,7 @@ pub struct Speed {
 
 impl Default for Speed {
     fn default() -> Self {
-        Speed::STOP
+        Self::STOP
     }
 }
 
@@ -14,10 +14,10 @@ impl Speed {
         Self { multiplier }
     }
 
-    pub const SPRINT: Speed = Speed::new(1.3);
-    pub const WALK: Speed = Speed::new(1.0);
-    pub const SNEAK: Speed = Speed::new(0.3);
-    pub const STOP: Speed = Speed::new(0.);
+    pub const SPRINT: Self = Self::new(1.3);
+    pub const WALK: Self = Self::new(1.0);
+    pub const SNEAK: Self = Self::new(0.3);
+    pub const STOP: Self = Self::new(0.);
 
     pub fn multiplier(&self) -> f64 {
         self.multiplier * 0.98 // TODO: different at 45 degree angle

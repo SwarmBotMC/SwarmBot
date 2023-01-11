@@ -1,15 +1,14 @@
+//! Module for interacting with Mojang
+
+use std::{convert::TryFrom, default::default};
+
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use sha1::Sha1;
-use std::{convert::TryFrom, default::default};
-
+use sha1::{Digest, Sha1};
 use swarm_bot_packets::types::UUID;
 
-use crate::{
-    bootstrap::Proxy,
-    error::{MojangErr, Res},
-};
+use crate::bootstrap::Proxy;
 
 #[derive(Debug)]
 pub struct MojangClient {
@@ -18,12 +17,12 @@ pub struct MojangClient {
 
 impl Default for MojangClient {
     fn default() -> Self {
-        MojangClient { client: default() }
+        Self { client: default() }
     }
 }
 
 impl TryFrom<&Proxy> for MojangClient {
-    type Error = crate::error::Error;
+    type Error = anyhow::Error;
 
     fn try_from(proxy: &Proxy) -> Result<Self, Self::Error> {
         let address = proxy.address();
@@ -35,28 +34,30 @@ impl TryFrom<&Proxy> for MojangClient {
 
         let client = reqwest::Client::builder().proxy(proxy).build()?;
 
-        Ok(MojangClient { client })
+        Ok(Self { client })
     }
 }
 
 impl TryFrom<Option<&Proxy>> for MojangClient {
-    type Error = crate::error::Error;
+    type Error = anyhow::Error;
 
     fn try_from(value: Option<&Proxy>) -> Result<Self, Self::Error> {
         match value {
-            None => Ok(MojangClient::default()),
-            Some(proxy) => MojangClient::try_from(proxy),
+            None => Ok(Self::default()),
+            Some(proxy) => Self::try_from(proxy),
         }
     }
 }
 
 pub fn calc_hash(server_id: &str, shared_secret: &[u8], public_key_encoded: &[u8]) -> String {
     let ascii = server_id.as_bytes();
-    let mut sha1 = Sha1::new();
-    sha1.update(ascii);
-    sha1.update(shared_secret);
-    sha1.update(public_key_encoded);
-    hexdigest(&sha1.digest().bytes())
+
+    let mut hasher = Sha1::new();
+    hasher.update(ascii);
+    hasher.update(shared_secret);
+    hasher.update(public_key_encoded);
+    let result = hasher.finalize();
+    hexdigest(result.as_slice())
 }
 
 fn hexdigest(bytes: &[u8]) -> String {
@@ -88,7 +89,7 @@ pub struct AuthResponse {
 }
 
 impl MojangClient {
-    pub async fn authenticate(&self, email: &str, password: &str) -> Res<AuthResponse> {
+    pub async fn authenticate(&self, email: &str, password: &str) -> anyhow::Result<AuthResponse> {
         let payload = json!({
             "agent": {
                 "name": "minecraft",
@@ -110,11 +111,8 @@ impl MojangClient {
 
         let status = res.status();
         if status != 200 {
-            return Err(MojangErr::InvalidCredentials {
-                error_code: status,
-                info: res.text().await.ok(),
-            }
-            .into());
+            let info = res.text().await.unwrap_or_default();
+            anyhow::bail!("Invalid credentials! Error code: {status}, info: {info}");
         }
 
         let auth: RawAuthResponse = res.json().await?;
@@ -127,7 +125,11 @@ impl MojangClient {
         Ok(auth)
     }
 
-    pub async fn refresh(&self, access_token: &str, client_token: &str) -> Res<AuthResponse> {
+    pub async fn refresh(
+        &self,
+        access_token: &str,
+        client_token: &str,
+    ) -> anyhow::Result<AuthResponse> {
         let payload = json!({
             "accessToken": access_token, // this is not a mistake... the username now takes in email
             "clientToken": client_token,
@@ -153,7 +155,7 @@ impl MojangClient {
         Ok(auth)
     }
 
-    pub async fn validate(&self, access_token: &str, client_token: &str) -> Res<bool> {
+    pub async fn validate(&self, access_token: &str, client_token: &str) -> anyhow::Result<bool> {
         let payload = json!({
             "accessToken": access_token, // this is not a mistake... the username now takes in email
             "clientToken": client_token,
@@ -171,7 +173,12 @@ impl MojangClient {
         Ok(status == 204)
     }
 
-    pub async fn join(&self, uuid: UUID, server_hash: &str, access_token: &str) -> Res<()> {
+    pub async fn join(
+        &self,
+        uuid: UUID,
+        server_hash: &str,
+        access_token: &str,
+    ) -> anyhow::Result<()> {
         let uuid_str = uuid.to_string();
 
         let payload = json!({
@@ -192,19 +199,7 @@ impl MojangClient {
         let status = res.status();
 
         if status != 204 {
-            println!("uuid invalid {uuid_str}");
-            let err = Err(MojangErr::InvalidCredentials {
-                error_code: status,
-                info: res.text().await.ok(),
-            }
-            .into());
-
-            #[allow(clippy::use_debug)]
-            {
-                println!("err {err:?}");
-            }
-
-            return err;
+            anyhow::bail!("UUID invalid {uuid_str}! Error code: {status}");
         }
 
         Ok(())
@@ -213,14 +208,14 @@ impl MojangClient {
 
 #[cfg(test)]
 mod tests {
-    use sha1::Sha1;
+    use sha1::{Digest, Sha1};
 
     use crate::bootstrap::mojang::hexdigest;
 
     fn sha1(input: &[u8]) -> String {
         let mut sha1 = Sha1::new();
         sha1.update(input);
-        hexdigest(&sha1.digest().bytes())
+        hexdigest(&sha1.finalize().as_slice())
     }
 
     #[test]

@@ -1,3 +1,5 @@
+//! used for boostrapping the code
+use anyhow::Context;
 use serde::Deserialize;
 use tokio::{
     net::{
@@ -22,7 +24,9 @@ pub mod storage;
 /// A server address
 #[derive(Clone, Debug)]
 pub struct Address {
+    /// the hostname
     pub host: String,
+    /// the port
     pub port: u16,
 }
 
@@ -51,51 +55,55 @@ pub struct BotConnection {
     pub write: OwnedWriteHalf,
 }
 
+async fn obtain_connection(user: BotDataLoader, address: Address) -> anyhow::Result<BotConnection> {
+    let BotDataLoader {
+        proxy,
+        user,
+        mojang,
+    } = user;
+
+    let target = String::from(&address);
+
+    let conn = if let Some(proxy) = proxy {
+        let address = proxy.address();
+        let conn = Socks5Stream::connect_with_password(
+            proxy.address().as_str(),
+            target.as_str(),
+            &proxy.user,
+            &proxy.pass,
+        )
+        .await
+        .with_context(|| format!("could not create to socks {address}"))?;
+
+        conn.into_inner()
+    } else {
+        TcpStream::connect(target.as_str()).await.unwrap()
+    };
+
+    let (read, write) = conn.into_split();
+    Ok(BotConnection {
+        user,
+        server_address: address,
+        mojang,
+        read,
+        write,
+    })
+}
+
 impl BotConnection {
-    /// Generates connections given BotData and an address
+    /// Generates connections given [`BotData`] and an address
     pub fn stream(
         server_address: Address,
-        mut users: tokio::sync::mpsc::Receiver<BotDataLoader>,
-    ) -> Receiver<BotConnection> {
+        mut users: Receiver<BotDataLoader>,
+    ) -> Receiver<anyhow::Result<Self>> {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         tokio::task::spawn_local(async move {
             while let Some(user) = users.recv().await {
                 let tx = tx.clone();
                 let address = server_address.clone();
                 tokio::task::spawn_local(async move {
-                    let BotDataLoader {
-                        proxy,
-                        user,
-                        mojang,
-                    } = user;
-
-                    let target = String::from(&address);
-
-                    let conn = match proxy {
-                        Some(proxy) => {
-                            let conn = Socks5Stream::connect_with_password(
-                                proxy.address().as_str(),
-                                target.as_str(),
-                                &proxy.user,
-                                &proxy.pass,
-                            )
-                            .await
-                            .unwrap();
-                            conn.into_inner()
-                        }
-                        None => TcpStream::connect(target.as_str()).await.unwrap(),
-                    };
-
-                    let (read, write) = conn.into_split();
-                    tx.send(BotConnection {
-                        user,
-                        server_address: address,
-                        mojang,
-                        read,
-                        write,
-                    })
-                    .await
-                    .unwrap();
+                    let connection = obtain_connection(user, address).await;
+                    tx.send(connection).await.unwrap();
                 });
             }
         });

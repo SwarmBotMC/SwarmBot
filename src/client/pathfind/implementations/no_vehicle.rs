@@ -1,9 +1,10 @@
+use interfaces::types::{BlockLocation, BlockLocation2D, ChunkLocation};
+
 use crate::client::pathfind::{
     context::MoveNode,
     implementations::PlayerProblem,
     traits::{GoalCheck, Heuristic},
 };
-use interfaces::types::{BlockLocation, BlockLocation2D, ChunkLocation};
 
 pub struct BlockGoalCheck {
     goal: BlockLocation,
@@ -16,7 +17,7 @@ pub struct BlockNearGoalCheck {
 }
 
 impl BlockNearGoalCheck {
-    fn new(goal: BlockLocation2D, dist2: f64, must_not_hit: bool) -> Self {
+    const fn new(goal: BlockLocation2D, dist2: f64, must_not_hit: bool) -> Self {
         Self {
             goal,
             dist2,
@@ -52,32 +53,32 @@ impl GoalCheck for ChunkGoalCheck {
 }
 
 pub struct CenterChunkGoalCheck {
-    goal_x_center: i32,
-    goal_z_center: i32,
+    goal_center_x: i32,
+    goal_center_z: i32,
 }
 
 impl CenterChunkGoalCheck {
-    fn new(goal: ChunkLocation) -> Self {
-        let goal_x_center = (goal.0 << 4) + 8;
-        let goal_z_center = (goal.1 << 4) + 8;
+    const fn new(goal: ChunkLocation) -> Self {
+        let goal_center_x = (goal.0 << 4) + 8;
+        let goal_center_z = (goal.1 << 4) + 8;
         Self {
-            goal_x_center,
-            goal_z_center,
+            goal_center_x,
+            goal_center_z,
         }
     }
 }
 
 impl GoalCheck for CenterChunkGoalCheck {
     fn is_goal(&self, input: &MoveNode) -> bool {
-        let dx = self.goal_x_center - input.location.x;
-        let dz = self.goal_z_center - input.location.z;
+        let dx = self.goal_center_x - input.location.x;
+        let dz = self.goal_center_z - input.location.z;
 
         (0..=1).contains(&dx) && (0..=1).contains(&dz)
     }
 }
 
 impl BlockGoalCheck {
-    pub fn new(goal: BlockLocation) -> Self {
+    pub const fn new(goal: BlockLocation) -> Self {
         Self { goal }
     }
 }
@@ -109,7 +110,7 @@ pub struct ChunkHeuristic {
 }
 
 impl ChunkHeuristic {
-    fn new(goal: ChunkLocation, move_cost: f64) -> Self {
+    const fn new(goal: ChunkLocation, move_cost: f64) -> Self {
         Self {
             move_cost,
 
@@ -122,8 +123,8 @@ impl ChunkHeuristic {
 
 impl Heuristic for ChunkHeuristic {
     fn heuristic(&self, input: &MoveNode) -> f64 {
-        let dx = (input.location.x - self.center_x) as f64;
-        let dz = (input.location.z - self.center_z) as f64;
+        let dx = f64::from(input.location.x - self.center_x);
+        let dz = f64::from(input.location.z - self.center_z);
         let dist2 = dx * dx + dz * dz;
         dist2.sqrt() * self.move_cost * 0.2
     }
@@ -162,6 +163,7 @@ impl TravelProblem {
         PlayerProblem::new(start_node, heuristic, goal_checker)
     }
 
+    #[allow(unused)]
     pub fn navigate_chunk(start: BlockLocation, goal: ChunkLocation) -> TravelChunkProblem {
         let heuristic = ChunkHeuristic::new(goal, 1.0);
         let start_node = MoveNode::simple(start);
@@ -169,6 +171,7 @@ impl TravelProblem {
         PlayerProblem::new(start_node, heuristic, goal_checker)
     }
 
+    #[allow(unused)]
     pub fn navigate_center_chunk(
         start: BlockLocation,
         goal: ChunkLocation,

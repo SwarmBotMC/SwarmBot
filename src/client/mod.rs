@@ -1,3 +1,4 @@
+//! Everything related to a client
 pub mod bot;
 mod commands;
 mod follow;

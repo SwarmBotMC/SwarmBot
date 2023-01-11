@@ -1,3 +1,5 @@
+use interfaces::types::BlockLocation;
+
 use crate::client::{
     state::{
         global::{mine_alloc::MineAlloc, GlobalState},
@@ -5,7 +7,6 @@ use crate::client::{
     },
     tasks::{lazy::Lazy, pillar_and_mine::PillarAndMineTask, Task},
 };
-use interfaces::types::BlockLocation;
 
 pub struct GoMineTop;
 

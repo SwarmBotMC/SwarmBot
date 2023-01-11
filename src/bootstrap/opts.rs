@@ -1,5 +1,8 @@
+//! Module to interact with cargo options
+
 use clap::Parser;
 
+/// Options parsed from CLI
 #[derive(Parser, Debug)]
 #[clap(version = "1.0", author = "Andrew Gazelka")]
 pub struct CliOptions {
@@ -66,7 +69,7 @@ pub struct CliOptions {
 }
 
 impl CliOptions {
-    pub fn get() -> CliOptions {
-        CliOptions::parse()
+    pub fn get() -> Self {
+        Self::parse()
     }
 }

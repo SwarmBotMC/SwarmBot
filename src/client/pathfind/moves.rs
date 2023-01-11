@@ -1,3 +1,8 @@
+use interfaces::types::{
+    BlockLocation, Change, SimpleType,
+    SimpleType::{Avoid, Solid, WalkThrough, Water},
+};
+
 use crate::{
     client::pathfind::{
         context::{GlobalContext, MoveNode},
@@ -6,7 +11,6 @@ use crate::{
     },
     storage::blocks::WorldBlocks,
 };
-use interfaces::types::{BlockLocation, Change, SimpleType, SimpleType::*};
 
 pub const MAX_FALL: i32 = 3;
 
@@ -37,13 +41,6 @@ impl Movements {
                 res
             }};
         }
-
-        // macro_rules! get_kind {
-        //     ($x: expr, $y: expr, $z:expr) => {{
-        //         let res: Option<BlockKind> =
-        // w.get_block_kind(BlockLocation::new($x,$y,$z));         res
-        //     }};
-        // }
 
         macro_rules! wrap {
             ($block_loc:expr) => {{
@@ -106,7 +103,7 @@ impl Movements {
                     res.push(Neighbor {
                         value: wrap!(BlockLocation::new(x + dx, y, z + dz)),
                         cost: ctx.path_config.costs.block_walk * multiplier,
-                    })
+                    });
                 }
             }
         }
@@ -125,7 +122,7 @@ impl Movements {
                     res.push(Neighbor {
                         value: wrap!(new_pos),
                         cost: ctx.path_config.costs.fall * multiplier,
-                    })
+                    });
                 }
             }
         }
@@ -262,7 +259,7 @@ impl Movements {
 
                     let same_y_possible = same_y == Solid;
 
-                    let rad2 = (dx * dx + dz * dz) as f64;
+                    let rad2 = f64::from(dx * dx + dz * dz);
 
                     const MIN_RAD: f64 = 1.1;
                     const MAX_RAD: f64 = 4.5;
@@ -324,19 +321,19 @@ pub enum CardinalDirection {
 }
 
 impl CardinalDirection {
-    pub const ALL: [CardinalDirection; 4] = {
-        use CardinalDirection::*;
+    pub const ALL: [Self; 4] = {
+        use CardinalDirection::{East, North, South, West};
         [North, South, East, West]
     };
 }
 
 impl CardinalDirection {
-    pub fn unit_change(&self) -> Change {
+    pub fn unit_change(self) -> Change {
         match self {
-            CardinalDirection::North => Change::new(1, 0, 0),
-            CardinalDirection::South => Change::new(-1, 0, 0),
-            CardinalDirection::West => Change::new(0, 0, 1),
-            CardinalDirection::East => Change::new(0, 0, -1),
+            Self::North => Change::new(1, 0, 0),
+            Self::South => Change::new(-1, 0, 0),
+            Self::West => Change::new(0, 0, 1),
+            Self::East => Change::new(0, 0, -1),
         }
     }
 }

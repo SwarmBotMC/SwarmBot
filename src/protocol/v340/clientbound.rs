@@ -2,7 +2,6 @@ use std::cmp::max;
 
 use interfaces::types::{BlockLocation, BlockState};
 use itertools::Itertools;
-
 use swarm_bot_packets::{
     read::{ByteReadable, ByteReadableLike, ByteReader},
     types::{BitField, Identifier, RawVec, UUIDHyphenated, VarInt, VarUInt, UUID},
@@ -10,7 +9,7 @@ use swarm_bot_packets::{
 };
 
 use crate::{
-    storage::chunk::{ChunkColumn, ChunkData, HighMemoryChunkSection, Palette},
+    storage::chunk::{ChunkData, Column, HighMemoryChunkSection, Palette},
     types::{
         Chat, Dimension, Direction, DirectionOrigin, Location, LocationFloat, LocationOrigin,
         Position,
@@ -33,7 +32,7 @@ pub enum GameMode {
 
 impl ByteReadable for GameMode {
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
-        use GameMode::*;
+        use GameMode::{Adventure, Creative, Spectator, Survival};
         let val: u8 = byte_reader.read();
         match val {
             0 => Survival,
@@ -234,7 +233,7 @@ pub struct PlayerPositionAndLookRaw {
 pub mod entity {
     use swarm_bot_packets::{
         types::{Angle, VarInt, UUID},
-        *,
+        Packet, Readable,
     };
 
     use crate::types::{Location, ShortLoc};
@@ -359,9 +358,9 @@ impl ByteReadable for Explosion {
             .into_iter()
             .map(|record| {
                 BlockLocation::new(
-                    origin_block.x + record.x as i32,
-                    origin_block.y + record.y as i16,
-                    origin_block.z + record.z as i32,
+                    origin_block.x + i32::from(record.x),
+                    origin_block.y + i16::from(record.y),
+                    origin_block.z + i32::from(record.z),
                 )
             })
             .collect();
@@ -411,7 +410,7 @@ pub struct ChunkColumnPacket {
     pub chunk_x: i32,
     pub chunk_z: i32,
     pub new_chunk: bool,
-    pub column: ChunkColumn,
+    pub column: Column,
 }
 
 impl ByteReadableLike for ChunkColumnPacket {
@@ -439,9 +438,9 @@ impl ByteReadableLike for ChunkColumnPacket {
 
         let data = ChunkData { sections };
 
-        let column = ChunkColumn::HighMemory { data };
+        let column = Column::HighMemory { data };
 
-        ChunkColumnPacket {
+        Self {
             chunk_x,
             chunk_z,
             new_chunk: ground_up_continuous,
@@ -519,7 +518,7 @@ impl ByteReadableLike for ChunkSection {
 
         let block_light = byte_reader.read();
         let sky_light = param.then(|| byte_reader.read());
-        ChunkSection {
+        Self {
             palette,
             block_light,
             sky_light,

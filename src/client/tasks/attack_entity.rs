@@ -1,24 +1,24 @@
+use interfaces::types::{BlockLocation, BlockLocation2D};
+
 use crate::{
     client::{
-        pathfind::implementations::novehicle::TravelProblem,
+        pathfind::implementations::no_vehicle::TravelProblem,
         state::{global::GlobalState, local::LocalState},
-        tasks::{hit_entity::HitEntityTask, navigate::NavigateProblem, stream::TaskStream, Task},
+        tasks::{
+            compound::CompoundTask, delay::DelayTask, hit_entity::HitEntityTask,
+            navigate::NavigateProblem, stream::TaskStream, Task,
+        },
     },
     protocol::InterfaceOut,
 };
 
-use crate::client::tasks::{compound::CompoundTask, delay::DelayTask};
-use interfaces::types::{BlockLocation, BlockLocation2D};
-use std::time::Instant;
-
 pub struct AttackEntity {
     id: u32,
-    hit_time: Option<Instant>,
 }
 
 impl AttackEntity {
-    pub fn new(id: u32) -> Self {
-        Self { id, hit_time: None }
+    pub const fn new(id: u32) -> Self {
+        Self { id }
     }
 }
 

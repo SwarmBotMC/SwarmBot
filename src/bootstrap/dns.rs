@@ -1,27 +1,31 @@
+//! Module for interacting with DNS
+use anyhow::Context;
 use trust_dns_resolver::{
     config::{ResolverConfig, ResolverOpts},
-    error::ResolveError,
     AsyncResolver,
 };
 
 use crate::bootstrap::Address;
 
 /// performs a DNS lookup on host
-async fn dns_lookup(host: &str) -> Result<Address, ResolveError> {
-    let resolver =
-        AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+async fn dns_lookup(host: &str) -> anyhow::Result<Address> {
+    let resolver = AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default())
+        .context("could not create async lookup")?;
 
-    println!("performing srv lookup");
-    resolver
+    let res = resolver
         .srv_lookup(format!("_minecraft._tcp.{host}"))
         .await
-        .map(|res| {
-            let srv = res.iter().next().unwrap();
-            Address {
-                host: srv.target().to_utf8(),
-                port: srv.port(),
-            }
-        })
+        .context("could not perform SRV lookup")?;
+
+    let srv = res
+        .iter()
+        .next()
+        .context("there are no elements in SRV lookup")?;
+
+    Ok(Address {
+        host: srv.target().to_utf8(),
+        port: srv.port(),
+    })
 }
 
 /// Normalizes the address. Some servers like 2b2t have a separate address for

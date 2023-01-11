@@ -1,3 +1,5 @@
+use interfaces::types::BlockLocation;
+
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
@@ -9,7 +11,6 @@ use crate::{
     },
     protocol::InterfaceOut,
 };
-use interfaces::types::BlockLocation;
 
 pub struct MineColumn;
 

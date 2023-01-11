@@ -1,26 +1,30 @@
 use std::cmp::Ordering;
 
 pub mod traits;
-// pub mod bidirectional; unused
 pub mod context;
 pub mod implementations;
 pub mod incremental;
 pub mod moves;
 
+/// a heap node sorted-min
 pub struct MinHeapNode<T, C: PartialOrd + PartialEq> {
+    /// the contents of the node
     pub contents: T,
+    /// the score by which to sort
     pub score: C,
 }
 
 impl<T, C: PartialOrd + PartialEq> MinHeapNode<T, C> {
-    pub fn new(contents: T, score: C) -> MinHeapNode<T, C> {
+    /// Create a new [`MinHeapNode`]
+    #[allow(unused)]
+    pub const fn new(contents: T, score: C) -> Self {
         Self { contents, score }
     }
 }
 
 impl<T: Clone, C: Clone + PartialOrd + PartialEq> Clone for MinHeapNode<T, C> {
     fn clone(&self) -> Self {
-        MinHeapNode {
+        Self {
             contents: self.contents.clone(),
             score: self.score.clone(),
         }
@@ -29,7 +33,7 @@ impl<T: Clone, C: Clone + PartialOrd + PartialEq> Clone for MinHeapNode<T, C> {
 
 impl<T, C: PartialOrd + PartialEq> Ord for MinHeapNode<T, C> {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
     }
 }
 
@@ -46,7 +50,3 @@ impl<T, C: PartialOrd + PartialEq> PartialEq for MinHeapNode<T, C> {
 }
 
 impl<T, C: PartialOrd + PartialEq> Eq for MinHeapNode<T, C> {}
-
-pub struct Path<T> {
-    pub inner: Vec<T>,
-}

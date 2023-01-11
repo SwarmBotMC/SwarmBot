@@ -1,6 +1,6 @@
 use crate::{
     client::{
-        pathfind::implementations::novehicle::TravelProblem,
+        pathfind::implementations::no_vehicle::TravelProblem,
         state::{global::GlobalState, local::LocalState},
         tasks::{
             compound::CompoundTask, lazy::LazyTask, navigate::NavigateProblem,

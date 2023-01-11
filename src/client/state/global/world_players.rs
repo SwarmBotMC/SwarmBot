@@ -17,6 +17,7 @@ impl WorldPlayers {
         self.players.iter().find(|player| player.name == name)
     }
 
+    #[allow(unused)]
     pub fn by_uuid(&mut self, uuid: u128) -> Option<&Player> {
         self.players.iter().find(|player| player.uuid == uuid)
     }

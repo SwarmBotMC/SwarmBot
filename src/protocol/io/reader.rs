@@ -3,18 +3,16 @@ use std::{
     task::{Context, Poll},
 };
 
+use swarm_bot_packets::{
+    read::{ByteReadable, ByteReader, LenRead},
+    types::{Packet, RawVec, VarInt},
+};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf},
     net::tcp::OwnedReadHalf,
 };
 
-use swarm_bot_packets::{
-    read::{ByteReadable, ByteReader, LenRead},
-    types::{Packet, RawVec, VarInt},
-};
-
 use crate::{
-    error::{Error::WrongPacket, Res},
     protocol::io::{Aes, ZLib},
     types::PacketData,
 };
@@ -42,7 +40,7 @@ impl AsyncRead for EncryptedReader {
             let to_encrypt = &mut buf.filled_mut()[filled_before..filled_after];
 
             if let Some(cipher) = self.cipher.as_mut() {
-                cipher.decrypt(to_encrypt)
+                cipher.decrypt(to_encrypt);
             }
         })
     }
@@ -57,7 +55,7 @@ impl From<OwnedReadHalf> for PacketReader {
             cipher: None,
         };
 
-        PacketReader {
+        Self {
             reader,
             compression: None,
         }
@@ -70,10 +68,10 @@ impl PacketReader {
     }
 
     pub fn compression(&mut self, threshold: u32) {
-        self.compression = Some(ZLib::new(threshold))
+        self.compression = Some(ZLib::new(threshold));
     }
 
-    pub async fn read(&mut self) -> Res<PacketData> {
+    pub async fn read(&mut self) -> anyhow::Result<PacketData> {
         let pkt_len;
 
         // ignore 0-sized packets
@@ -92,7 +90,7 @@ impl PacketReader {
 
         let mut reader = ByteReader::new(data);
 
-        let data = match self.compression.as_ref() {
+        let data = match self.compression {
             None => packet_reader(&mut reader, pkt_len),
             Some(zlib) => packet_reader_compressed(&mut reader, zlib, pkt_len),
         };
@@ -106,33 +104,27 @@ impl PacketReader {
         })
     }
 
-    pub async fn read_exact_packet<T>(&mut self) -> Res<T>
+    pub async fn read_exact_packet<T>(&mut self) -> anyhow::Result<T>
     where
         T: Packet,
         T: ByteReadable,
     {
         let PacketData { id, mut reader } = self.read().await?;
 
-        // if id == 0 && T::STATE == PacketState::Login {
-        //     let Disconnect {reason} = reader.read();
-        //     println!("disconnected because {}", reason);
-        //     // return Err(crate::Error::Disconnect(reason))
-        // }
-
         if id != T::ID {
-            Err(WrongPacket {
-                state: T::STATE,
-                expected: T::ID,
-                actual: id,
-            })
-        } else {
-            let packet = T::read_from_bytes(&mut reader);
-            Ok(packet)
+            let state = T::STATE;
+            let expected = T::ID;
+            anyhow::bail!(
+                "received the wrong packet! state: {state}, expected: {expected}, actual: {id}"
+            )
         }
+
+        let packet = T::read_from_bytes(&mut reader);
+        Ok(packet)
     }
 }
 
-fn packet_reader_compressed(reader: &mut ByteReader, zlib: &ZLib, len: usize) -> Vec<u8> {
+fn packet_reader_compressed(reader: &mut ByteReader, zlib: ZLib, len: usize) -> Vec<u8> {
     let data: LenRead<VarInt> = reader.read_with_len();
 
     let len_left = len - data.len;

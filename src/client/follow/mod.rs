@@ -9,21 +9,47 @@ use crate::{
     types::{Direction, Location},
 };
 
-const PROGRESS_THRESHOLD: f64 = 0.3;
-const PROGRESS_THRESHOLD_Y: f64 = 0.48;
+/// the threshold we need to progress when in horizontal blocks from our target
+///
+/// Targets are centered horizontally at the top surface of a block
+const HORIZONTAL_PROGRESS_THRESHOLD: f64 = 0.3;
 
-const EPSILON: f64 = 0.001;
+/// the maximum we can be below a block to progress. This is useful when
+/// climbing ladders and swimming
+const PROGRESS_MAX_BELOW_BLOCK: f64 = 0.48;
 
+/// the y level we must achieve to complete a block
+/// for instance this makes us not finish a block if we are still jumping
+///
+/// This is important because we want to be able to touch down to correct our
+/// velocity before we start running towards the next block
+const PROGRESS_MAX_ABOVE_BLOCK: f64 = 0.001;
+
+/// the minimum distance we can jump from
 const MIN_JUMP_DIST: f64 = 1.2;
+
+/// the minimum distance we must be from a block to sprint
 const MIN_SPRINT_DIST: f64 = 3.0;
+
+/// maximum distance we can jump in blocks
 const MAX_JUMP_DIST: f64 = 4.0;
 
-const MAX_TICKS: usize = 20 * 10;
+/// the maximum number of ticks we can try progressing to another block
+///
+/// `20*10` means 10 seconds to progress between one jump
+const MAX_PROGRESS_TICKS: usize = 20 * 10;
 
+/// The result of trying to follow a path
 #[derive(Eq, PartialEq, Debug)]
-pub enum FollowResult {
+pub enum Result {
+    /// we failed. we didn't get to the destination block we wanted to.
+    /// maybe we fell or died or got stuck.
     Failed,
+
+    /// we are in progress of moving following a path
     InProgress,
+
+    /// we have finished following a path
     Finished,
 }
 
@@ -41,18 +67,28 @@ pub enum FollowResult {
 /// current target.
 #[derive(Debug)]
 pub struct Follower {
+    /// the locations we still need to reach
     xs: VecDeque<Location>,
+
+    /// the initial path length
     initial: usize,
+
+    /// the number of ticks since we gone to the next [`BlockLocation`] in the
+    /// [`PathResult`]
     ticks: usize,
+
+    /// if the path we were given was complete or not. If it is not, we will
+    /// need to recalculate a path before we finish
     complete: bool,
-    should_recalc: bool,
+
+    /// if we specifically think we should recalculate
+    should_recalculate: bool,
 }
 
 impl Follower {
-    pub fn points(&self) -> &VecDeque<Location> {
-        &self.xs
-    }
-    pub fn new(path_result: PathResult<MoveRecord>) -> Option<Follower> {
+    /// Create a new [`Follower`]. If the `path_result` is empty, we will return
+    /// [`None`]
+    pub fn new(path_result: PathResult<MoveRecord>) -> Option<Self> {
         let path = path_result.value;
         if path.is_empty() {
             return None;
@@ -67,20 +103,32 @@ impl Follower {
             })
             .collect();
 
-        Some(Follower {
+        Some(Self {
             xs,
             initial,
             ticks: 0,
             complete: path_result.complete,
-            should_recalc: false,
+            should_recalculate: false,
         })
     }
 
+    /// attempt to merge the current path with another path result.
+    ///
+    /// This can be done when we are using an incremental on-the-fly version of
+    /// A* and we want to merge two path results.
+    ///
+    /// The merging is done by finding a path where two blocks touch each other.
+    /// If there are no blocks that are shared between the current path and
+    /// the calculate path the paths are not merged
     pub fn merge(&mut self, result: PathResult<MoveRecord>) {
-        let other = match Follower::new(result) {
-            Some(res) => res,
-            None => return,
-        };
+        /// the number of iterators until we fail the merge task. Generally, the
+        /// re-calculate path should not take a long time to compute, so
+        /// this number can be fairly small.
+        ///
+        /// Generally paths will converge within maximally 3 or 4 blocks
+        const ITERS_UNTIL_FAIL: usize = 100;
+
+        let Some(other) = Self::new(result) else { return };
 
         let on = self.xs.front();
 
@@ -95,8 +143,6 @@ impl Follower {
         let mut temp_xs = other.xs.clone();
 
         let mut idx = 0;
-
-        const ITERS_UNTIL_FAIL: usize = 100;
 
         while let Some(&loc) = temp_xs.front() {
             idx += 1;
@@ -115,28 +161,36 @@ impl Follower {
         *self = other;
     }
 
+    /// go to the next point on the path
     fn next(&mut self) {
         self.xs.pop_front();
         self.ticks = 0;
     }
 
+    /// if we should recalcualte the path
     pub fn should_recalc(&mut self) -> bool {
         // we should only recalc if this is not complete
         if self.complete {
             return false;
         }
         // we should only return once
-        self.should_recalc
+        self.should_recalculate
     }
 
-    pub fn follow(&mut self, local: &mut LocalState, _global: &mut GlobalState) -> FollowResult {
-        // We only want to recalc if we are on the ground to prevent issues with the
-        // pathfinder thinking we are one block higher. We do this if the path
-        // is incomplete and we have gone through at least half of the nodes
-        if !self.complete && !self.should_recalc && local.physics.on_ground() {
+    /// an iteration where we attempt to stay on the given path
+    pub fn follow_iteration(
+        &mut self,
+        local: &mut LocalState,
+        _global: &mut GlobalState,
+    ) -> Result {
+        // We only want to recalculate if we are on the ground to prevent issues with
+        // the pathfinder thinking we are one block higher. We do this if the
+        // path is incomplete and we have gone through at least half of the
+        // nodes
+        if !self.complete && !self.should_recalculate && local.physics.on_ground() {
             let recalc = self.xs.len() * 2 < self.initial;
             if recalc {
-                self.should_recalc = true;
+                self.should_recalculate = true;
             }
         }
 
@@ -148,9 +202,9 @@ impl Follower {
             let on = match self.xs.front() {
                 None => {
                     return if self.complete {
-                        FollowResult::Finished
+                        Result::Finished
                     } else {
-                        FollowResult::Failed
+                        Result::Failed
                     }
                 }
                 Some(on) => *on,
@@ -159,9 +213,9 @@ impl Follower {
             displacement = on - current;
             mag2_horizontal = displacement.make_dy(0.).mag2();
 
-            if mag2_horizontal < PROGRESS_THRESHOLD * PROGRESS_THRESHOLD
-                && -EPSILON <= displacement.dy
-                && displacement.dy <= PROGRESS_THRESHOLD_Y
+            if mag2_horizontal < HORIZONTAL_PROGRESS_THRESHOLD * HORIZONTAL_PROGRESS_THRESHOLD
+                && -PROGRESS_MAX_ABOVE_BLOCK <= displacement.dy
+                && displacement.dy <= PROGRESS_MAX_BELOW_BLOCK
             {
                 self.next();
             } else {
@@ -179,52 +233,80 @@ impl Follower {
         self.ticks += 1;
 
         // more than 1.5 seconds on same block => failed
-        if self.ticks >= MAX_TICKS {
+        if self.ticks >= MAX_PROGRESS_TICKS {
             println!(
-                "follower failed (time) for {} -> {}",
+                "follower failed (time) for {} -> {:?}",
                 local.physics.location(),
-                self.xs.front().unwrap()
+                self.xs.front()
             );
-            return FollowResult::Failed;
+            return Result::Failed;
         }
 
-        let disp_horizontal = displacement.make_dy(0.);
+        let displacement_horizontal = displacement.make_dy(0.);
         let velocity = local.physics.velocity().make_dy(0.);
 
+        /// how much we factor in velocity into how much we need to counter our
+        /// look direction
+        ///
+        /// Suppose this player is you trying to get to the block `[]` and the
+        /// current velocity is in the direction of `/`
+        /// ```
+        ///          /
+        ///         o
+        ///        \|/    ------->   []
+        ///        /\
+        /// ```
+        ///
+        /// If [`VELOCITY_IMPORTANCE`] is 0, the player will look directly at
+        /// the block
+        ///
+        /// ```
+        /// 
+        ///         o ----
+        ///        \|/    ------->   []
+        ///        /\
+        /// ```
+        ///
+        /// In the case where it is tuned correctly, the direction the player is
+        /// looking should counter act the velocity so during a job it
+        /// will actually hit the block. For instance, with `1.5` the
+        /// player might reach
+        ///
+        /// ```
+        /// 
+        ///          o
+        ///        \|/ \   ------->   []
+        ///        /\   \
+        /// ```
         const VELOCITY_IMPORTANCE: f64 = 1.5;
-        const DISPLACEMENT_CONSIDER_THRESH: f64 = 0.05;
 
-        let look_displacement = disp_horizontal - velocity * VELOCITY_IMPORTANCE;
-        let corr = velocity.normalize().dot(disp_horizontal.normalize());
+        let look_displacement = displacement_horizontal - velocity * VELOCITY_IMPORTANCE;
 
-        // let vel_percent2 = (velocity.mag2() / (SPRINT_BLOCKS_PER_TICK *
-        // SPRINT_BLOCKS_PER_TICK)).min(1.0);
+        // the correlation between the horizontal displacement and velocity
+        let correlation = velocity
+            .normalize()
+            .dot(displacement_horizontal.normalize());
 
-        // println!("vel percent {}", vel_percent2);
-
-        // if displacement.mag2() < DISPLACEMENT_CONSIDER_THRESH *
-        // DISPLACEMENT_CONSIDER_THRESH {     look_displacement =
-        // disp_horizontal;     corr = 1.0;
-        // }
-
-        const THRESH_VEL: f64 = 3.0 / 20.;
-        // const THRESH_VEL: f64 = 0.0;
+        /// the threshold velocity (in blocks per tick) that we need to achieve
+        /// to perform a jump
+        const JUMP_THRESHOLD_VEL: f64 = 3.0 / 20.;
 
         // sqrt(2) is 1.41 which is the distance from the center of a block to the next
         if local.physics.on_ground() && mag2_horizontal > MIN_JUMP_DIST * MIN_JUMP_DIST {
             // it is far away... we probably have to jump to it
 
-            // min distance we can jump at
+            // if the horizontal distance is jumpable and our velocity is correct and we
+            // have enough velocity to jump, jump
             if mag2_horizontal < MAX_JUMP_DIST * MAX_JUMP_DIST
-                && corr > 0.95
-                && velocity.mag2() > THRESH_VEL * THRESH_VEL
+                && correlation > 0.95
+                && velocity.mag2() > JUMP_THRESHOLD_VEL * JUMP_THRESHOLD_VEL
             {
                 local.physics.jump();
             }
 
-            // walk if close
+            // walk if close (so we do not overshoot)
             if mag2_horizontal < MIN_SPRINT_DIST * MIN_SPRINT_DIST
-                && velocity.mag2() > THRESH_VEL * THRESH_VEL
+                && velocity.mag2() > JUMP_THRESHOLD_VEL * JUMP_THRESHOLD_VEL
             {
                 local.physics.speed(Speed::WALK);
             }
@@ -242,7 +324,7 @@ impl Follower {
             // local.physics.descend();
         }
 
-        FollowResult::InProgress
+        Result::InProgress
     }
 }
 
@@ -253,13 +335,14 @@ mod tests {
         time::{Duration, Instant},
     };
 
+    use anyhow::Context;
     use interfaces::types::BlockLocation;
-    use more_asserts::*;
+    use more_asserts::assert_lt;
 
     use crate::{
         client::{
-            follow::{FollowResult, Follower},
-            pathfind::implementations::{novehicle::TravelProblem, Problem},
+            follow::{Follower, Result},
+            pathfind::implementations::{no_vehicle::TravelProblem, Problem},
             state::{
                 global::GlobalState,
                 local::{inventory::PlayerInventory, LocalState},
@@ -270,13 +353,13 @@ mod tests {
     };
 
     #[test]
-    fn test_parkour_course() {
+    fn test_parkour_course() -> anyhow::Result<()> {
         let mut reader = OpenOptions::new()
             .read(true)
             .open("test-data/parkour.schematic")
-            .unwrap();
+            .context("could not open the parkour schematic")?;
 
-        let course = Schematic::load(&mut reader);
+        let course = Schematic::load(&mut reader).unwrap();
 
         let mut local_state = LocalState::mock();
         let mut global_state = GlobalState::init();
@@ -287,8 +370,16 @@ mod tests {
         let end = BlockLocation::new(-152, 80, -338);
 
         let world = &global_state.blocks;
-        let start_below = world.get_block(start.below()).unwrap().as_real().id();
-        let end_below = world.get_block(end.below()).unwrap().as_real().id();
+        let start_below = world
+            .get_block(start.below())
+            .context("could not get below block")?
+            .as_real()
+            .id();
+        let end_below = world
+            .get_block(end.below())
+            .context("could not get end below block")?
+            .as_real()
+            .id();
 
         // the ids of stained glass
         assert_eq!(95, start_below);
@@ -303,17 +394,19 @@ mod tests {
         );
 
         let result = match increment {
-            Increment::InProgress => panic!("not finished"),
+            Increment::InProgress => anyhow::bail!("not finished"),
             Increment::Finished(res) => res,
         };
 
         assert!(result.complete);
 
-        let mut follower = Follower::new(result).unwrap();
+        let mut follower = Follower::new(result).context("could not create a follower")?;
 
         local_state.physics.teleport(start.center_bottom());
 
-        while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
+        while let Result::InProgress =
+            follower.follow_iteration(&mut local_state, &mut global_state)
+        {
             local_state
                 .physics
                 .tick(&mut global_state.blocks, &PlayerInventory::default());
@@ -325,13 +418,15 @@ mod tests {
         }
 
         assert_eq!(
-            follower.follow(&mut local_state, &mut global_state),
-            FollowResult::Finished
+            follower.follow_iteration(&mut local_state, &mut global_state),
+            Result::Finished
         );
         assert_lt!(
             local_state.physics.location().dist2(end.center_bottom()),
             0.6 * 0.6
         );
+
+        Ok(())
     }
 
     #[test]
@@ -372,7 +467,9 @@ mod tests {
 
         local_state.physics.teleport(start.center_bottom());
 
-        while let FollowResult::InProgress = follower.follow(&mut local_state, &mut global_state) {
+        while let Result::InProgress =
+            follower.follow_iteration(&mut local_state, &mut global_state)
+        {
             local_state
                 .physics
                 .tick(&mut global_state.blocks, &local_state.inventory);
@@ -386,8 +483,8 @@ mod tests {
         }
 
         assert_eq!(
-            follower.follow(&mut local_state, &mut global_state),
-            FollowResult::Finished
+            follower.follow_iteration(&mut local_state, &mut global_state),
+            Result::Finished
         );
         assert_lt!(
             local_state.physics.location().dist2(end.center_bottom()),
