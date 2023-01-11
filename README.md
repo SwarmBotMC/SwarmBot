@@ -1,6 +1,6 @@
 # SwarmBot — tested on 2b2t with hundreds of bots
 
-[![Build Status](https://travis-ci.com/andrewgazelka/SwarmBot.svg?branch=master)](https://travis-ci.com/andrewgazelka/SwarmBot)
+[![Crates.io](https://img.shields.io/crates/v/swarm-bot.svg?style=plastic)](http://crates.io/crates/swarm-bot)
 [![Discord Shield](https://discordapp.com/api/guilds/877280790596165702/widget.png?style=shield)](https://discord.gg/64z2nkGxDu)
 
 
