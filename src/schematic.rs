@@ -1,6 +1,6 @@
 use std::io::Read;
-use anyhow::Context;
 
+use anyhow::Context;
 use interfaces::types::{BlockLocation, BlockState};
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +33,8 @@ impl Schematic {
 
     #[allow(unused)]
     pub fn load(reader: &mut impl Read) -> anyhow::Result<Self> {
-        let res: Result<Self, _> = nbt::from_gzip_reader(reader).context("could not load schematic");
+        let res: Result<Self, _> =
+            nbt::from_gzip_reader(reader).context("could not load schematic");
 
         res
     }
@@ -58,7 +59,6 @@ impl Schematic {
             _ => None,
         }
     }
-
 
     #[allow(unused, clippy::unwrap_used)]
     pub fn width(&self) -> u64 {

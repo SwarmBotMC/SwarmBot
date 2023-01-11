@@ -4,7 +4,7 @@ use interfaces::types::{BlockLocation, ChunkLocation};
 
 use crate::{
     client::{
-        follow::{Result, Follower},
+        follow::{Follower, Result},
         pathfind::{
             context::MoveNode,
             implementations::{

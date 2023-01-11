@@ -15,7 +15,6 @@
 // #![deny(clippy::missing_docs_in_private_items)]
 
 // #![deny(clippy::indexing_slicing)]
-
 #![deny(
     clippy::await_holding_refcell_ref,
     clippy::await_holding_lock,
@@ -55,7 +54,19 @@
 #![allow(clippy::wildcard_imports)]
 #![allow(clippy::cast_sign_loss)]
 // TODO: remove most of these
-#![allow(incomplete_features, clippy::items_after_statements, clippy::cast_possible_truncation, clippy::module_name_repetitions, clippy::unwrap_used, clippy::indexing_slicing, clippy::panic, clippy::expect_used, clippy::cast_precision_loss, clippy::cast_possible_wrap, clippy::default_trait_access)]
+#![allow(
+    incomplete_features,
+    clippy::items_after_statements,
+    clippy::cast_possible_truncation,
+    clippy::module_name_repetitions,
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    clippy::expect_used,
+    clippy::cast_precision_loss,
+    clippy::cast_possible_wrap,
+    clippy::default_trait_access
+)]
 
 #[allow(unused, clippy::useless_attribute)]
 extern crate test;

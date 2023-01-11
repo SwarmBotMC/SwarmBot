@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     client::{
+        physics::Physics,
         state::{global::GlobalState, local::LocalState},
         tasks::{
             lazy_stream::LazyStream, mine::MineTask, pillar::PillarTask, stream::TaskStream, Task,
@@ -10,7 +11,6 @@ use crate::{
     protocol::{Face, InterfaceOut},
     types::Displacement,
 };
-use crate::client::physics::Physics;
 
 #[allow(clippy::module_name_repetitions)]
 pub type PillarAndMineTask = LazyStream<PillarOrMine>;
@@ -33,7 +33,8 @@ impl TaskStream for PillarOrMine {
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> Option<Task> {
-        let current_height = u32::try_from((local.physics.location().y).floor() as i64).unwrap_or_default();
+        let current_height =
+            u32::try_from((local.physics.location().y).floor() as i64).unwrap_or_default();
 
         // > not >= because we are considering block height
         if current_height > self.height {

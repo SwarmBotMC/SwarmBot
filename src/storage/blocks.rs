@@ -12,7 +12,6 @@ use crate::{
     client::pathfind::MinHeapNode,
     schematic::Schematic,
     storage::chunk::{ChunkData, Column, HighMemoryChunkSection},
-
 };
 
 /// representation of all blocks in a world
@@ -245,7 +244,7 @@ impl WorldBlocks {
             .iter()
             .filter_map(|(loc, column)| match column {
                 Column::HighMemory { data } => Some((loc, data)),
-                Column::LowMemory{ .. } => None,
+                Column::LowMemory { .. } => None,
             })
     }
 
@@ -268,7 +267,7 @@ impl WorldBlocks {
         let res = self.storage.get(&location)?;
         match res {
             Column::HighMemory { data } => Some(data),
-            Column::LowMemory{ .. } => None,
+            Column::LowMemory { .. } => None,
         }
     }
 
@@ -280,7 +279,7 @@ impl WorldBlocks {
         let res = self.storage.get_mut(&location)?;
         match res {
             Column::HighMemory { data } => Some(data),
-            Column::LowMemory{ .. } => None,
+            Column::LowMemory { .. } => None,
         }
     }
 

@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 
-pub mod traits;
 pub mod context;
 pub mod implementations;
 pub mod incremental;
 pub mod moves;
+pub mod traits;
 
 /// a heap node sorted-min
 pub struct MinHeapNode<T, C: PartialOrd + PartialEq> {

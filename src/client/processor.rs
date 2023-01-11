@@ -48,7 +48,12 @@ impl<'a, I: InterfaceOut> SimpleInterfaceIn<'a, I> {
         global: &'a mut GlobalState,
         out: &'a mut I,
     ) -> SimpleInterfaceIn<'a, I> {
-        SimpleInterfaceIn { global, local, actions, out }
+        SimpleInterfaceIn {
+            global,
+            local,
+            actions,
+            out,
+        }
     }
 }
 
