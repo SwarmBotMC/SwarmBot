@@ -822,24 +822,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "interfaces"
-version = "0.1.0"
-dependencies = [
- "colored",
- "futures",
- "itertools",
- "lazy_static",
- "num",
- "regex",
- "serde",
- "serde_json",
- "swarm-bot-packets",
- "tokio",
- "tokio-tungstenite 0.17.2",
- "tungstenite 0.17.3",
-]
-
-[[package]]
 name = "io-lifetimes"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1786,7 +1768,6 @@ dependencies = [
  "hematite-nbt",
  "hex-literal",
  "indexmap",
- "interfaces",
  "itertools",
  "more-asserts",
  "num",
@@ -1803,6 +1784,7 @@ dependencies = [
  "sha1",
  "smallvec",
  "swarm-bot-packets",
+ "swarmbot-interfaces",
  "tokio",
  "tokio-socks",
  "tokio-stream",
@@ -1826,6 +1808,24 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "swarmbot-interfaces"
+version = "0.1.0"
+dependencies = [
+ "colored",
+ "futures",
+ "itertools",
+ "lazy_static",
+ "num",
+ "regex",
+ "serde",
+ "serde_json",
+ "swarm-bot-packets",
+ "tokio",
+ "tokio-tungstenite 0.17.2",
+ "tungstenite 0.17.3",
 ]
 
 [[package]]
