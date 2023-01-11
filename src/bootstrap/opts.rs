@@ -42,6 +42,11 @@ pub struct CliOptions {
     #[clap(short, long, default_value = "500")]
     pub delay_ms: u64,
 
+    /// if we are launching in offline mode. If this is true, the bots will not require a file
+    /// and join with randomly generated names
+    #[clap(long)]
+    pub offline: bool,
+
     /// The file that the users will be read from. This is a CSV file of
     /// the form of
     ///

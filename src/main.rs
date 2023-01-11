@@ -81,7 +81,7 @@ use tokio::{runtime::Runtime, task};
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 
 use crate::{
-    bootstrap::{dns::normalize_address, opts::CliOptions, storage::BotDataLoader, BotConnection},
+    bootstrap::{dns::normalize_address, opts::CliOptions, storage::BotInfo, BotConnection},
     client::runner::{Runner, RunnerOptions},
 };
 
@@ -122,14 +122,15 @@ async fn run() -> anyhow::Result<()> {
         load,
         ws_port,
         proxy,
+        offline,
     } = CliOptions::get();
 
     // A list of users we will login
-    let mut bot_receiver = BotDataLoader::load(proxy, &users_file, &proxies_file, count)?;
+    let mut bot_info_receiver = BotInfo::load_from_files(&users_file, &proxies_file, count, proxy)?;
 
     // if we only load the data but do not login
     if load {
-        while bot_receiver.recv().await.is_some() {
+        while bot_info_receiver.recv().await.is_some() {
             // empty
         }
         return Ok(());
@@ -140,7 +141,7 @@ async fn run() -> anyhow::Result<()> {
     let server_address = normalize_address(&host, port).await;
 
     // taking the users and generating connections to the Minecraft server
-    let connections: ReceiverStream<_> = BotConnection::stream(server_address, bot_receiver).into();
+    let connections: ReceiverStream<_> = BotConnection::stream(server_address, bot_info_receiver).into();
 
     // only return bot connections which were successful
     let connections = connections.filter_map(|elem| match elem {

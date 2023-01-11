@@ -12,7 +12,7 @@ use tokio_socks::tcp::Socks5Stream;
 
 use crate::bootstrap::{
     mojang::MojangClient,
-    storage::{BotDataLoader, OnlineUser},
+    storage::{BotInfo, OnlineUser},
 };
 
 pub mod csv;
@@ -55,8 +55,8 @@ pub struct BotConnection {
     pub write: OwnedWriteHalf,
 }
 
-async fn obtain_connection(user: BotDataLoader, address: Address) -> anyhow::Result<BotConnection> {
-    let BotDataLoader {
+async fn obtain_connection(user: BotInfo, address: Address) -> anyhow::Result<BotConnection> {
+    let BotInfo {
         proxy,
         user,
         mojang,
@@ -91,10 +91,10 @@ async fn obtain_connection(user: BotDataLoader, address: Address) -> anyhow::Res
 }
 
 impl BotConnection {
-    /// Generates connections given [`BotData`] and an address
+    /// Generates connections given [`BotInfo`] and an address
     pub fn stream(
         server_address: Address,
-        mut users: Receiver<BotDataLoader>,
+        mut users: Receiver<BotInfo>,
     ) -> Receiver<anyhow::Result<Self>> {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         tokio::task::spawn_local(async move {

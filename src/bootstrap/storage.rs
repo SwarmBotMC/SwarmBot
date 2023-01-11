@@ -62,22 +62,22 @@ pub struct UserCache {
     cache: HashMap<String, User>,
 }
 
-/// A bot data holds the "Mojang" object used in cache to verify that the user
+/// Bot data holds the "Mojang" object used in cache to verify that the user
 /// is valid along with data about what the proxy address is and the valid user
 /// information
 #[derive(Debug)]
-pub struct BotDataLoader {
+pub struct BotInfo {
     pub user: OnlineUser,
     pub proxy: Option<Proxy>,
     pub mojang: MojangClient,
 }
 
-impl BotDataLoader {
-    pub fn load(
-        proxy: bool,
+impl BotInfo {
+    pub fn load_from_files(
         users_file: &str,
         proxies_file: &str,
         count: usize,
+        proxy: bool,
     ) -> anyhow::Result<Receiver<Self>> {
         let csv_file = File::open(users_file)
             .with_context(|| format!("could not open users file {users_file}"))?;
@@ -247,7 +247,7 @@ impl UserCache {
         count: usize,
         users: Vec<CSVUser>,
         proxies: Vec<Option<Proxy>>,
-    ) -> Receiver<BotDataLoader> {
+    ) -> Receiver<BotInfo> {
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(32);
@@ -261,7 +261,7 @@ impl UserCache {
                 {
                     local_count += 1;
                     println!("valid user {}", user.email);
-                    tx.send(BotDataLoader {
+                    tx.send(BotInfo {
                         user,
                         proxy,
                         mojang,
