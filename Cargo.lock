@@ -1749,7 +1749,7 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "swarm-bot"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "aes",
  "anyhow",
