@@ -1,3 +1,6 @@
+Join the [Discord](https://discord.gg/64z2nkGxDu) and talk with me (`Andrew Gazelka#0001`). I am very open to having people contribute. :)
+
+
 # Structure
 
 ## Commands
