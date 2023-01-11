@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::net::TcpListener;
 
+/// commands received over websocket (typically forge mod)
 pub struct CommandReceiver {
     pub pending: Receiver<CommandData>,
 }

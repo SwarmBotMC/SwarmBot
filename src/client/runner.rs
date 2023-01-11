@@ -104,15 +104,30 @@ impl<T: Minecraft + 'static> Runner<T> {
         connections: impl Stream<Item = BotConnection> + 'static,
         opts: RunnerOptions,
     ) -> anyhow::Result<Self> {
-        let RunnerOptions {
-            delay_ms: delay_millis,
-            ws_port,
-        } = opts;
+        let RunnerOptions { delay_ms, ws_port } = opts;
 
-        let mut connections = Box::pin(connections);
-
+        // commands received over websocket (typically forge mod)
         let commands = CommandReceiver::init(ws_port).await?;
 
+        let pending_logins = Self::login_all(connections, delay_ms);
+
+        Ok(Self {
+            pending_logins,
+            global_state: GlobalState::init(),
+            command_receiver: commands,
+            bots: Vec::new(),
+            id_on: 0,
+        })
+    }
+
+    /// start the login process for all players
+    ///
+    /// - return pending logins
+    fn login_all(
+        connections: impl Stream<Item = BotConnection> + 'static,
+        delay_millis: u64,
+    ) -> Logins<T> {
+        let mut connections = Box::pin(connections);
         let pending_logins = Rc::new(RefCell::new(Vec::new()));
 
         {
@@ -146,13 +161,7 @@ impl<T: Minecraft + 'static> Runner<T> {
             });
         }
 
-        Ok(Self {
-            pending_logins,
-            global_state: GlobalState::init(),
-            command_receiver: commands,
-            bots: Vec::new(),
-            id_on: 0,
-        })
+        pending_logins
     }
 
     pub async fn game_loop(&mut self) {
@@ -179,27 +188,10 @@ impl<T: Minecraft + 'static> Runner<T> {
     async fn game_iter(&mut self, end_by: Instant) {
         let old_count = self.bots.len();
         // first step: removing disconnected clients
-        {
-            self.bots.retain(|client| !client.state.disconnected);
-        }
+        self.remove_disconnected();
 
         // second step: turning pending logins into clients
-        {
-            let mut logins = self.pending_logins.borrow_mut();
-
-            for login in logins.drain(..) {
-                let Login { queue, out, info } = login;
-
-                let client = Bot {
-                    state: LocalState::new(self.id_on, info),
-                    actions: default(),
-                    queue,
-                    out,
-                };
-                self.id_on += 1;
-                self.bots.push(client);
-            }
-        }
+        self.pending_logins_to_client();
 
         let new_count = self.bots.len();
 
@@ -209,13 +201,49 @@ impl<T: Minecraft + 'static> Runner<T> {
         }
 
         // process pending commands (from forge mod)
+        self.process_forge_mod_commands();
+
+        // fourth step: process packets from game loop
+        self.process_incoming_minecraft_packets();
+
+        // fifth step: process packets from game loop
+        self.run_expensive_tasks_multithreaded(end_by).await;
+    }
+
+    /// remove disconnected clients
+    fn remove_disconnected(&mut self) {
+        self.bots.retain(|client| !client.state.disconnected);
+    }
+
+    /// turn pending logins into clients that are controller by the [`Runner`].
+    fn pending_logins_to_client(&mut self) {
+        let mut logins = self.pending_logins.borrow_mut();
+
+        for login in logins.drain(..) {
+            let Login { queue, out, info } = login;
+
+            let client = Bot {
+                state: LocalState::new(self.id_on, info),
+                actions: default(),
+                queue,
+                out,
+            };
+            self.id_on += 1;
+            self.bots.push(client);
+        }
+    }
+
+    /// process pending commands (generally from forge mod but more generally
+    /// from a websocket)
+    fn process_forge_mod_commands(&mut self) {
         while let Ok(command) = self.command_receiver.pending.try_recv() {
             if let Err(err) = self.process_command(command) {
                 println!("Error processing command: {err}");
             }
         }
+    }
 
-        // fourth step: process packets from game loop
+    fn process_incoming_minecraft_packets(&mut self) {
         for bot in &mut self.bots {
             let mut processor = SimpleInterfaceIn::new(
                 &mut bot.state,
@@ -231,7 +259,23 @@ impl<T: Minecraft + 'static> Runner<T> {
             // implementation
             bot.run_sync(&mut self.global_state);
         }
+    }
 
+    /// launch expensive tasks (for instance A*) in multiple threads and
+    /// `.await` until either:
+    ///
+    /// 1. all tasks are completed
+    /// 2. we have reached the max processing time before the game loop starts
+    /// again
+    ///
+    /// This will allow all bots to access `&GlobalState` and `&mut LocalState`
+    /// as the [`GlobalState`] as shared cross-thread, whereas the
+    /// [`LocalState`] will only be accessed by one thread.
+    ///
+    /// This means that per-bot calculations (i.e., A* for one bot) will be done
+    /// sequentially, whereas cross-bot calculations (i.e., A* for bot A and
+    /// A* bot B) will be done concurrently.
+    async fn run_expensive_tasks_multithreaded(&mut self, end_by: Instant) {
         // sixth step: run multi-threaded environment for the rest of the game loop.
         // GlobalState will be read-only and LocalState will be mutable
         let thread_loop_end = Arc::new(Notify::new());

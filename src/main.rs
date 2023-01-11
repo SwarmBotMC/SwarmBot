@@ -11,10 +11,6 @@
 #![feature(default_free_fn)]
 #![feature(fs_try_exists)]
 #![feature(async_fn_in_trait)]
-// #![deny(missing_docs)]
-// #![deny(clippy::missing_docs_in_private_items)]
-
-// #![deny(clippy::indexing_slicing)]
 #![deny(
     clippy::await_holding_refcell_ref,
     clippy::await_holding_lock,
@@ -68,6 +64,10 @@
     clippy::default_trait_access
 )]
 
+// TODO: uncomment these
+// #![deny(missing_docs)]
+// #![deny(clippy::missing_docs_in_private_items)]
+
 #[allow(unused, clippy::useless_attribute)]
 extern crate test;
 
@@ -75,8 +75,6 @@ extern crate test;
 extern crate enum_dispatch;
 #[macro_use]
 extern crate swarm_bot_packets;
-
-
 
 use anyhow::Context;
 use tokio::{runtime::Runtime, task};
@@ -96,8 +94,8 @@ mod types;
 
 fn main() {
     // create the single-threaded async runtime
-    // multiple threads will still be used—however, they will only be
-    // used in non-async context as they are resource heavy
+    // we still leverage threads—however in a non-async context.
+    // For instance, A* and other CPU-heavy tasks are spawned into threads
     let rt = Runtime::new().unwrap();
     let local = task::LocalSet::new();
     local.block_on(&rt, async move {
@@ -144,6 +142,7 @@ async fn run() -> anyhow::Result<()> {
     // taking the users and generating connections to the Minecraft server
     let connections: ReceiverStream<_> = BotConnection::stream(server_address, bot_receiver).into();
 
+    // only return bot connections which were successful
     let connections = connections.filter_map(|elem| match elem {
         Ok(v) => Some(v),
         Err(e) => {
