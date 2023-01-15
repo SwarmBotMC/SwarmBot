@@ -12,7 +12,9 @@ use std::{
 
 use anyhow::Context;
 use bincode::{Decode, Encode};
+use swarm_bot_packets::types::UUID;
 use tokio::sync::mpsc::Receiver;
+use tokio_stream::Stream;
 
 use crate::{
     bootstrap,
@@ -36,6 +38,11 @@ struct InvalidUser {
     password: String,
 }
 
+#[derive(Debug)]
+pub struct OfflineUser {
+    pub username: String,
+}
+
 #[derive(Encode, Decode, Clone, Debug)]
 pub struct OnlineUser {
     pub email: String,
@@ -45,6 +52,12 @@ pub struct OnlineUser {
     pub uuid: String,
     pub access_id: String,
     pub client_id: String,
+}
+
+impl OnlineUser {
+    pub fn uuid(&self) -> UUID {
+        UUID::from(&self.uuid)
+    }
 }
 
 impl User {
@@ -62,21 +75,62 @@ pub struct UserCache {
     cache: HashMap<String, User>,
 }
 
+#[derive(Debug)]
+pub enum BotData {
+    Online {
+        /// the online user
+        user: OnlineUser,
+
+        /// the mojang client we can interact with mojang for
+        mojang: MojangClient,
+    },
+    Offline {
+        /// the invalid user
+        user: OfflineUser,
+    },
+}
+
+impl BotData {
+    pub fn username(&self) -> &str {
+        match self {
+            Self::Online { user, .. } => &user.username,
+            Self::Offline { user } => &user.username,
+        }
+    }
+}
+
 /// A bot data holds the "Mojang" object used in cache to verify that the user
 /// is valid along with data about what the proxy address is and the valid user
 /// information
 #[derive(Debug)]
-pub struct BotDataLoader {
-    pub user: OnlineUser,
+pub struct BotConnectionData {
+    pub bot: BotData,
     pub proxy: Option<Proxy>,
-    pub mojang: MojangClient,
 }
 
-impl BotDataLoader {
-    pub fn load(
-        proxy: bool,
+impl BotConnectionData {
+    pub fn offline_random() -> impl Stream<Item = Self> {
+        let mut idx = 0;
+        futures::stream::repeat_with(move || {
+            let username = format!("Bot{idx:0>4}");
+            let res = Self {
+                bot: BotData::Offline {
+                    user: OfflineUser { username },
+                },
+                proxy: None,
+            };
+
+            idx += 1;
+
+            println!("generated offline {res:?}");
+
+            res
+        })
+    }
+    pub fn load_from_files(
         users_file: &str,
         proxies_file: &str,
+        proxy: bool,
         count: usize,
     ) -> anyhow::Result<Receiver<Self>> {
         let csv_file = File::open(users_file)
@@ -247,7 +301,7 @@ impl UserCache {
         count: usize,
         users: Vec<CSVUser>,
         proxies: Vec<Option<Proxy>>,
-    ) -> Receiver<BotDataLoader> {
+    ) -> Receiver<BotConnectionData> {
         let mut proxies = proxies.into_iter().cycle();
 
         let (tx, rx) = tokio::sync::mpsc::channel(32);
@@ -261,10 +315,9 @@ impl UserCache {
                 {
                     local_count += 1;
                     println!("valid user {}", user.email);
-                    tx.send(BotDataLoader {
-                        user,
+                    tx.send(BotConnectionData {
+                        bot: BotData::Online { user, mojang },
                         proxy,
-                        mojang,
                     })
                     .await
                     .unwrap();

@@ -8,7 +8,7 @@ use swarm_bot_packets::{
 };
 
 use crate::{
-    bootstrap::{mojang::calc_hash, storage::OnlineUser, Address, BotConnection},
+    bootstrap::{mojang::calc_hash, storage::BotData, Address, BotConnection},
     client::processor::InterfaceIn,
     protocol::{
         encrypt::{rand_bits, Rsa},
@@ -401,28 +401,26 @@ impl Minecraft for Protocol {
     type Queue = EventQueue340;
     type Interface = Interface340;
 
+    /// Login for 1.12.2
+    ///
+    /// Look <https://wiki.vg/index.php?title=Protocol&oldid=14204#Login>
     async fn login(conn: BotConnection) -> anyhow::Result<Login<EventQueue340, Interface340>> {
         let BotConnection {
-            user,
-            server_address: address,
-            mojang,
+            server_address,
+            bot,
             read,
             write,
         } = conn;
-        let OnlineUser {
-            username,
-            uuid,
-            access_id,
-            ..
-        } = user;
 
-        let Address { host, port } = address;
-        let uuid = UUID::from(&uuid);
+        let username = bot.username();
+
+        let Address { host, port } = server_address;
 
         let mut reader = PacketReader::from(read);
         let mut writer = PacketWriter::from(write);
 
-        // START: handshake
+        // ----------- START: handshake ------------
+        // 1. C -> S
         writer
             .write(serverbound::Handshake {
                 protocol_version: VarInt(340),
@@ -432,43 +430,54 @@ impl Minecraft for Protocol {
             })
             .await?;
 
-        // START: login
+        // ------------ START: login ----------------
+        // 2 C -> S     LOGIN START
         writer
             .write(serverbound::LoginStart {
-                username: username.clone(),
+                username: username.to_string(),
             })
             .await?;
 
-        let clientbound::EncryptionRequest {
-            public_key_der,
-            verify_token,
-            server_id,
-        } = reader.read_exact_packet().await?;
+        // 3. S -> C: Encryption Request
 
-        let rsa = Rsa::from_der(&public_key_der);
+        let uuid = if let BotData::Online { user, mojang } = &bot {
+            let access_id = &user.access_id;
+            let uuid = user.uuid();
 
-        let shared_secret = rand_bits();
+            let clientbound::EncryptionRequest {
+                public_key_der,
+                verify_token,
+                server_id,
+            } = reader.read_exact_packet().await?;
 
-        let encrypted_ss = rsa.encrypt(&shared_secret).unwrap();
-        let encrypted_verify = rsa.encrypt(&verify_token).unwrap();
+            let rsa = Rsa::from_der(&public_key_der);
 
-        // Mojang online mode requests
-        let hash = calc_hash(&server_id, &shared_secret, &public_key_der);
-        mojang.join(uuid, &hash, &access_id).await?;
+            let shared_secret = rand_bits();
 
-        // id = 1
-        writer
-            .write(serverbound::EncryptionResponse {
-                shared_secret: encrypted_ss,
-                verify_token: encrypted_verify,
-            })
-            .await?;
+            let encrypted_ss = rsa.encrypt(&shared_secret).unwrap();
+            let encrypted_verify = rsa.encrypt(&verify_token).unwrap();
 
-        // writer.flush().await;
+            // 4. Mojang online mode requests
+            let hash = calc_hash(&server_id, &shared_secret, &public_key_der);
+            mojang.join(uuid, &hash, access_id).await?;
 
-        // we now do everything encrypted
-        writer.encryption(&shared_secret);
-        reader.encryption(&shared_secret);
+            // 5. Encryption Response
+            writer
+                .write(serverbound::EncryptionResponse {
+                    shared_secret: encrypted_ss,
+                    verify_token: encrypted_verify,
+                })
+                .await?;
+
+            // we now do everything encrypted
+            writer.encryption(&shared_secret);
+            reader.encryption(&shared_secret);
+
+            uuid
+        } else {
+            // TODO: remove
+            UUID::default()
+        };
 
         // set compression or login success
         let mut data = reader.read().await?;
@@ -535,7 +544,7 @@ impl Minecraft for Protocol {
             queue,
             out,
             info: ClientInfo {
-                username,
+                username: username.to_string(),
                 uuid,
                 entity_id,
             },

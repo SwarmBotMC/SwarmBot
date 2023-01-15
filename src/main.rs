@@ -61,7 +61,8 @@
     clippy::expect_used,
     clippy::cast_precision_loss,
     clippy::cast_possible_wrap,
-    clippy::default_trait_access
+    clippy::default_trait_access,
+    clippy::match_bool
 )]
 
 // TODO: uncomment these
@@ -76,12 +77,17 @@ extern crate enum_dispatch;
 #[macro_use]
 extern crate swarm_bot_packets;
 
+use std::pin::Pin;
+
 use anyhow::Context;
+use futures::Stream;
 use tokio::{runtime::Runtime, task};
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 
 use crate::{
-    bootstrap::{dns::normalize_address, opts::CliOptions, storage::BotDataLoader, BotConnection},
+    bootstrap::{
+        dns::normalize_address, opts::CliOptions, storage::BotConnectionData, BotConnection,
+    },
     client::runner::{Runner, RunnerOptions},
 };
 
@@ -119,28 +125,30 @@ async fn run() -> anyhow::Result<()> {
         version,
         port,
         delay_ms,
-        load,
         ws_port,
         proxy,
+        offline,
     } = CliOptions::get();
 
     // A list of users we will login
-    let mut bot_receiver = BotDataLoader::load(proxy, &users_file, &proxies_file, count)?;
-
-    // if we only load the data but do not login
-    if load {
-        while bot_receiver.recv().await.is_some() {
-            // empty
-        }
-        return Ok(());
-    }
 
     // looks up DNS records, etc. This is important where there is a redirect
     // for instance, 2b2t.org has a DNS redirect
     let server_address = normalize_address(&host, port).await;
 
+    let connection_data: Pin<Box<dyn Stream<Item = BotConnectionData>>> = match offline {
+        true => Box::pin(BotConnectionData::offline_random().take(count)),
+        false => {
+            let bot_receiver =
+                BotConnectionData::load_from_files(&users_file, &proxies_file, proxy, count)?;
+
+            Box::pin(ReceiverStream::new(bot_receiver))
+        }
+    };
+
     // taking the users and generating connections to the Minecraft server
-    let connections: ReceiverStream<_> = BotConnection::stream(server_address, bot_receiver).into();
+    let connections: ReceiverStream<_> =
+        BotConnection::stream(server_address, connection_data).into();
 
     // only return bot connections which were successful
     let connections = connections.filter_map(|elem| match elem {
@@ -157,7 +165,7 @@ async fn run() -> anyhow::Result<()> {
     match version {
         340 => Runner::<protocol::v340::Protocol>::run(connections, run_options)
             .await
-            .context("Error starting up 1.12")?, // 1.12
+            .context("Error starting up 1.12")?, // 1.12.2
         _ => {
             panic!("version {version} does not exist")
         }

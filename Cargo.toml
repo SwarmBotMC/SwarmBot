@@ -121,7 +121,7 @@ more-asserts = "0.3"
 primes = "0.3"
 
 [workspace]
-members = ["packets", "interfaces"]
+members = ["packets", "interfaces", "swarmbot-cli"]
 
 [profile.dev]
 split-debuginfo = "unpacked"

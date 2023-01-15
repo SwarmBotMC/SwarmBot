@@ -140,8 +140,8 @@ impl<T: Minecraft + 'static> Runner<T> {
 
                     // login task for an individual user
                     tokio::task::spawn_local(async move {
-                        println!("Starting login of {}", connection.user.username);
-                        let username = connection.user.username.clone();
+                        println!("Starting login of {}", connection.bot.username());
+                        let username = connection.bot.username().to_string();
                         let login = match T::login(connection).await {
                             Ok(res) => {
                                 println!("Finished logging in {username}");

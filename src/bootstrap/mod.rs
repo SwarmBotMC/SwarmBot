@@ -1,5 +1,6 @@
 //! used for boostrapping the code
 use anyhow::Context;
+use futures::{Stream, StreamExt};
 use serde::Deserialize;
 use tokio::{
     net::{
@@ -10,10 +11,7 @@ use tokio::{
 };
 use tokio_socks::tcp::Socks5Stream;
 
-use crate::bootstrap::{
-    mojang::MojangClient,
-    storage::{BotDataLoader, OnlineUser},
-};
+use crate::bootstrap::storage::{BotConnectionData, BotData};
 
 pub mod csv;
 pub mod dns;
@@ -40,13 +38,10 @@ impl From<&Address> for String {
 #[derive(Debug)]
 pub struct BotConnection {
     /// the user information
-    pub user: OnlineUser,
+    pub bot: BotData,
 
     /// the address being logged into
     pub server_address: Address,
-
-    /// the mojang client we can interact with mojang for
-    pub mojang: MojangClient,
 
     /// A read stream (from the server)
     pub read: OwnedReadHalf,
@@ -55,14 +50,15 @@ pub struct BotConnection {
     pub write: OwnedWriteHalf,
 }
 
-async fn obtain_connection(user: BotDataLoader, address: Address) -> anyhow::Result<BotConnection> {
-    let BotDataLoader {
-        proxy,
-        user,
-        mojang,
-    } = user;
+/// Obtain a concrete TCP connection to the sever `address`. This only
+/// establishes a connection and does not anything involving
+async fn obtain_connection(
+    user: BotConnectionData,
+    server_address: Address,
+) -> anyhow::Result<BotConnection> {
+    let BotConnectionData { bot, proxy } = user;
 
-    let target = String::from(&address);
+    let target = String::from(&server_address);
 
     let conn = if let Some(proxy) = proxy {
         let address = proxy.address();
@@ -82,23 +78,22 @@ async fn obtain_connection(user: BotDataLoader, address: Address) -> anyhow::Res
 
     let (read, write) = conn.into_split();
     Ok(BotConnection {
-        user,
-        server_address: address,
-        mojang,
+        bot,
+        server_address,
         read,
         write,
     })
 }
 
 impl BotConnection {
-    /// Generates connections given [`BotData`] and an address
+    /// Generates connections given [`BotConnectionData`] and an address
     pub fn stream(
         server_address: Address,
-        mut users: Receiver<BotDataLoader>,
+        mut users: impl Stream<Item = BotConnectionData> + Unpin + 'static,
     ) -> Receiver<anyhow::Result<Self>> {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         tokio::task::spawn_local(async move {
-            while let Some(user) = users.recv().await {
+            while let Some(user) = users.next().await {
                 let tx = tx.clone();
                 let address = server_address.clone();
                 tokio::task::spawn_local(async move {

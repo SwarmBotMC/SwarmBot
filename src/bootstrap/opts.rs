@@ -9,11 +9,6 @@ pub struct CliOptions {
     /// The host which the bot will connect to
     pub host: String,
 
-    /// If load is true, the bots will not join the server. This is used
-    /// to refresh the login keys of the given bots.
-    #[clap(long)]
-    pub load: bool,
-
     /// The number of bots that will be launched
     #[clap(short, long, default_value = "1")]
     pub count: usize,
@@ -66,6 +61,10 @@ pub struct CliOptions {
     /// <https://minecraft.fandom.com/wiki/Protocol_version>
     #[clap(short, long, default_value = "340")]
     pub version: usize,
+
+    /// if we are launching in offline mode
+    #[clap(long)]
+    pub offline: bool
 }
 
 impl CliOptions {
