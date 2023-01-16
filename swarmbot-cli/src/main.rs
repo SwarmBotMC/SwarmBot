@@ -2,14 +2,15 @@
 
 use std::{io, io::Write};
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use clap::Parser;
 use futures::SinkExt;
+use swarmbot_interfaces::{types::BlockLocation, CommandData, GoTo};
 use tokio::{
     io::{AsyncBufReadExt, BufReader},
     net::TcpSocket,
 };
-use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::tungstenite::{handshake::client::Request, Message};
 
 /// Options parsed from CLI
 #[derive(Parser, Debug)]
@@ -28,32 +29,62 @@ struct CliOptions {
 
 async fn run() -> anyhow::Result<!> {
     let CliOptions { ip, port } = CliOptions::parse();
+    // let addr = format!("{ip}:{port}");
+    // let addr = addr.parse()?;
+    //
+    // let socket = TcpSocket::new_v4().context("could not create V4 socket")?;
+    // let socket = socket
+    //     .connect(addr)
+    //     .await
+    //     .context("could not connect to given address")?;
+    //
 
-    let addr = format!("{ip}:{port}");
-    let addr = addr.parse()?;
-
-    let socket = TcpSocket::new_v4().context("could not create V4 socket")?;
-    let socket = socket
-        .connect(addr)
-        .await
-        .context("could not connect to given address")?;
-
-    let mut web_socket = tokio_tungstenite::accept_async(socket)
+    let (mut web_socket, _) = tokio_tungstenite::connect_async(format!("ws://{ip}:{port}"))
         .await
         .context("could not create websocket")?;
 
+    println!("connected to websocket");
     println!();
-    let mut stdin = BufReader::new(tokio::io::stdin());
+    let stdin = BufReader::new(tokio::io::stdin());
+    
+    let mut lines = stdin.lines();
 
-    let mut s = String::new();
     loop {
         print!("> ");
         io::stdout().flush()?;
 
-        let len = stdin.read_line(&mut s).await?;
-        let s = &s[..len];
+        let s = lines.next_line().await?.unwrap_or_default();
 
-        web_socket.send(Message::Text(s.to_string())).await?;
+        match send_string(&s) {
+            Ok(s) => web_socket.send(Message::Text(s)).await?,
+            Err(e) => println!("invalid... {e}"),
+        }
+    }
+}
+
+fn send_string(input: &str) -> anyhow::Result<String> {
+    let cmd_data = to_command_data(input).with_context(|| format!("invalid converting to command data for {input}"))?;
+    let to_send = serde_json::to_string(&cmd_data).context("converting to JSON")?;
+
+    println!("sending {to_send}");
+    println!();
+    Ok(to_send)
+}
+
+fn to_command_data(input_str: &str) -> anyhow::Result<CommandData> {
+    let mut input = input_str.trim().split(' ');
+
+    let cmd_name = input.next().context("no command name specified")?;
+
+    match cmd_name {
+        "goto" => Ok(CommandData::GoTo(GoTo {
+            location: BlockLocation {
+                x: input.next().context("no x in goto")?.parse()?,
+                y: input.next().context("no y in goto")?.parse()?,
+                z: input.next().context("no z in goto")?.parse()?,
+            },
+        })),
+        _ => bail!("input '{input_str}' could not be parsed into a CommandData struct"),
     }
 }
 

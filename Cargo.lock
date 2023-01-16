@@ -1818,6 +1818,7 @@ dependencies = [
  "clap",
  "futures",
  "serde",
+ "serde_json",
  "swarmbot-interfaces",
  "tokio",
  "tokio-tungstenite 0.18.0",

@@ -48,7 +48,7 @@ macro_rules! commands {
     {
         #[derive(Serialize, Deserialize, Debug)]
         #[serde(rename_all = "lowercase")]
-        #[serde(tag = "type")]
+        #[serde(tag = "path")]
         pub enum CommandData {
             $($command($command)),*
         }
