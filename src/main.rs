@@ -1,6 +1,7 @@
 //! The entry point for the code
 
 #![feature(generic_const_exprs)]
+#![feature(never_type)]
 #![feature(type_alias_impl_trait)]
 #![feature(once_cell)]
 #![feature(step_trait)]
