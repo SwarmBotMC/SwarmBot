@@ -4,7 +4,7 @@ use clap::Parser;
 
 /// Options parsed from CLI
 #[derive(Parser, Debug)]
-#[clap(version = "1.0", author = "Andrew Gazelka")]
+#[clap(version = "1.0", author = "Andrew Gazelka", disable_version_flag = true)]
 pub struct CliOptions {
     /// The host which the bot will connect to
     pub host: String,
