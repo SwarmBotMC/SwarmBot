@@ -27,6 +27,7 @@ use crate::{
     storage::entities::EntityKind,
     types::{Dimension, Direction, Location, PacketData, Slot},
 };
+use crate::protocol::v340::clientbound::LoginDisconnect;
 
 mod clientbound;
 mod serverbound;
@@ -492,6 +493,11 @@ impl Minecraft for Protocol {
                 reader.read_exact_packet().await?
             }
             LoginSuccess::ID => data.reader.read(),
+            LoginDisconnect::ID => {
+                let LoginDisconnect { reason } = data.reader.read();
+                let reason = reason.colorize();
+                anyhow::bail!("Disconnected while logging in. Reason: {reason}")
+            }
             actual => {
                 let expected = LoginSuccess::ID;
                 anyhow::bail!("wrong packet for logging in. Expected {expected}, got {actual}")

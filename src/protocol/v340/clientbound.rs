@@ -222,6 +222,12 @@ pub struct LoginSuccess {
     pub username: String,
 }
 
+#[derive(Debug, Packet, Readable)]
+#[packet(0x00, Login)]
+pub struct LoginDisconnect {
+    pub reason: Chat,
+}
+
 #[derive(Readable)]
 pub struct PlayerPositionAndLookRaw {
     location: Location,
