@@ -6,13 +6,15 @@ use anyhow::{bail, Context};
 use clap::Parser;
 use futures::SinkExt;
 use swarmbot_interfaces::{types::BlockLocation, CommandData, GoTo};
-use tokio::{
-    io::{AsyncBufReadExt, BufReader},
-    net::TcpSocket,
-};
-use tokio_tungstenite::tungstenite::{handshake::client::Request, Message};
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio_tungstenite::tungstenite::Message;
 
 /// Options parsed from CLI
+///
+/// Commands:
+///
+///
+/// goto {x} {y} {z}    — go to the coordinates {x} {y} {z}
 #[derive(Parser, Debug)]
 #[clap(version = "1.0", author = "Andrew Gazelka")]
 struct CliOptions {
@@ -29,15 +31,6 @@ struct CliOptions {
 
 async fn run() -> anyhow::Result<!> {
     let CliOptions { ip, port } = CliOptions::parse();
-    // let addr = format!("{ip}:{port}");
-    // let addr = addr.parse()?;
-    //
-    // let socket = TcpSocket::new_v4().context("could not create V4 socket")?;
-    // let socket = socket
-    //     .connect(addr)
-    //     .await
-    //     .context("could not connect to given address")?;
-    //
 
     let (mut web_socket, _) = tokio_tungstenite::connect_async(format!("ws://{ip}:{port}"))
         .await
@@ -46,7 +39,7 @@ async fn run() -> anyhow::Result<!> {
     println!("connected to websocket");
     println!();
     let stdin = BufReader::new(tokio::io::stdin());
-    
+
     let mut lines = stdin.lines();
 
     loop {
@@ -63,7 +56,8 @@ async fn run() -> anyhow::Result<!> {
 }
 
 fn send_string(input: &str) -> anyhow::Result<String> {
-    let cmd_data = to_command_data(input).with_context(|| format!("invalid converting to command data for {input}"))?;
+    let cmd_data = to_command_data(input)
+        .with_context(|| format!("invalid converting to command data for {input}"))?;
     let to_send = serde_json::to_string(&cmd_data).context("converting to JSON")?;
 
     println!("sending {to_send}");

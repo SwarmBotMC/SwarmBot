@@ -17,7 +17,7 @@ use crate::{
             writer::{PacketWriteChannel, PacketWriter},
         },
         v340::{
-            clientbound::{JoinGame, LoginSuccess},
+            clientbound::{JoinGame, LoginDisconnect, LoginSuccess},
             serverbound::{
                 ClientStatusAction, DigStatus, Hand, HandshakeNextState, InteractEntityKind,
             },
@@ -27,7 +27,6 @@ use crate::{
     storage::entities::EntityKind,
     types::{Dimension, Direction, Location, PacketData, Slot},
 };
-use crate::protocol::v340::clientbound::LoginDisconnect;
 
 mod clientbound;
 mod serverbound;
