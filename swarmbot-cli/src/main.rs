@@ -1,10 +1,10 @@
 #![feature(never_type)]
 
-use std::{future::Future, io, net::SocketAddr, str::FromStr};
-use std::io::Write;
+use std::{io, io::Write};
 
 use anyhow::Context;
 use clap::Parser;
+use futures::SinkExt;
 use tokio::{
     io::{AsyncBufReadExt, BufReader},
     net::TcpSocket,
@@ -38,7 +38,7 @@ async fn run() -> anyhow::Result<!> {
         .await
         .context("could not connect to given address")?;
 
-    let web_socket = tokio_tungstenite::accept_async(socket)
+    let mut web_socket = tokio_tungstenite::accept_async(socket)
         .await
         .context("could not create websocket")?;
 
@@ -53,8 +53,7 @@ async fn run() -> anyhow::Result<!> {
         let len = stdin.read_line(&mut s).await?;
         let s = &s[..len];
 
-        web_socket.send(Message::Text()).await
-
+        web_socket.send(Message::Text(s.to_string())).await?;
     }
 }
 
