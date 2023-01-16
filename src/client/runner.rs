@@ -9,13 +9,14 @@ use std::{
 use anyhow::Context;
 use tokio::sync::Notify;
 use tokio_stream::{Stream, StreamExt};
+use interfaces::{Attack, CommandData, GoTo};
+use interfaces::types::Selection2D;
 
 use crate::{
     bootstrap::BotConnection,
     client::{
         bot::{run_threaded, ActionState, Bot},
-        commands,
-        commands::{CommandData, CommandReceiver, Selection2D},
+        commands::{CommandReceiver},
         processor::SimpleInterfaceIn,
         state::{
             global::{mine_alloc::MinePreference, GlobalState},
@@ -331,7 +332,7 @@ impl<T: Minecraft + 'static> Runner<T> {
         let bots = &mut self.bots;
 
         match command {
-            CommandData::Mine(commands::Mine { sel }) => {
+            CommandData::Mine(interfaces::Mine { sel }) => {
                 let Selection2D { from, to } = sel.normalize();
                 global.mine.mine(from, to, Some(MinePreference::FromDist));
 
@@ -339,13 +340,13 @@ impl<T: Minecraft + 'static> Runner<T> {
                     bot.actions.schedule(LazyStream::from(MineRegion));
                 }
             }
-            CommandData::GoTo(commands::GoTo { location }) => {
+            CommandData::GoTo(GoTo { location }) => {
                 for bot in bots {
                     bot.actions
                         .schedule(BlockTravelTask::new(location, &bot.state));
                 }
             }
-            CommandData::Attack(commands::Attack { name }) => {
+            CommandData::Attack(Attack { name }) => {
                 let player = self
                     .global_state
                     .players
@@ -362,6 +363,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                     bot.actions.schedule(task);
                 }
             }
+            CommandData::Cancelled(_) | CommandData::Finished(_) => {}
         }
 
         Ok(())

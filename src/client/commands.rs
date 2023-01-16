@@ -1,63 +1,13 @@
 use std::sync::mpsc::Receiver;
 
 use futures::StreamExt;
-use interfaces::types::{BlockLocation, BlockLocation2D};
-use serde::{Deserialize, Serialize};
+use interfaces::CommandData;
 use serde_json::Value;
 use tokio::net::TcpListener;
 
 /// commands received over websocket (typically forge mod)
 pub struct CommandReceiver {
     pub pending: Receiver<CommandData>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Selection2D {
-    pub from: BlockLocation2D,
-    pub to: BlockLocation2D,
-}
-
-impl Selection2D {
-    /// Normalize so that the **from** coordinate is always smaller than the
-    /// **to** coord.
-    pub fn normalize(self) -> Self {
-        let min_x = self.from.x.min(self.to.x);
-        let min_z = self.from.z.min(self.to.z);
-
-        let max_x = self.from.x.max(self.to.x);
-        let max_z = self.from.z.max(self.to.z);
-
-        Self {
-            from: BlockLocation2D::new(min_x, min_z),
-            to: BlockLocation2D::new(max_x, max_z),
-        }
-    }
-}
-
-/// The mine command.
-/// Mine the given selection.
-/// A global command. The process should allocate appropriately to children.
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Mine {
-    pub sel: Selection2D,
-}
-
-/// A navigation command to go to the given block location
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GoTo {
-    pub location: BlockLocation,
-}
-
-/// Attack a given player
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Attack {
-    pub name: String,
-}
-
-pub enum CommandData {
-    Mine(Mine),
-    GoTo(GoTo),
-    Attack(Attack),
 }
 
 fn process(path: &str, value: Value) -> Option<CommandData> {
