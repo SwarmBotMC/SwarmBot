@@ -31,7 +31,7 @@ impl<T: TaskStream> LazyStream<T> {
     ) -> Option<&mut Task> {
         if self.current.is_none() {
             let next = self.create_task.poll(out, local, global)?;
-            self.current = Some(box next);
+            self.current = Some(next.into());
         }
 
         self.current.as_deref_mut()

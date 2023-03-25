@@ -341,7 +341,7 @@ impl UserCache {
 
             let root = Root { users };
 
-            let data = bincode::encode_to_vec(&root, bincode::config::standard()).unwrap();
+            let data = bincode::encode_to_vec(root, bincode::config::standard()).unwrap();
             file.write_all(&data).unwrap();
             file.flush().unwrap();
         });

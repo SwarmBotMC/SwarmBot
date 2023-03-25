@@ -8,7 +8,6 @@
 #![feature(option_get_or_insert_default)]
 #![feature(array_zip)]
 #![feature(test)]
-#![feature(box_syntax)]
 #![feature(default_free_fn)]
 #![feature(fs_try_exists)]
 #![feature(async_fn_in_trait)]

@@ -54,7 +54,7 @@ impl<H: Heuristic, G: GoalCheck> From<PlayerProblem<H, G>> for NavigateProblem<H
     fn from(problem: PlayerProblem<H, G>) -> Self {
         Self {
             calculate: true,
-            problem: box problem,
+            problem: problem.into(),
             follower: None,
         }
     }

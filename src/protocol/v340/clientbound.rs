@@ -436,7 +436,7 @@ impl ByteReadableLike for ChunkColumnPacket {
         while primary_bitmask != 0 {
             if primary_bitmask & 0b1 == 1 {
                 let section: ChunkSection = byte_reader.read_like(param);
-                sections[idx] = Some(box HighMemoryChunkSection::new(section.palette));
+                sections[idx] = Some(HighMemoryChunkSection::new(section.palette).into());
             }
             primary_bitmask >>= 1;
             idx += 1;
