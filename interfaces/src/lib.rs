@@ -1,5 +1,3 @@
-#![feature(once_cell)]
-
 use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};

@@ -3,7 +3,6 @@
 #![feature(generic_const_exprs)]
 #![feature(never_type)]
 #![feature(type_alias_impl_trait)]
-#![feature(once_cell)]
 #![feature(step_trait)]
 #![feature(option_get_or_insert_default)]
 #![feature(array_zip)]
