@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs::OpenOptions,
-};
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -96,13 +93,13 @@ impl BlockData {
 
     pub fn read() -> Result<BlockData, serde_json::Error> {
         let blocks: Vec<RawBlock> = {
-            let reader = OpenOptions::new().read(true).open("blocks.json").unwrap();
-            serde_json::from_reader(reader)?
+            let s = include_str!("blocks.json");
+            serde_json::from_str(s)?
         };
 
         let foods: Vec<RawFood> = {
-            let reader = OpenOptions::new().read(true).open("foods.json").unwrap();
-            serde_json::from_reader(reader)?
+            let s = include_str!("foods.json");
+            serde_json::from_str(s)?
         };
 
         let food_lookup: HashSet<_> = foods.into_iter().map(|food| food.id).collect();
