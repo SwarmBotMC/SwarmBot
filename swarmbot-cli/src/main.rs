@@ -16,7 +16,7 @@ use tokio_tungstenite::tungstenite::Message;
 ///
 /// goto {x} {y} {z}    — go to the coordinates {x} {y} {z}
 #[derive(Parser, Debug)]
-#[clap(version = "1.0", author = "Andrew Gazelka")]
+#[command(about, author, version)]
 struct CliOptions {
     /// The IP we are going to connect to
     #[clap(long, default_value = "127.0.0.1")]
