@@ -5,8 +5,6 @@ edition = "2021"
 description = "Interfacs for swarmbot"
 license = "MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 # json parsing (particularly for mojang api)
 serde_json = "1.0"

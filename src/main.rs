@@ -5,7 +5,6 @@
 #![feature(type_alias_impl_trait)]
 #![feature(step_trait)]
 #![feature(option_get_or_insert_default)]
-#![feature(array_zip)]
 #![feature(test)]
 #![feature(default_free_fn)]
 #![feature(fs_try_exists)]
