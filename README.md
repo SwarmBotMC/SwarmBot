@@ -52,9 +52,8 @@ If you want to support a version, you will need to implement the `Minecraft` tra
 ### Bot Launcher
 
 1. Install cargo: https://rustup.rs/
-2. Make sure you are using _nightly_ `rustup default nightly`
-3. Run `cargo install swarm-bot`
-4. You can now execute `swarm-bot` executable to launch swarm bot
+2. Run `cargo install swarm-bot`
+3. You can now execute `swarm-bot` executable to launch swarm bot
 
 ### Forge Mod
 
