@@ -108,7 +108,7 @@ fn main() {
             Ok(_) => println!("Program exited without errors somehow"),
 
             // print the error in non-debug fashion
-            Err(err) => println!("{err}"),
+            Err(err) => println!("{err:?}"),
         }
     });
 }
@@ -120,7 +120,7 @@ async fn run() -> anyhow::Result<()> {
         proxies_file,
         host,
         count,
-        version,
+        ver: version,
         port,
         delay_ms,
         ws_port,

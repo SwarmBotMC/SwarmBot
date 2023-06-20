@@ -43,6 +43,9 @@ pub struct CliOptions {
     /// email@gmail.com:password
     ///
     /// Note, instead of commas as a delimiter, colons are used
+    ///
+    /// This is purely to specify credentials.
+    /// If you are using the --offline flag, then this is not needed.
     #[clap(long, default_value = "users.csv")]
     pub users_file: String,
 
@@ -60,7 +63,7 @@ pub struct CliOptions {
     ///
     /// <https://minecraft.fandom.com/wiki/Protocol_version>
     #[clap(short, long, default_value = "340")]
-    pub version: usize,
+    pub ver: usize,
 
     /// if we are launching in offline mode
     #[clap(long)]

@@ -133,8 +133,12 @@ impl BotConnectionData {
         proxy: bool,
         count: usize,
     ) -> anyhow::Result<Receiver<Self>> {
-        let csv_file = File::open(users_file)
-            .with_context(|| format!("could not open users file {users_file}"))?;
+        let csv_file = File::open(users_file).with_context(|| {
+            format!(
+                "could not open users file {users_file}. \
+            This is specified by the --users-file flag. You can avoid specifying this file by using the --offline flag to use offline mode."
+            )
+        })?;
 
         let csv_users =
             bootstrap::csv::read_users(csv_file).context("could not open users file")?;

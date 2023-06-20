@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc, sync::mpsc::TryRecvError};
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
 use swarm_bot_packets::{
     types::{Packet, VarInt, UUID},
@@ -17,7 +17,7 @@ use crate::{
             writer::{PacketWriteChannel, PacketWriter},
         },
         v340::{
-            clientbound::{JoinGame, LoginDisconnect, LoginSuccess},
+            clientbound::{EncryptionRequest, JoinGame, LoginDisconnect, LoginSuccess},
             serverbound::{
                 ClientStatusAction, DigStatus, Hand, HandshakeNextState, InteractEntityKind,
             },
@@ -495,11 +495,17 @@ impl Minecraft for Protocol {
             LoginDisconnect::ID => {
                 let LoginDisconnect { reason } = data.reader.read();
                 let reason = reason.colorize();
-                anyhow::bail!("Disconnected while logging in. Reason: {reason}")
+                bail!("Disconnected while logging in. Reason: {reason}")
+            }
+            EncryptionRequest::ID => {
+                bail!("Server requested encryption but, we are in offline mode")
             }
             actual => {
                 let expected = LoginSuccess::ID;
-                anyhow::bail!("wrong packet for logging in. Expected {expected}, got {actual}")
+                bail!(
+                    "wrong packet ID for logging in. Expected \
+                ID {expected} which is the ID for login success but, got ID of {actual}."
+                )
             }
         };
 
