@@ -115,7 +115,7 @@ pub struct PlayerMessage {
 
 impl PlayerMessage {
     pub fn into_cmd(self) -> Option<Command> {
-        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^#(\S+)\s?(.*)").unwrap());
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"#(\S+)\s?(.*)").unwrap());
         let capture = RE.captures(&self.message)?;
 
         let command = capture.get(1)?.as_str().to_string();

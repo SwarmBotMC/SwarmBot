@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use anyhow::bail;
 use crossterm::style::Stylize;
 use float_ord::FloatOrd;
 use interfaces::types::BlockLocation;
@@ -246,7 +247,7 @@ pub fn process_command(
         _ => {}
     }
 
-    Ok(())
+    bail!("unknown command: {name}")
 }
 
 pub fn run_threaded(
