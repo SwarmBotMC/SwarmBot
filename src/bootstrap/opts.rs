@@ -64,7 +64,7 @@ pub struct CliOptions {
 
     /// if we are launching in offline mode
     #[clap(long)]
-    pub offline: bool
+    pub offline: bool,
 }
 
 impl CliOptions {

@@ -7,16 +7,15 @@ use std::{
 };
 
 use anyhow::Context;
+use interfaces::{types::Selection2D, Attack, CommandData, GoTo};
 use tokio::sync::Notify;
 use tokio_stream::{Stream, StreamExt};
-use interfaces::{Attack, CommandData, GoTo};
-use interfaces::types::Selection2D;
 
 use crate::{
     bootstrap::BotConnection,
     client::{
         bot::{run_threaded, ActionState, Bot},
-        commands::{CommandReceiver},
+        commands::CommandReceiver,
         processor::SimpleInterfaceIn,
         state::{
             global::{mine_alloc::MinePreference, GlobalState},

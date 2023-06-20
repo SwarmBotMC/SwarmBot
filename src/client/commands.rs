@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
-use anyhow::{bail, Context};
 
+use anyhow::{bail, Context};
 use futures::StreamExt;
 use interfaces::CommandData;
 use serde_json::Value;
@@ -31,7 +31,10 @@ fn process(path: &str, value: Value) -> Option<CommandData> {
     }
 }
 
-async fn command_receiver(tx: Sender<CommandData>, mut ws: WebSocketStream<TcpStream>) -> anyhow::Result<()> {
+async fn command_receiver(
+    tx: Sender<CommandData>,
+    mut ws: WebSocketStream<TcpStream>,
+) -> anyhow::Result<()> {
     'wloop: while let Some(msg) = ws.next().await {
         let msg = msg.context("error reading next web socket message (websocket disconnect?)")?;
 
