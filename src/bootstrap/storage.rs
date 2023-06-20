@@ -3,7 +3,6 @@
 use std::{
     collections::HashMap,
     convert::TryFrom,
-    fs,
     fs::{File, OpenOptions},
     io::{Read, Write},
     path::PathBuf,
@@ -169,7 +168,8 @@ fn time() -> u64 {
 
 impl UserCache {
     pub fn load(file_path: PathBuf) -> anyhow::Result<Self> {
-        let exists = fs::try_exists(&file_path)
+        let exists = file_path
+            .try_exists()
             .with_context(|| format!("cannot load user from: {file_path:?} (DNE)"))?;
         let res = if exists {
             let file = File::open(&file_path).context("could not load file")?;

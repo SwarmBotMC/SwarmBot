@@ -1,4 +1,4 @@
-use std::{collections::HashSet, default::default};
+use std::collections::HashSet;
 
 use float_ord::FloatOrd;
 use interfaces::types::{BlockApprox, BlockKind, BlockLocation, BlockState, SimpleType};
@@ -7,6 +7,7 @@ use num::traits::Pow;
 
 use crate::{
     client::{physics::speed::Speed, state::local::inventory::PlayerInventory},
+    default,
     protocol::Face,
     storage::blocks::WorldBlocks,
     types::{Direction, Displacement, Location},

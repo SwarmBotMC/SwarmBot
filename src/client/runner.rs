@@ -1,6 +1,5 @@
 use std::{
     cell::RefCell,
-    default::default,
     rc::Rc,
     sync::Arc,
     time::{Duration, Instant},
@@ -26,6 +25,7 @@ use crate::{
             navigate::BlockTravelTask,
         },
     },
+    default,
     protocol::{EventQueue, Login, Minecraft},
 };
 

@@ -4,6 +4,8 @@ use std::collections::HashMap;
 
 use interfaces::types::{BlockApprox, BlockLocation, BlockState, ChunkLocation, SimpleType};
 
+use crate::default;
+
 const SECTION_ELEMENTS: usize = 16 * 16 * 16;
 const BITS_PER_ENUM: usize = 2;
 const SECTION_BYTES: usize = SECTION_ELEMENTS * BITS_PER_ENUM / 8;
@@ -439,11 +441,11 @@ impl Column {
         let section_idx = section_idx as usize;
         match self {
             Self::LowMemory { data } => {
-                let section = data.sections[section_idx].get_or_insert_default();
+                let section = data.sections[section_idx].get_or_insert_with(default);
                 section.set_simple_type(x, y_offset, z, state.simple_type());
             }
             Self::HighMemory { data } => {
-                let section = data.sections[section_idx].get_or_insert_default();
+                let section = data.sections[section_idx].get_or_insert_with(default);
                 section.palette.set_block(x, y_offset, z, state);
             }
         }

@@ -20,8 +20,6 @@ pub enum MinePreference {
     ToDist,
 }
 
-pub type Locations = impl Iterator<Item = BlockLocation>;
-
 impl MineAlloc {
     pub const REGION_R: i32 = 3;
     pub const REGION_WIDTH: i32 = Self::REGION_R * 2 + 1;
@@ -32,7 +30,7 @@ impl MineAlloc {
         Some(centered)
     }
 
-    fn locations_rad(center: BlockLocation2D, rad: i32) -> Locations {
+    fn locations_rad(center: BlockLocation2D, rad: i32) -> impl Iterator<Item = BlockLocation> {
         (0..256)
             .cartesian_product(-rad..=rad)
             .cartesian_product(-rad..=rad)
@@ -40,7 +38,7 @@ impl MineAlloc {
     }
 
     // locations plus 1 block extra
-    pub fn locations_extra(center: BlockLocation2D) -> Locations {
+    pub fn locations_extra(center: BlockLocation2D) -> impl Iterator<Item = BlockLocation> {
         Self::locations_rad(center, Self::REGION_R + 1)
     }
 

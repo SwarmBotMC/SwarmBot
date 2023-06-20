@@ -1,14 +1,5 @@
 //! The entry point for the code
 
-#![feature(generic_const_exprs)]
-#![feature(never_type)]
-#![feature(type_alias_impl_trait)]
-#![feature(step_trait)]
-#![feature(option_get_or_insert_default)]
-#![feature(test)]
-#![feature(default_free_fn)]
-#![feature(fs_try_exists)]
-#![feature(async_fn_in_trait)]
 #![deny(
     clippy::await_holding_refcell_ref,
     clippy::await_holding_lock,
@@ -67,9 +58,6 @@
 // #![deny(missing_docs)]
 // #![deny(clippy::missing_docs_in_private_items)]
 
-#[allow(unused, clippy::useless_attribute)]
-extern crate test;
-
 #[macro_use]
 extern crate enum_dispatch;
 #[macro_use]
@@ -111,6 +99,10 @@ fn main() {
             Err(err) => println!("{err:?}"),
         }
     });
+}
+
+fn default<T: Default>() -> T {
+    T::default()
 }
 
 async fn run() -> anyhow::Result<()> {

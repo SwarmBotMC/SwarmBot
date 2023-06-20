@@ -11,11 +11,8 @@ serde_json = "1.0"
 # serialization, deserialization
 serde = { version = "1.0", features = ["derive"] }
 
-lazy_static = "1.4"
-
-
-tokio-tungstenite = "0.17"
-tungstenite = "0.17"
+tokio-tungstenite = "0.19.0"
+tungstenite = "0.19.0"
 tokio = { version = "1.24", features = [
     "rt",
     "io-std",
@@ -35,3 +32,4 @@ regex = "1.5"
 
 itertools = "0.10.3"
 num = "0.4.0"
+once_cell = { version = "1.18.0", features = ["parking_lot"] }

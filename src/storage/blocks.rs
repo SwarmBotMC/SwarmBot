@@ -387,38 +387,39 @@ mod tests {
         }
     }
 
-    #[bench]
-    fn bench_get_block(b: &mut test::Bencher) {
-        let mut world = WorldBlocks::default();
-
-        let schematic = {
-            let mut spawn_2b2t = OpenOptions::new()
-                .read(true)
-                .open("test-data/2b2t.schematic")
-                .unwrap();
-
-            Schematic::load(&mut spawn_2b2t).unwrap()
-        };
-
-        world.paste(&schematic);
-
-        let origin = schematic.origin().unwrap();
-
-        let mut rand = rand::thread_rng();
-
-        b.iter(|| {
-            // Inner closure, the actual test
-            let center_x = origin.x + rand.gen_range(3..(schematic.width - 3)) as i32;
-            let center_z = origin.z + rand.gen_range(3..(schematic.length - 3)) as i32;
-
-            for x in -3..=3 {
-                for z in -3..=3 {
-                    for y in 0..256 {
-                        let loc = BlockLocation::new(center_x + x, y, center_z + z);
-                        test::black_box(world.get_block(loc));
-                    }
-                }
-            }
-        });
-    }
+    // #[bench]
+    // fn bench_get_block(b: &mut test::Bencher) {
+    //     let mut world = WorldBlocks::default();
+    //
+    //     let schematic = {
+    //         let mut spawn_2b2t = OpenOptions::new()
+    //             .read(true)
+    //             .open("test-data/2b2t.schematic")
+    //             .unwrap();
+    //
+    //         Schematic::load(&mut spawn_2b2t).unwrap()
+    //     };
+    //
+    //     world.paste(&schematic);
+    //
+    //     let origin = schematic.origin().unwrap();
+    //
+    //     let mut rand = rand::thread_rng();
+    //
+    //     b.iter(|| {
+    //         // Inner closure, the actual test
+    //         let center_x = origin.x + rand.gen_range(3..(schematic.width -
+    // 3)) as i32;         let center_z = origin.z +
+    // rand.gen_range(3..(schematic.length - 3)) as i32;
+    //
+    //         for x in -3..=3 {
+    //             for z in -3..=3 {
+    //                 for y in 0..256 {
+    //                     let loc = BlockLocation::new(center_x + x, y,
+    // center_z + z);
+    // test::black_box(world.get_block(loc));                 }
+    //             }
+    //         }
+    //     });
+    // }
 }

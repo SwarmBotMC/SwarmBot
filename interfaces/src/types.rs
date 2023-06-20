@@ -6,7 +6,7 @@ use std::{
 
 use colored::Colorize;
 use itertools::Itertools;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 use swarm_bot_packets::{
@@ -115,9 +115,7 @@ pub struct PlayerMessage {
 
 impl PlayerMessage {
     pub fn into_cmd(self) -> Option<Command> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^#(\S+)\s?(.*)").unwrap();
-        }
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^#(\S+)\s?(.*)").unwrap());
         let capture = RE.captures(&self.message)?;
 
         let command = capture.get(1)?.as_str().to_string();
@@ -139,9 +137,8 @@ impl PlayerMessage {
 
 impl Chat {
     pub fn player_dm(&self) -> Option<PlayerMessage> {
-        lazy_static::lazy_static! {
-            static ref RE: Regex =Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap();
-        }
+        static RE: Lazy<Regex> =
+            Lazy::new(|| Regex::new(r"^([A-Za-z_0-9]+) whispers: (.*)").unwrap());
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
 
@@ -152,9 +149,7 @@ impl Chat {
         Some(PlayerMessage { player, message })
     }
     pub fn player_message(&self) -> Option<PlayerMessage> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap();
-        }
+        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^<([A-Za-z_0-9]+)> (.*)").unwrap());
 
         let text = self.extra.as_ref()?.iter().map(|x| &x.text).join("");
 

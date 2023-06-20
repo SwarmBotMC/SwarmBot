@@ -205,7 +205,7 @@ impl Movements {
                 return Progression::Edge;
             }
 
-            let mut open = CenteredArray::init::<_, RADIUS_S>();
+            let mut open = CenteredArray::init(RADIUS_S);
 
             // so we do not add the origin (it is already added)
             open[(0, 0)] = State::Closed;

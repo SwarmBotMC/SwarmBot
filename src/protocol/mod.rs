@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use interfaces::types::BlockLocation;
 use swarm_bot_packets::types::UUID;
 
@@ -178,6 +179,7 @@ pub trait InterfaceOut {
 }
 
 /// the minecraft trait. This represents a full Minecraft bot
+#[async_trait]
 pub trait Minecraft: Sized {
     /// the queue we are receiving from
     type Queue: EventQueue;

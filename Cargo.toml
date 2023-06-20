@@ -114,6 +114,8 @@ bincode = "2.0.0-alpha.2"
 hex-literal = "0.3.4"
 cfb8 = "0.7"
 tokio-stream = "0.1.11"
+once_cell = { version = "1.18.0", features = ["parking_lot"] }
+async-trait = "0.1.68"
 
 [dev-dependencies]
 assert_matches = "1.5"

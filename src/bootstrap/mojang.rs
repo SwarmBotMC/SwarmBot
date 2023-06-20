@@ -1,6 +1,6 @@
 //! Module for interacting with Mojang
 
-use std::{convert::TryFrom, default::default};
+use std::convert::TryFrom;
 
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,7 @@ use serde_json::json;
 use sha1::{Digest, Sha1};
 use swarm_bot_packets::types::UUID;
 
-use crate::bootstrap::Proxy;
+use crate::{bootstrap::Proxy, default};
 
 #[derive(Debug)]
 pub struct MojangClient {
