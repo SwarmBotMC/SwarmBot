@@ -244,10 +244,12 @@ pub fn process_command(
         //         actions.schedule(mine_task);
         //     }
         // }
-        _ => {}
+        _ => {
+            bail!("unknown command: {name}")
+        }
     }
 
-    bail!("unknown command: {name}")
+    Ok(())
 }
 
 pub fn run_threaded(
