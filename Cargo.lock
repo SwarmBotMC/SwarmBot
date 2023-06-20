@@ -1756,7 +1756,7 @@ checksum = "81cdd64d312baedb58e21336b31bc043b77e01cc99033ce76ef539f78e965ebc"
 
 [[package]]
 name = "swarm-bot"
-version = "0.3.9"
+version = "0.4.0"
 dependencies = [
  "aes",
  "anyhow",
@@ -1803,7 +1803,7 @@ dependencies = [
 
 [[package]]
 name = "swarm-bot-packets"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bytes",
  "swarm-bot-packets-macro",
@@ -1835,7 +1835,7 @@ dependencies = [
 
 [[package]]
 name = "swarmbot-interfaces"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "colored",
  "futures",

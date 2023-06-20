@@ -3,7 +3,7 @@ name = "swarm-bot-packets"
 version = "0.2.1"
 edition = "2018"
 description = "The packets component of swarm bot"
-license = "Business Source License"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
