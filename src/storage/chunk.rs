@@ -210,7 +210,7 @@ pub struct Palette {
 impl Default for Palette {
     fn default() -> Self {
         Self {
-            /// the smallest bpb
+            // the smallest bpb
             bits_per_block: 1,
             id_to_state: Some(vec![BlockState::AIR]),
             storage: vec![0; 64],
