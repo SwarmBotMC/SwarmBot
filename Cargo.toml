@@ -102,9 +102,7 @@ swarm-bot-packets = { path = "packets", version = "0.2.0" }
 
 # so we don't have to use v-tables
 enum_dispatch = "0.3"
-
-# websockets
-tokio-tungstenite = "0.18"
+tokio-tungstenite = "0.20.1"
 
 futures = "0.3"
 
@@ -116,6 +114,7 @@ cfb8 = "0.7"
 tokio-stream = "0.1.11"
 once_cell = { version = "1.18.0", features = ["parking_lot"] }
 async-trait = "0.1.68"
+tungstenite = "0.20.1"
 
 [dev-dependencies]
 assert_matches = "1.5"

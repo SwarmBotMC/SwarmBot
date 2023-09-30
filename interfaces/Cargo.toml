@@ -11,8 +11,8 @@ serde_json = "1.0"
 # serialization, deserialization
 serde = { version = "1.0", features = ["derive"] }
 
-tokio-tungstenite = "0.19.0"
-tungstenite = "0.19.0"
+tokio-tungstenite = "0.20.1"
+tungstenite = "0.20.1"
 tokio = { version = "1.24", features = [
     "rt",
     "io-std",
