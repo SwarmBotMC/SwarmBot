@@ -13,7 +13,7 @@ serde = { version = "1.0", features = ["derive"] }
 
 tokio-tungstenite = "0.20.1"
 tungstenite = "0.20.1"
-tokio = { version = "1.24", features = [
+tokio = { version = "1.33", features = [
     "rt",
     "io-std",
     "io-util",
@@ -28,8 +28,8 @@ swarm-bot-packets = { path = "../packets", version = "0.2.0" }
 colored = "2.0"
 
 # chat parsing
-regex = "1.5"
+regex = "1.10"
 
-itertools = "0.10.3"
-num = "0.4.0"
+itertools = "0.11.0"
+num = "0.4.1"
 once_cell = { version = "1.18.0", features = ["parking_lot"] }

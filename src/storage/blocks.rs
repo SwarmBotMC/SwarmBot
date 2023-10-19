@@ -176,9 +176,6 @@ impl WorldBlocks {
         let x = (x - (chunk_x << 4)) as u8;
         let z = (z - (chunk_z << 4)) as u8;
 
-        let chunk_x = chunk_x;
-        let chunk_z = chunk_z;
-
         let loc = ChunkLocation(chunk_x, chunk_z);
         let column = self.storage.get(&loc)?;
 
@@ -293,9 +290,6 @@ impl WorldBlocks {
 
         let x = (x - (chunk_x << 4)) as u8;
         let z = (z - (chunk_z << 4)) as u8;
-
-        let chunk_x = chunk_x;
-        let chunk_z = chunk_z;
 
         let loc = ChunkLocation(chunk_x, chunk_z);
 

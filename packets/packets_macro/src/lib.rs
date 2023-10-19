@@ -2,19 +2,17 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input, DeriveInput, ItemEnum, ItemStruct, Token,
+    parse_macro_input, DeriveInput, ItemEnum, ItemStruct, Meta, Token,
 };
 
-struct MyParams(syn::LitInt, syn::Ident);
+struct PacketParams(syn::LitInt, syn::Ident);
 
-impl Parse for MyParams {
+impl Parse for PacketParams {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let content;
-        syn::parenthesized!(content in input);
-        let type1 = content.parse()?;
-        content.parse::<Token![,]>()?;
-        let type2 = content.parse()?;
-        Ok(MyParams(type1, type2))
+        let type1 = input.parse()?;
+        input.parse::<Token![,]>()?;
+        let type2 = input.parse()?;
+        Ok(PacketParams(type1, type2))
     }
 }
 
@@ -24,16 +22,22 @@ impl Parse for MyParams {
 pub fn packet(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    let packe_attr = input
+    let packet_attr = input
         .attrs
         .iter()
-        .find(|attr| attr.path.is_ident("packet"))
-        .expect("need packet attibute");
+        .find(|attr| attr.path().is_ident("packet"))
+        .expect("need packet attribute");
 
     let name = input.ident;
 
-    let MyParams(id, kind) =
-        syn::parse(packe_attr.tokens.clone().into()).expect("Invalid attributes!");
+    // let tokens = packet_attr.to_token_stream();
+    let Meta::List(meta) = &packet_attr.meta else {
+        panic!("Invalid attributes!");
+    };
+
+    let tokens = meta.tokens.clone();
+
+    let PacketParams(id, kind) = syn::parse(tokens.into()).expect("Invalid attributes!");
 
     let expanded = quote! {
 

@@ -94,8 +94,8 @@ struct AStarState<T: Node> {
 
 /// Takes ownership of all nodes and returns a path ending at `goal_idx` which
 /// will start at a starting idx determined by tracing `parent_map`
-/// HashMap<idx,idx> until there is no parent (i.e., the root node). This is the
-/// most efficient path, so there should be no circles assuming non-negative
+/// `HashMap<idx,idx>` until there is no parent (i.e., the root node). This is
+/// the most efficient path, so there should be no circles assuming non-negative
 /// weights.
 fn reconstruct_path<T: Clone>(
     vec: &[T],
@@ -245,7 +245,9 @@ impl<T: Node> AStar<T> {
     ) -> Increment<PathResult<T::Record>> {
         // obtain the state. If we have already finished the state is Option as we did
         // Option#take(..). We should not ever call this in that state.
-        let Some(state) = self.state.as_mut() else { panic!("called after finished") };
+        let Some(state) = self.state.as_mut() else {
+            panic!("called after finished")
+        };
 
         if let Some(node) = state.open_set.pop() {
             let parent = node.contents;
@@ -260,7 +262,9 @@ impl<T: Node> AStar<T> {
                 return Increment::Finished(PathResult::complete(path));
             }
 
-            let Progression::Movements(neighbors) = progressor.progressions(&parent) else { return Increment::InProgress };
+            let Progression::Movements(neighbors) = progressor.progressions(&parent) else {
+                return Increment::InProgress;
+            };
 
             let parent_record = parent.get_record();
             let parent_record_idx = state.record_to_idx[&parent_record];

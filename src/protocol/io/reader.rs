@@ -34,7 +34,7 @@ impl AsyncRead for EncryptedReader {
         buf: &mut ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
         let filled_before = buf.filled().len();
-        Pin::new(&mut self.reader).poll_read(cx, buf).map_ok(|_| {
+        Pin::new(&mut self.reader).poll_read(cx, buf).map_ok(|()| {
             let filled_after = buf.filled().len();
 
             let to_encrypt = &mut buf.filled_mut()[filled_before..filled_after];

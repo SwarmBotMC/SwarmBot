@@ -302,7 +302,6 @@ impl<T: Minecraft + 'static> Runner<T> {
                 // Safety:
                 // TODO
                 let global_state = unsafe { global_state_sync.state() };
-                let states_sync = states_sync;
                 rayon::scope(|s| {
                     for state_sync in states_sync {
                         let (state, actions) = state_sync.0;

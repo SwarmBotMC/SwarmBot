@@ -45,9 +45,13 @@ async fn command_receiver(
             Err(_e) => continue 'wloop,
         };
 
-        let Value::Object(map) = &mut v else { bail!("invalid value") };
+        let Value::Object(map) = &mut v else {
+            bail!("invalid value")
+        };
 
-        let Value::String(path) = map.remove("path").expect("no path elem") else { bail!("invalid path") };
+        let Value::String(path) = map.remove("path").expect("no path elem") else {
+            bail!("invalid path")
+        };
 
         let command = process(&path, v).expect("invalid command");
         tx.send(command).unwrap();

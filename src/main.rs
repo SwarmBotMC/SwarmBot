@@ -93,7 +93,7 @@ fn main() {
     local.block_on(&rt, async move {
         match run().await {
             // this should never happen as this should be an infinite loop
-            Ok(_) => println!("Program exited without errors somehow"),
+            Ok(()) => println!("Program exited without errors somehow"),
 
             // print the error in non-debug fashion
             Err(err) => println!("{err:?}"),

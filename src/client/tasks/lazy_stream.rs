@@ -58,7 +58,9 @@ impl<T: TaskStream> TaskTrait for LazyStream<T> {
     }
 
     fn expensive(&mut self, end_by: Instant, local: &mut LocalState, global: &GlobalState) {
-        let Some(current) = self.current.as_mut() else { return };
+        let Some(current) = self.current.as_mut() else {
+            return;
+        };
         current.expensive(end_by, local, global);
     }
 }

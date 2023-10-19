@@ -67,7 +67,9 @@ impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for Navig
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {
-        let Some(follower) = self.follower.as_mut() else { return false };
+        let Some(follower) = self.follower.as_mut() else {
+            return false;
+        };
 
         if follower.should_recalc() {
             println!("recalc");

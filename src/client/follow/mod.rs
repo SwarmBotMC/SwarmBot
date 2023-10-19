@@ -128,7 +128,9 @@ impl Follower {
         /// Generally paths will converge within maximally 3 or 4 blocks
         const ITERS_UNTIL_FAIL: usize = 100;
 
-        let Some(other) = Self::new(result) else { return };
+        let Some(other) = Self::new(result) else {
+            return;
+        };
 
         let on = self.xs.front();
 

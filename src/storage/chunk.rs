@@ -132,7 +132,9 @@ impl ChunkData<HighMemoryChunkSection> {
         let chunk_y = y - (section_idx << 4);
 
         let mut res = [BlockState::AIR; 16 * 16];
-        let Some(section) = self.sections[section_idx as usize].as_ref() else { return res };
+        let Some(section) = self.sections[section_idx as usize].as_ref() else {
+            return res;
+        };
 
         let mut idx = 0;
 

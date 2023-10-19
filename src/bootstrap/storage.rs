@@ -215,7 +215,6 @@ impl UserCache {
                             access_id: res.access_token,
                             client_id: res.client_token,
                         };
-                        let valid_user = valid_user;
                         self.cache
                             .insert(valid_user.email.clone(), User::Valid(valid_user.clone()));
                         Some((mojang, proxy, valid_user))
