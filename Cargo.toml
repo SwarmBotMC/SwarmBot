@@ -35,7 +35,7 @@ tokio = { version = "1.33", features = [
 ] }
 
 # dns
-trust-dns-resolver = "0.22"
+trust-dns-resolver = "0.23"
 
 # encryption
 aes = "0.7.5"
@@ -57,7 +57,7 @@ reqwest = { version = "0.11", features = ["json", "socks"] }
 
 # for minecraft auth RSA response
 rsa-der = "0.3"
-rsa = "0.7"
+rsa = { version = "0.9", features = ["pkcs5"] }
 
 # used for RSA and random generation
 rand = "0.8"

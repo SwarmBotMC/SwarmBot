@@ -1,5 +1,5 @@
 use rand::{random, rngs::OsRng};
-use rsa::{BigUint, PaddingScheme, PublicKey, RsaPublicKey};
+use rsa::{BigUint, Pkcs1v15Encrypt, RsaPublicKey};
 
 pub struct Rsa {
     key: RsaPublicKey,
@@ -20,8 +20,7 @@ impl Rsa {
 
     pub fn encrypt(&self, elem: &[u8]) -> rsa::errors::Result<Vec<u8>> {
         let mut rng = OsRng;
-        let padding = PaddingScheme::new_pkcs1v15_encrypt();
-        self.key.encrypt(&mut rng, padding, elem)
+        self.key.encrypt(&mut rng, Pkcs1v15Encrypt, elem)
     }
 }
 

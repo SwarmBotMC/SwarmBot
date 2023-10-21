@@ -1,28 +1,31 @@
+//! **Block cipher** operates on fixed-length groups of bits is called a
+//! **block** Consists of encryption and decryption algorithms
+
 use std::io::{Read, Write};
 
-use aes::{
-    cipher::{AsyncStreamCipher, NewCipher},
-    Aes128,
-};
+use aes::{cipher::NewCipher, Aes128};
+use cfb8::cipher::AsyncStreamCipher;
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 
 pub mod reader;
 pub mod writer;
 
-type AesCfb8 = cfb8::Cfb8<Aes128>;
+type AesEncrypt = cfb8::Cfb8<Aes128>;
 
 /// <https://github.com/RustCrypto/block-ciphers/issues/28>
 /// <https://docs.rs/cfb-mode/0.7.1/cfb_mode/>
 /// as per <https://wiki.vg/Protocol_Encryption#Symmetric_Encryption> the key and iv are the same
 struct Aes {
-    cipher: AesCfb8,
+    cipher: AesEncrypt,
 }
 
 impl Aes {
     pub fn new(key: &[u8]) -> Self {
-        Self {
-            cipher: AesCfb8::new_from_slices(key, key).unwrap(),
-        }
+        let iv = key;
+
+        let cipher = AesEncrypt::new_from_slices(key, iv).unwrap();
+
+        Self { cipher }
     }
 
     pub fn encrypt(&mut self, elem: &mut [u8]) {

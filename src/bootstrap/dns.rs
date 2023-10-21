@@ -9,8 +9,7 @@ use crate::bootstrap::Address;
 
 /// performs a DNS lookup on host
 async fn dns_lookup(host: &str) -> anyhow::Result<Address> {
-    let resolver = AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default())
-        .context("could not create async lookup")?;
+    let resolver = AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
 
     let res = resolver
         .srv_lookup(format!("_minecraft._tcp.{host}"))
