@@ -38,7 +38,7 @@ tokio = { version = "1.33", features = [
 trust-dns-resolver = "0.23"
 
 # encryption
-aes = "0.7.5"
+aes = "0.8.3"
 
 # zlib
 #flate2 = {version = "1.0"}
@@ -110,11 +110,13 @@ interfaces = { package = "swarmbot-interfaces", path = "interfaces", version = "
 anyhow = "1.0.75"
 bincode = "2.0.0-rc.3"
 hex-literal = "0.4.1"
-cfb8 = "0.7"
+cfb8 = "0.8"
 tokio-stream = "0.1.14"
 once_cell = { version = "1.18.0", features = ["parking_lot"] }
 async-trait = "0.1.74"
 tungstenite = "0.20.1"
+generic-array = "1.0.0"
+typenum = "1.17.0"
 
 [dev-dependencies]
 assert_matches = "1.5"

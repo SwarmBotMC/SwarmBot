@@ -3,37 +3,56 @@
 
 use std::io::{Read, Write};
 
-use aes::{cipher::NewCipher, Aes128};
-use cfb8::cipher::AsyncStreamCipher;
+use aes::{
+    cipher::{crypto_common, BlockDecryptMut, BlockEncryptMut, KeyIvInit},
+    Aes128,
+};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 
 pub mod reader;
 pub mod writer;
 
-type AesEncrypt = cfb8::Cfb8<Aes128>;
+type AesEncrypt = cfb8::Encryptor<Aes128>;
+type AesDecrypt = cfb8::Decryptor<Aes128>;
+type Cfb8Block = crypto_common::Block<AesEncrypt>;
 
 /// <https://github.com/RustCrypto/block-ciphers/issues/28>
 /// <https://docs.rs/cfb-mode/0.7.1/cfb_mode/>
 /// as per <https://wiki.vg/Protocol_Encryption#Symmetric_Encryption> the key and iv are the same
 struct Aes {
-    cipher: AesEncrypt,
+    encryptor: AesEncrypt,
+    decryptor: AesDecrypt,
 }
 
 impl Aes {
     pub fn new(key: &[u8]) -> Self {
         let iv = key;
 
-        let cipher = AesEncrypt::new_from_slices(key, iv).unwrap();
+        let encryptor = AesEncrypt::new_from_slices(key, iv).unwrap();
+        let decryptor = AesDecrypt::new_from_slices(key, iv).unwrap();
 
-        Self { cipher }
+        Self {
+            encryptor,
+            decryptor,
+        }
     }
 
     pub fn encrypt(&mut self, elem: &mut [u8]) {
-        self.cipher.encrypt(elem);
+        let (prefix, blocks, suffix) = unsafe { elem.align_to_mut::<Cfb8Block>() };
+
+        debug_assert!(prefix.is_empty());
+        debug_assert!(suffix.is_empty());
+
+        self.encryptor.encrypt_blocks_mut(blocks);
     }
 
     pub fn decrypt(&mut self, elem: &mut [u8]) {
-        self.cipher.decrypt(elem);
+        let (prefix, blocks, suffix) = unsafe { elem.align_to_mut::<Cfb8Block>() };
+
+        debug_assert!(prefix.is_empty());
+        debug_assert!(suffix.is_empty());
+
+        self.decryptor.decrypt_blocks_mut(blocks);
     }
 }
 
