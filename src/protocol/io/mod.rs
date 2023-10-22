@@ -38,6 +38,7 @@ impl Aes {
     }
 
     pub fn encrypt(&mut self, elem: &mut [u8]) {
+        // SAFETY: Cfb8Block is POD (plain old data)
         let (prefix, blocks, suffix) = unsafe { elem.align_to_mut::<Cfb8Block>() };
 
         debug_assert!(prefix.is_empty());
@@ -47,6 +48,7 @@ impl Aes {
     }
 
     pub fn decrypt(&mut self, elem: &mut [u8]) {
+        // SAFETY: Cfb8Block is POD (plain old data)
         let (prefix, blocks, suffix) = unsafe { elem.align_to_mut::<Cfb8Block>() };
 
         debug_assert!(prefix.is_empty());
