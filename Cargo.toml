@@ -117,11 +117,13 @@ async-trait = "0.1.74"
 tungstenite = "0.20.1"
 generic-array = "1.0.0"
 typenum = "1.17.0"
+rustix = "0.38.20"
 
 [dev-dependencies]
 assert_matches = "1.5"
 more-asserts = "0.3"
 primes = "0.3"
+rustix = "0.38.20"
 
 [workspace]
 members = ["packets", "interfaces", "swarmbot-cli"]
