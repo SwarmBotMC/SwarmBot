@@ -28,7 +28,8 @@
 
 ## Support
 
-Join the discord [![Discord Shield](https://discordapp.com/api/guilds/877280790596165702/widget.png?style=shield)](https://discord.gg/64z2nkGxDu)
+Join the
+discord [![Discord Shield](https://discordapp.com/api/guilds/877280790596165702/widget.png?style=shield)](https://discord.gg/64z2nkGxDu)
 
 ## Features
 
@@ -52,17 +53,14 @@ If you want to support a version, you will need to implement the `Minecraft` tra
 ### Bot Launcher
 
 1. Install cargo: https://rustup.rs/
-2. Run `cargo install swarm-bot`
-3. You can now execute `swarm-bot` executable to launch swarm bot
-
-### Forge Mod
-
-A forge mod is needed to interact with the bots. Follow the
-instructions [here](https://github.com/andrewgazelka/SwarmBotForge)
+2. If you are on Windows, install
+   the [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+3. Run `cargo install --git https://github.com/SwarmBotMC/SwarmBot swarm-bot`
+4. You can now execute `swarm-bot` executable to launch swarm bot
 
 ## Running
 
-See `./swarmbot --help`
+See `./swarm-bot --help`
 
 ## Configuring
 
