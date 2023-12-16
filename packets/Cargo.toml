@@ -10,4 +10,4 @@ license = "MIT"
 [dependencies]
 bytes = "1.5"
 swarm-bot-packets-macro = { path = "packets_macro", version = "0.1.2" } # from a path in the local filesystem
-tokio = { version = "1.33", features = ["full"] }
+tokio = { version = "1.34", features = ["full"] }
