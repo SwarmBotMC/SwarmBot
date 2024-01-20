@@ -132,18 +132,10 @@ pub struct MoveState {
     pub throwaway_block_count: usize,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MoveRecord {
     pub state: MoveState,
 }
-
-impl PartialEq for MoveRecord {
-    fn eq(&self, other: &Self) -> bool {
-        self.state.eq(&other.state)
-    }
-}
-
-impl Eq for MoveRecord {}
 
 impl Hash for MoveRecord {
     fn hash<H: Hasher>(&self, state: &mut H) {

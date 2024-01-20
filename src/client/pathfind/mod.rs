@@ -44,6 +44,7 @@ impl<T, C: PartialOrd + PartialEq> PartialOrd for MinHeapNode<T, C> {
 }
 
 impl<T, C: PartialOrd + PartialEq> PartialEq for MinHeapNode<T, C> {
+    #[allow(clippy::unconditional_recursion)]
     fn eq(&self, other: &Self) -> bool {
         self.score.eq(&other.score)
     }
