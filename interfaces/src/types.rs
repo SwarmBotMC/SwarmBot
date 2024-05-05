@@ -666,7 +666,6 @@ impl ByteReadable for Dimension {
 pub type Position = BlockLocation;
 
 impl ByteReadable for Position {
-    ///
     fn read_from_bytes(byte_reader: &mut ByteReader) -> Self {
         let val: u64 = byte_reader.read();
 

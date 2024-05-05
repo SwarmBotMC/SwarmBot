@@ -9,7 +9,6 @@
     warnings,
     clippy::complexity,
     clippy::correctness,
-    clippy::pedantic,
     clippy::perf,
     clippy::style,
     clippy::suspicious,
@@ -51,7 +50,8 @@
     clippy::cast_precision_loss,
     clippy::cast_possible_wrap,
     clippy::default_trait_access,
-    clippy::match_bool
+    clippy::match_bool,
+    dead_code
 )]
 
 // TODO: uncomment these

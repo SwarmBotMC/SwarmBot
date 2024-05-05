@@ -47,7 +47,7 @@ impl<'a, I: InterfaceOut> SimpleInterfaceIn<'a, I> {
         actions: &'a mut ActionState,
         global: &'a mut GlobalState,
         out: &'a mut I,
-    ) -> SimpleInterfaceIn<'a, I> {
+    ) -> Self {
         SimpleInterfaceIn {
             global,
             local,

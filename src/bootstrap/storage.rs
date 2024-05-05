@@ -335,6 +335,7 @@ impl UserCache {
 
             let mut file = OpenOptions::new()
                 .create(true)
+                .truncate(true)
                 .append(false)
                 .write(true)
                 .open(&self.file_path)
