@@ -106,8 +106,7 @@ impl PacketReader {
 
     pub async fn read_exact_packet<T>(&mut self) -> anyhow::Result<T>
     where
-        T: Packet,
-        T: ByteReadable,
+        T: Packet + ByteReadable,
     {
         let PacketData { id, mut reader } = self.read().await?;
 

@@ -2,59 +2,64 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use anyhow::{bail, Context};
 use futures::StreamExt;
-use interfaces::CommandData;
 use serde_json::Value;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::WebSocketStream;
+use tracing::error;
 
 /// commands received over websocket (typically forge mod)
 pub struct CommandReceiver {
-    pub pending: Receiver<CommandData>,
+    pub pending: Receiver<TaggedValue>,
 }
 
-fn process(path: &str, value: Value) -> Option<CommandData> {
-    macro_rules! parse {
-        () => {{
-            serde_json::from_value(value).unwrap()
-        }};
-    }
+struct Processor {
+    value: Value,
+}
 
-    match path {
-        "mine" => Some(CommandData::Mine(parse!())),
-        "goto" => Some(CommandData::GoTo(parse!())),
-        "attack" => Some(CommandData::Attack(parse!())),
+pub struct TaggedValue {
+    pub path: String,
+    pub value: Value,
+}
 
-        path => {
-            println!("invalid {path}");
-            None
-        }
+impl TaggedValue {
+    pub fn parse<T>(self) -> Result<T, serde_json::Error>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        serde_json::from_value(self.value)
     }
 }
 
 async fn command_receiver(
-    tx: Sender<CommandData>,
+    tx: Sender<TaggedValue>,
     mut ws: WebSocketStream<TcpStream>,
 ) -> anyhow::Result<()> {
-    'wloop: while let Some(msg) = ws.next().await {
+    while let Some(msg) = ws.next().await {
         let msg = msg.context("error reading next web socket message (websocket disconnect?)")?;
 
         let text = msg.into_text().unwrap();
 
-        let mut v: Value = match serde_json::from_str(&text) {
+        let v: Value = match serde_json::from_str(&text) {
             Ok(v) => v,
-            Err(_e) => continue 'wloop,
+            Err(e) => {
+                error!("invalid json {e}");
+                continue;
+            }
         };
 
-        let Value::Object(map) = &mut v else {
-            bail!("invalid value")
+        let Value::Object(mut map) = v else {
+            bail!("expected object")
         };
 
         let Value::String(path) = map.remove("path").expect("no path elem") else {
             bail!("invalid path")
         };
 
-        let command = process(&path, v).expect("invalid command");
-        tx.send(command).unwrap();
+        let value = Value::Object(map);
+
+        let elem = TaggedValue { path, value };
+
+        tx.send(elem).unwrap();
     }
     Ok(())
 }

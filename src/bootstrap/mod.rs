@@ -73,6 +73,7 @@ async fn obtain_connection(
 
         conn.into_inner()
     } else {
+        println!("connecting to {target}");
         TcpStream::connect(target.as_str()).await.unwrap()
     };
 

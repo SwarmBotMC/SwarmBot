@@ -101,7 +101,6 @@ hematite-nbt = "0.5"
 swarm-bot-packets = { path = "packets", version = "0.2.0" }
 
 # so we don't have to use v-tables
-enum_dispatch = "0.3"
 tokio-tungstenite = "0.20.1"
 
 futures = "0.3"
@@ -118,6 +117,7 @@ tungstenite = "0.20.1"
 generic-array = "1.0.0"
 typenum = "1.17.0"
 rustix = "0.38.25"
+tracing = "0.1.40"
 
 [dev-dependencies]
 assert_matches = "1.5"
@@ -129,10 +129,22 @@ rustix = "0.38.25"
 members = ["packets", "interfaces", "swarmbot-cli"]
 
 [profile.dev]
-split-debuginfo = "unpacked"
-opt-level = 1
+#split-debuginfo = "unpacked"
+#opt-level = 1
 
 
-[profile.release]
-lto = "fat"
-codegen-units = 1
+#[profile.release]
+#lto = "fat"
+#codegen-units = 1
+
+[lints.clippy]
+complexity = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
+style = { level = "deny", priority = -1 }
+suspicious = { level = "deny", priority = -1 }
+
+module_name_repetitions = "allow"
+future_not_send = "allow"
+

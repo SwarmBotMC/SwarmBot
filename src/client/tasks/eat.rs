@@ -1,7 +1,7 @@
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::InterfaceOut,
 };
@@ -19,10 +19,10 @@ impl Default for EatTask {
     }
 }
 
-impl TaskTrait for EatTask {
+impl Task for EatTask {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         _: &mut LocalState,
         _: &mut GlobalState,
     ) -> bool {

@@ -11,7 +11,7 @@ use crate::client::{
 pub struct GoMineTop;
 
 impl Lazy for GoMineTop {
-    fn create(&self, local: &mut LocalState, global: &GlobalState) -> Task {
+    fn create(&self, local: &mut LocalState, global: &GlobalState) -> Box<dyn Task> {
         let BlockLocation { x, y, z } = local.physics.location().into();
         let mut highest_y = y - 1;
 
@@ -30,6 +30,7 @@ impl Lazy for GoMineTop {
 
         // println!("highest y {}", highest_y);
 
-        PillarAndMineTask::pillar_and_mine(highest_y as u32).into()
+        let task = PillarAndMineTask::pillar_and_mine(highest_y as u32);
+        Box::new(task)
     }
 }

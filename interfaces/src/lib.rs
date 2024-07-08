@@ -9,6 +9,25 @@ pub mod types;
 
 type Id = u64;
 
+pub trait Tag: Serialize {
+    const PATH: &'static str;
+
+    fn encode(&self) -> String {
+        let mut v = serde_json::to_value(self).unwrap();
+
+        let Some(map) = v.as_object_mut() else {
+            panic!("expected object")
+        };
+
+        map.insert(
+            "path".to_string(),
+            serde_json::Value::String(Self::PATH.to_string()),
+        );
+
+        serde_json::to_string(&v).unwrap()
+    }
+}
+
 /// The mine command.
 /// Mine the given selection.
 /// A global command. The process should allocate appropriately to children.
@@ -17,16 +36,28 @@ pub struct Mine {
     pub sel: Selection2D,
 }
 
+impl Tag for Mine {
+    const PATH: &'static str = "mine";
+}
+
 /// A navigation command to go to the given block location
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GoTo {
     pub location: BlockLocation,
 }
 
+impl Tag for GoTo {
+    const PATH: &'static str = "goto";
+}
+
 /// Attack a given player
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Attack {
     pub name: String,
+}
+
+impl Tag for Attack {
+    const PATH: &'static str = "attack";
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -39,29 +70,11 @@ pub struct Finished {
     pub id: Id,
 }
 
-macro_rules! commands {
-    (
-        $($command: ident),*
-    ) =>
-    {
-        #[derive(Serialize, Deserialize, Debug)]
-        #[serde(rename_all = "lowercase")]
-        #[serde(tag = "path")]
-        pub enum CommandData {
-            $($command($command)),*
-        }
-
-    };
-}
-
-commands! {
-    Mine, GoTo, Attack, Cancelled, Finished
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Command {
     id: u64,
-    data: CommandData,
+    path: String,
+    data: serde_json::Value,
 }
 
 pub struct Comm {
@@ -174,14 +187,15 @@ impl Comm {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Attack, Command, CommandData};
+    use crate::Command;
 
     #[test]
     fn test() {
         let command = Command {
             id: 123,
-            data: CommandData::Attack(Attack {
-                name: "hello".to_string(),
+            path: "attack".to_string(),
+            data: serde_json::json!({
+                "name": "hello"
             }),
         };
 

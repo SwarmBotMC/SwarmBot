@@ -1,3 +1,5 @@
+use swarm_bot_packets::types::UUID;
+
 use crate::{
     client::{physics::Physics, state::local::inventory::PlayerInventory},
     protocol::ClientInfo,
@@ -32,7 +34,7 @@ impl LocalState {
             0,
             ClientInfo {
                 username: "abc".to_string(),
-                uuid: Default::default(),
+                uuid: UUID::default(),
                 entity_id: 0,
             },
         )

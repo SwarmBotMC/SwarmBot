@@ -348,8 +348,12 @@ impl Physics {
         let sideways = horizontal.cross(UNIT_Y);
 
         let move_mults = [
-            horizontal.dx * forward_change + sideways.dx * strafe_change,
-            horizontal.dz * forward_change + sideways.dz * strafe_change,
+            horizontal
+                .dx
+                .mul_add(forward_change, sideways.dx * strafe_change),
+            horizontal
+                .dz
+                .mul_add(forward_change, sideways.dz * strafe_change),
         ];
 
         let effect_mult = effects_multiplier(0.0, 0.0);
@@ -380,7 +384,7 @@ impl Physics {
             let downwards_force = feet_flowing || head_flowing;
 
             // TODO: remove 0.014
-            let res = self.prev.y_vel * WATER_SLOW_DOWN - 0.02
+            let res = self.prev.y_vel.mul_add(WATER_SLOW_DOWN, -0.02)
                 + if self.pending.jump { 0.04 } else { 0. }
                 - if downwards_force { 0.014 } else { 0. };
 

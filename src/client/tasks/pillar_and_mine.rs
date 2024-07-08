@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use interfaces::types::BlockLocation;
+
 use crate::{
     client::{
         physics::Physics,
@@ -29,13 +31,12 @@ pub struct PillarOrMine {
 impl TaskStream for PillarOrMine {
     fn poll(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
-    ) -> Option<Task> {
+    ) -> Option<Box<dyn Task>> {
         let current_height =
             u32::try_from((local.physics.location().y).floor() as i64).unwrap_or_default();
-
         // > not >= because we are considering block height
         if current_height > self.height {
             return None;
@@ -45,25 +46,30 @@ impl TaskStream for PillarOrMine {
         let mut set = HashSet::new();
         Physics::in_cross_section(above1, &global.blocks, &mut set);
 
-        macro_rules! mine_task {
-            ($position:expr) => {{
-                let mut task = MineTask::new($position, out, local, global);
-                task.set_face(Face::NegY);
-                Some(task.into())
-            }};
+        if let Some(&position) = set.iter().next() {
+            return Some(create_mine_task(position, out, local, global));
         }
 
+        let above2 = local.physics.location() + Displacement::new(0., 3.5, 0.);
+        set.clear();
+        Physics::in_cross_section(above2, &global.blocks, &mut set);
+
         if let Some(&position) = set.iter().next() {
-            mine_task!(position)
+            Some(create_mine_task(position, out, local, global))
         } else {
-            let above2 = local.physics.location() + Displacement::new(0., 3.5, 0.);
-            Physics::in_cross_section(above2, &global.blocks, &mut set);
-            if let Some(&position) = set.iter().next() {
-                mine_task!(position)
-            } else {
-                local.inventory.switch_block(out);
-                Some(PillarTask::new(current_height + 1).into())
-            }
+            local.inventory.switch_block(out);
+            Some(Box::new(PillarTask::new(current_height + 1)))
         }
     }
+}
+
+fn create_mine_task(
+    position: BlockLocation,
+    out: &mut dyn InterfaceOut,
+    local: &mut LocalState,
+    global: &mut GlobalState,
+) -> Box<dyn Task> {
+    let mut task = MineTask::new(position, out, local, global);
+    task.set_face(Face::NegY);
+    Box::new(task)
 }

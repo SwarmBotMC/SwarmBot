@@ -132,14 +132,14 @@ impl<T: Debug> Debug for PathResult<T> {
 }
 
 impl<T> PathResult<T> {
-    fn complete(value: Vec<T>) -> Self {
+    const fn complete(value: Vec<T>) -> Self {
         Self {
             complete: true,
             value,
         }
     }
 
-    fn incomplete(value: Vec<T>) -> Self {
+    const fn incomplete(value: Vec<T>) -> Self {
         Self {
             complete: false,
             value,

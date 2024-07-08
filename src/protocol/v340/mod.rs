@@ -1,7 +1,6 @@
 use std::{cell::RefCell, rc::Rc, sync::mpsc::TryRecvError};
 
 use anyhow::{bail, Context};
-use async_trait::async_trait;
 use interfaces::types::{BlockLocation, BlockState, ChunkLocation};
 use swarm_bot_packets::{
     types::{Packet, VarInt, UUID},
@@ -398,7 +397,6 @@ impl InterfaceOut for Interface340 {
 
 pub struct Protocol;
 
-#[async_trait]
 impl Minecraft for Protocol {
     type Queue = EventQueue340;
     type Interface = Interface340;

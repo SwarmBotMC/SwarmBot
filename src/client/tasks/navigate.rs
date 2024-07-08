@@ -17,7 +17,7 @@ use crate::{
             traits::{GoalCheck, Heuristic},
         },
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
         timing::Increment,
     },
     protocol::InterfaceOut,
@@ -60,10 +60,10 @@ impl<H: Heuristic, G: GoalCheck> From<PlayerProblem<H, G>> for NavigateProblem<H
     }
 }
 
-impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> TaskTrait for NavigateProblem<H, G> {
+impl<H: Heuristic + Send + Sync, G: GoalCheck + Send + Sync> Task for NavigateProblem<H, G> {
     fn tick(
         &mut self,
-        _out: &mut impl InterfaceOut,
+        _out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

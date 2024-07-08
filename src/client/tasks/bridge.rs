@@ -5,7 +5,7 @@ use crate::{
         pathfind::moves::CardinalDirection,
         physics::{speed::Speed, Line},
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::{Face, InterfaceOut},
     types::{Direction, Displacement},
@@ -29,10 +29,10 @@ impl BridgeTask {
     }
 }
 
-impl TaskTrait for BridgeTask {
+impl Task for BridgeTask {
     fn tick(
         &mut self,
-        _out: &mut impl InterfaceOut,
+        _out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         _global: &mut GlobalState,
     ) -> bool {

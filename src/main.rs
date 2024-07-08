@@ -1,65 +1,5 @@
 //! The entry point for the code
 
-#![deny(
-    clippy::await_holding_refcell_ref,
-    clippy::await_holding_lock,
-    rustdoc::broken_intra_doc_links,
-    unused_must_use,
-    unused_extern_crates,
-    warnings,
-    clippy::complexity,
-    clippy::correctness,
-    clippy::perf,
-    clippy::style,
-    clippy::suspicious,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::rc_buffer,
-    clippy::rest_pat_in_fully_bound_structs,
-    clippy::undocumented_unsafe_blocks,
-    clippy::unneeded_field_pattern,
-    clippy::unwrap_used,
-    clippy::verbose_file_reads,
-    clippy::negative_feature_names,
-    clippy::redundant_feature_names,
-    clippy::wildcard_dependencies,
-    clippy::iter_with_drain,
-    clippy::missing_const_for_fn,
-    clippy::mutex_atomic,
-    clippy::mutex_integer,
-    clippy::nonstandard_macro_braces,
-    clippy::path_buf_push_overwrite,
-    clippy::redundant_pub_crate,
-    clippy::suspicious_operation_groupings,
-    clippy::use_self,
-    clippy::useless_let_if_seq
-)]
-#![allow(clippy::too_many_lines)]
-#![allow(clippy::wildcard_imports)]
-#![allow(clippy::cast_sign_loss)]
-// TODO: remove most of these
-#![allow(
-    incomplete_features,
-    clippy::items_after_statements,
-    clippy::cast_possible_truncation,
-    clippy::module_name_repetitions,
-    clippy::unwrap_used,
-    clippy::indexing_slicing,
-    clippy::panic,
-    clippy::expect_used,
-    clippy::cast_precision_loss,
-    clippy::cast_possible_wrap,
-    clippy::default_trait_access,
-    clippy::match_bool,
-    dead_code
-)]
-
-// TODO: uncomment these
-// #![deny(missing_docs)]
-// #![deny(clippy::missing_docs_in_private_items)]
-
-#[macro_use]
-extern crate enum_dispatch;
 #[macro_use]
 extern crate swarm_bot_packets;
 
@@ -117,7 +57,7 @@ async fn run() -> anyhow::Result<()> {
         delay_ms,
         ws_port,
         proxy,
-        offline,
+        online,
     } = CliOptions::get();
 
     // A list of users we will login
@@ -126,9 +66,9 @@ async fn run() -> anyhow::Result<()> {
     // for instance, 2b2t.org has a DNS redirect
     let server_address = normalize_address(&host, port).await;
 
-    let connection_data: Pin<Box<dyn Stream<Item = BotConnectionData>>> = match offline {
-        true => Box::pin(BotConnectionData::offline_random().take(count)),
-        false => {
+    let connection_data: Pin<Box<dyn Stream<Item = BotConnectionData>>> = match online {
+        false => Box::pin(BotConnectionData::offline_random().take(count)),
+        true => {
             let bot_receiver =
                 BotConnectionData::load_from_files(&users_file, &proxies_file, proxy, count)?;
 

@@ -3,32 +3,32 @@ use std::{collections::VecDeque, time::Instant};
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::{Task, TaskTrait},
+        tasks::Task,
     },
     protocol::InterfaceOut,
 };
 
 #[derive(Default)]
 pub struct CompoundTask {
-    tasks: VecDeque<Task>,
+    tasks: VecDeque<Box<dyn Task>>,
 }
 
 impl CompoundTask {
-    pub fn add<T: Into<Task>>(&mut self, task: T) -> &mut Self {
-        self.tasks.push_back(task.into());
+    pub fn add<T: Task + 'static>(&mut self, task: T) -> &mut Self {
+        self.tasks.push_back(Box::new(task));
         self
     }
 
     #[allow(unused)]
-    pub fn prepend(&mut self, task: impl Into<Task>) {
-        self.tasks.push_front(task.into());
+    pub fn prepend(&mut self, task: impl Task + 'static) {
+        self.tasks.push_front(Box::new(task));
     }
 }
 
-impl TaskTrait for CompoundTask {
+impl Task for CompoundTask {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

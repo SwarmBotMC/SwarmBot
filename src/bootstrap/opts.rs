@@ -28,7 +28,7 @@ pub struct CliOptions {
     pub port: u16,
 
     /// The port of the web socket that is used to communicate bot commands
-    /// to. This is used to interface with the SwarmBot mod, although it
+    /// to. This is used to interface with the `SwarmBot` mod, although it
     /// can be used for anything.
     #[clap(long, default_value = "8080")]
     pub ws_port: u16,
@@ -67,7 +67,7 @@ pub struct CliOptions {
 
     /// if we are launching in offline mode
     #[clap(long)]
-    pub offline: bool,
+    pub online: bool,
 }
 
 impl CliOptions {

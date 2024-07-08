@@ -42,10 +42,7 @@ impl TryFrom<Option<&Proxy>> for MojangClient {
     type Error = anyhow::Error;
 
     fn try_from(value: Option<&Proxy>) -> Result<Self, Self::Error> {
-        match value {
-            None => Ok(Self::default()),
-            Some(proxy) => Self::try_from(proxy),
-        }
+        value.map_or_else(|| Ok(Self::default()), Self::try_from)
     }
 }
 

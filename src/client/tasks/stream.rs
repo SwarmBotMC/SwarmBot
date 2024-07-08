@@ -9,8 +9,8 @@ use crate::{
 pub trait TaskStream {
     fn poll(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
-    ) -> Option<Task>;
+    ) -> Option<Box<dyn Task>>;
 }

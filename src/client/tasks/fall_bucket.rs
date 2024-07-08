@@ -3,7 +3,7 @@ use interfaces::types::{BlockLocation, BlockState, SimpleType};
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::InterfaceOut,
 };
@@ -16,10 +16,10 @@ pub struct FallBucketTask {
     place_loc: Option<BlockLocation>,
 }
 
-impl TaskTrait for FallBucketTask {
+impl Task for FallBucketTask {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

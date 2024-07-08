@@ -221,7 +221,7 @@ impl Default for Palette {
 }
 
 impl Palette {
-    pub fn direct(storage: Vec<u64>) -> Self {
+    pub const fn direct(storage: Vec<u64>) -> Self {
         Self {
             bits_per_block: 13,
             id_to_state: None,

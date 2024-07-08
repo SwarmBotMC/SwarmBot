@@ -4,17 +4,16 @@ use crate::{
     client::{
         physics::{speed::Speed, Line},
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::InterfaceOut,
 };
-
 pub struct CenterTask;
 
-impl TaskTrait for CenterTask {
+impl Task for CenterTask {
     fn tick(
         &mut self,
-        _out: &mut impl InterfaceOut,
+        _out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         _global: &mut GlobalState,
     ) -> bool {

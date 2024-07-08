@@ -25,10 +25,10 @@ impl AttackEntity {
 impl TaskStream for AttackEntity {
     fn poll(
         &mut self,
-        _out: &mut impl InterfaceOut,
+        _out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
-    ) -> Option<Task> {
+    ) -> Option<Box<dyn Task>> {
         let current_location = local.physics.location();
 
         // we cannot do anything if we do not know the location so we end the task
@@ -46,7 +46,7 @@ impl TaskStream for AttackEntity {
 
             compound.add(hit).add(DelayTask(10));
 
-            Some(compound.into())
+            Some(Box::new(compound))
         } else {
             // we need to travel to them
             let travel = TravelProblem::navigate_near_block(
@@ -57,7 +57,7 @@ impl TaskStream for AttackEntity {
             );
             let task = NavigateProblem::from(travel);
 
-            Some(task.into())
+            Some(Box::new(task))
         }
     }
 }

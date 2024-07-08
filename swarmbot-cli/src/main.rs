@@ -5,7 +5,7 @@ use std::{io, io::Write};
 use anyhow::{bail, Context};
 use clap::Parser;
 use futures::SinkExt;
-use swarmbot_interfaces::{types::BlockLocation, CommandData, GoTo};
+use swarmbot_interfaces::{types::BlockLocation, GoTo, Tag};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_tungstenite::tungstenite::Message;
 
@@ -56,28 +56,30 @@ async fn run() -> anyhow::Result<!> {
 }
 
 fn send_string(input: &str) -> anyhow::Result<String> {
-    let cmd_data = to_command_data(input)
+    let to_send = to_command_data(input)
         .with_context(|| format!("invalid converting to command data for {input}"))?;
-    let to_send = serde_json::to_string(&cmd_data).context("converting to JSON")?;
 
     println!("sending {to_send}");
     println!();
     Ok(to_send)
 }
 
-fn to_command_data(input_str: &str) -> anyhow::Result<CommandData> {
+fn to_command_data(input_str: &str) -> anyhow::Result<String> {
     let mut input = input_str.trim().split(' ');
 
     let cmd_name = input.next().context("no command name specified")?;
 
     match cmd_name {
-        "goto" => Ok(CommandData::GoTo(GoTo {
-            location: BlockLocation {
-                x: input.next().context("no x in goto")?.parse()?,
-                y: input.next().context("no y in goto")?.parse()?,
-                z: input.next().context("no z in goto")?.parse()?,
-            },
-        })),
+        "goto" => {
+            let goto = GoTo {
+                location: BlockLocation {
+                    x: input.next().context("no x in goto")?.parse()?,
+                    y: input.next().context("no y in goto")?.parse()?,
+                    z: input.next().context("no z in goto")?.parse()?,
+                },
+            };
+            Ok(goto.encode())
+        }
         _ => bail!("input '{input_str}' could not be parsed into a CommandData struct"),
     }
 }

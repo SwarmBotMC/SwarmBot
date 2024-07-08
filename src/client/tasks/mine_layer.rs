@@ -16,10 +16,10 @@ pub struct MineLayer;
 impl TaskStream for MineLayer {
     fn poll(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
-    ) -> Option<Task> {
+    ) -> Option<Box<dyn Task>> {
         const RADIUS: u8 = 3;
 
         let origin_loc = BlockLocation::from(local.physics.location()).below();
@@ -42,6 +42,7 @@ impl TaskStream for MineLayer {
                 FloatOrd(priority)
             })?;
 
-        Some(MineTask::new(block_to_mine, out, local, global).into())
+        let task = MineTask::new(block_to_mine, out, local, global);
+        Some(Box::new(task))
     }
 }

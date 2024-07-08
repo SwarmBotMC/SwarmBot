@@ -1,7 +1,7 @@
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::InterfaceOut,
 };
@@ -15,10 +15,10 @@ impl DelayTask {
     }
 }
 
-impl TaskTrait for DelayTask {
+impl Task for DelayTask {
     fn tick(
         &mut self,
-        _out: &mut impl InterfaceOut,
+        _out: &mut dyn InterfaceOut,
         _local: &mut LocalState,
         _global: &mut GlobalState,
     ) -> bool {

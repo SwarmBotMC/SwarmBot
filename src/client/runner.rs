@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::Context;
-use interfaces::{types::Selection2D, Attack, CommandData, GoTo};
+use interfaces::types::Selection2D;
 use tokio::sync::Notify;
 use tokio_stream::{Stream, StreamExt};
 
@@ -14,7 +14,7 @@ use crate::{
     bootstrap::BotConnection,
     client::{
         bot::{run_threaded, ActionState, Bot},
-        commands::CommandReceiver,
+        commands::{CommandReceiver, TaggedValue},
         processor::SimpleInterfaceIn,
         state::{
             global::{mine_alloc::MinePreference, GlobalState},
@@ -201,7 +201,7 @@ impl<T: Minecraft + 'static> Runner<T> {
         }
 
         // process pending commands (from forge mod)
-        self.process_forge_mod_commands();
+        self.process_commands();
 
         // fourth step: process packets from game loop
         self.process_incoming_minecraft_packets();
@@ -235,7 +235,7 @@ impl<T: Minecraft + 'static> Runner<T> {
 
     /// process pending commands (generally from forge mod but more generally
     /// from a websocket)
-    fn process_forge_mod_commands(&mut self) {
+    fn process_commands(&mut self) {
         while let Ok(command) = self.command_receiver.pending.try_recv() {
             if let Err(err) = self.process_command(command) {
                 println!("Error processing command: {err}");
@@ -325,12 +325,16 @@ impl<T: Minecraft + 'static> Runner<T> {
         thread_loop_end.notified().await;
     }
 
-    fn process_command(&mut self, command: CommandData) -> anyhow::Result<()> {
+    fn process_command(&mut self, command: TaggedValue) -> anyhow::Result<()> {
+        use interfaces::{Attack, GoTo, Mine, Tag};
+
         let global = &mut self.global_state;
         let bots = &mut self.bots;
 
-        match command {
-            CommandData::Mine(interfaces::Mine { sel }) => {
+        match command.path.as_str() {
+            Mine::PATH => {
+                let Mine { sel } = command.parse()?;
+
                 let Selection2D { from, to } = sel.normalize();
                 global.mine.mine(from, to, Some(MinePreference::FromDist));
 
@@ -338,13 +342,15 @@ impl<T: Minecraft + 'static> Runner<T> {
                     bot.actions.schedule(LazyStream::from(MineRegion));
                 }
             }
-            CommandData::GoTo(GoTo { location }) => {
+            GoTo::PATH => {
+                let GoTo { location } = command.parse()?;
                 for bot in bots {
                     bot.actions
                         .schedule(BlockTravelTask::new(location, &bot.state));
                 }
             }
-            CommandData::Attack(Attack { name }) => {
+            Attack::PATH => {
+                let Attack { name } = command.parse()?;
                 let player = self
                     .global_state
                     .players
@@ -361,7 +367,7 @@ impl<T: Minecraft + 'static> Runner<T> {
                     bot.actions.schedule(task);
                 }
             }
-            CommandData::Cancelled(_) | CommandData::Finished(_) => {}
+            _ => {}
         }
 
         Ok(())

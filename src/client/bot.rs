@@ -11,7 +11,7 @@ use crate::{
         state::{global::GlobalState, local::LocalState},
         tasks::{
             compound::CompoundTask, eat::EatTask, fall_bucket::FallBucketTask, mine::MineTask,
-            navigate::BlockTravelTask, Task, TaskTrait,
+            navigate::BlockTravelTask, Task,
         },
     },
     protocol::{EventQueue, Face, InterfaceOut},
@@ -24,13 +24,13 @@ use crate::{
 pub struct ActionState {
     /// the task. In the future, this might change to be a priority queue of
     /// tasks
-    task: Option<Task>,
+    task: Option<Box<dyn Task>>,
 }
 
 impl ActionState {
     /// schedule a task
-    pub fn schedule<T: Into<Task>>(&mut self, task: T) {
-        self.task = Some(task.into());
+    pub fn schedule(&mut self, task: impl Task + 'static) {
+        self.task = Some(Box::new(task));
     }
     /// clear the task list
     pub fn clear(&mut self) {
@@ -102,7 +102,7 @@ pub fn process_command(
     local: &mut LocalState,
     global: &mut GlobalState,
     actions: &mut ActionState,
-    out: &mut impl InterfaceOut,
+    out: &mut dyn InterfaceOut,
 ) -> anyhow::Result<()> {
     macro_rules! msg {
         () => {{
@@ -153,7 +153,7 @@ pub fn process_command(
         // }
         "eat" => {
             let eat_task = EatTask::default();
-            actions.task = Some(eat_task.into());
+            actions.task = Some(Box::new(eat_task));
         }
         "slot" => {
             if let [number] = args {

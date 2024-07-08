@@ -15,10 +15,10 @@ pub struct MineRegion;
 impl TaskStream for MineRegion {
     fn poll(
         &mut self,
-        _out: &mut impl InterfaceOut,
+        _out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
-    ) -> Option<Task> {
+    ) -> Option<Box<dyn Task>> {
         let goal = global.mine.obtain_region()?;
         let start = local.physics.location();
 
@@ -28,6 +28,6 @@ impl TaskStream for MineRegion {
 
         compound.add(nav).add(LazyTask::from(SafeMineRegion));
 
-        Some(compound.into())
+        Some(Box::new(compound))
     }
 }

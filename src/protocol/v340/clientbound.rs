@@ -423,13 +423,14 @@ impl ByteReadableLike for ChunkColumnPacket {
     type Param = bool;
 
     fn read_from_bytes(byte_reader: &mut ByteReader, param: &Self::Param) -> Self {
+        const INIT: Option<Box<HighMemoryChunkSection>> = None;
+
         let chunk_x = byte_reader.read();
         let chunk_z = byte_reader.read();
         let ground_up_continuous: bool = byte_reader.read();
         let VarUInt(mut primary_bitmask) = byte_reader.read();
         let _size: VarUInt = byte_reader.read();
 
-        const INIT: Option<Box<HighMemoryChunkSection>> = None;
         let mut sections = [INIT; 16];
 
         let mut idx = 0;
@@ -471,7 +472,7 @@ pub mod window {
     pub struct Open {
         pub window_id: u8,
 
-        /// https://wiki.vg/Inventory
+        /// <https://wiki.vg/Inventory>
         pub kind: String,
 
         pub title: String,

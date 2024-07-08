@@ -20,7 +20,7 @@ use crate::client::{
 pub struct SafeMineRegion;
 
 impl Lazy for SafeMineRegion {
-    fn create(&self, local: &mut LocalState, global: &GlobalState) -> Task {
+    fn create(&self, local: &mut LocalState, global: &GlobalState) -> Box<dyn Task> {
         let location = BlockLocation::from(local.physics.location());
         let center = BlockLocation2D::from(location);
 
@@ -49,7 +49,7 @@ impl Lazy for SafeMineRegion {
         });
 
         if avoid {
-            DelayTask(0).into()
+            Box::new(DelayTask(0))
         } else {
             let mut compound = CompoundTask::default();
 
@@ -58,7 +58,7 @@ impl Lazy for SafeMineRegion {
                 .add(LazyTask::from(GoMineTop))
                 .add(LazyStream::from(MineColumn));
 
-            compound.into()
+            Box::new(compound)
         }
     }
 }

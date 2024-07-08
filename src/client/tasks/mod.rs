@@ -1,30 +1,14 @@
 use std::time::Instant;
 
-use bridge::BridgeTask;
-use center::CenterTask;
-use compound::CompoundTask;
-use delay::DelayTask;
-use eat::EatTask;
-use fall_bucket::FallBucketTask;
-use hit_entity::HitEntityTask;
 use lazy::LazyTask;
-use mine::MineTask;
-use mine_column::MineColumnTask;
 use mine_goto::GoMineTop;
-use mine_layer::MineLayerTask;
 use mine_region::MineRegion;
-use navigate::BlockTravelNearTask;
-use pillar::PillarTask;
-use pillar_and_mine::PillarAndMineTask;
 
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
         tasks::{
-            attack_entity::AttackEntity,
-            lazy_stream::LazyStream,
-            navigate::{BlockTravelTask, ChunkTravelTask},
-            safe_mine_coord::SafeMineRegion,
+            attack_entity::AttackEntity, lazy_stream::LazyStream, safe_mine_coord::SafeMineRegion,
         },
     },
     protocol::InterfaceOut,
@@ -51,12 +35,12 @@ pub mod pillar_and_mine;
 pub mod safe_mine_coord;
 pub mod stream;
 
-#[enum_dispatch]
-pub trait TaskTrait {
+/// Must be Send because expensive is called in a multi-threaded environment
+pub trait Task: Send {
     /// return true if done
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool;
@@ -74,27 +58,3 @@ pub type GoMineTopTask = LazyTask<GoMineTop>;
 pub type MineRegionTask = LazyStream<MineRegion>;
 pub type SafeMineRegionTask = LazyTask<SafeMineRegion>;
 pub type AttackEntityTask = LazyStream<AttackEntity>;
-
-#[allow(clippy::enum_variant_names)]
-#[enum_dispatch(TaskTrait)]
-pub enum Task {
-    CompoundTask,
-    AttackEntityTask,
-    HitEntityTask,
-    EatTask,
-    MineRegionTask,
-    SafeMineRegionTask,
-    CenterTask,
-    BridgeTask,
-    GoMineTopTask,
-    MineColumnTask,
-    MineTask,
-    BlockTravelNearTask,
-    BlockTravelTask,
-    ChunkTravelTask,
-    PillarTask,
-    DelayTask,
-    PillarAndMineTask,
-    MineLayerTask,
-    FallBucketTask,
-}

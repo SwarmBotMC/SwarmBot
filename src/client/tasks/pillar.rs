@@ -3,7 +3,7 @@ use interfaces::types::{BlockLocation, SimpleType};
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::InterfaceOut,
     types::{Direction, Displacement},
@@ -20,10 +20,10 @@ impl PillarTask {
     }
 }
 
-impl TaskTrait for PillarTask {
+impl Task for PillarTask {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

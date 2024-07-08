@@ -3,7 +3,7 @@ use interfaces::types::{BlockLocation, BlockState};
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::{Face, InterfaceOut, Mine},
 };
@@ -18,7 +18,7 @@ pub struct MineTask {
 impl MineTask {
     pub fn new(
         location: BlockLocation,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &GlobalState,
     ) -> Self {
@@ -41,10 +41,10 @@ impl MineTask {
     }
 }
 
-impl TaskTrait for MineTask {
+impl Task for MineTask {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

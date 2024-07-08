@@ -3,18 +3,18 @@ use std::time::Instant;
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::{Task, TaskTrait},
+        tasks::Task,
     },
     protocol::InterfaceOut,
 };
 
 pub struct LazyTask<T: Lazy> {
-    inner: Option<Box<Task>>,
+    inner: Option<Box<dyn Task>>,
     create_task: Option<T>,
 }
 
 pub trait Lazy {
-    fn create(&self, local: &mut LocalState, global: &GlobalState) -> Task;
+    fn create(&self, local: &mut LocalState, global: &GlobalState) -> Box<dyn Task>;
 }
 
 impl<T: Lazy> From<T> for LazyTask<T> {
@@ -27,20 +27,21 @@ impl<T: Lazy> From<T> for LazyTask<T> {
 }
 
 impl<T: Lazy> LazyTask<T> {
-    fn get(&mut self, local: &mut LocalState, global: &GlobalState) -> &mut Task {
+    fn get(&mut self, local: &mut LocalState, global: &GlobalState) -> &mut dyn Task {
         if self.inner.is_none() {
             let f = self.create_task.take().unwrap();
-            self.inner = Some(Box::new(f.create(local, global)));
+            let task = f.create(local, global);
+            self.inner = Some(task);
         }
 
-        self.inner.as_mut().unwrap()
+        self.inner.as_deref_mut().unwrap()
     }
 }
 
-impl<T: Lazy> TaskTrait for LazyTask<T> {
+impl<T: Lazy + Send> Task for LazyTask<T> {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

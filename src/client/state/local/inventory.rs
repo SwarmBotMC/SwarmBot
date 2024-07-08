@@ -66,7 +66,7 @@ impl PlayerInventory {
 
     /// drop a single item in the hotbar (not multiple because anti cheat does
     /// not like this) returns if dropped all
-    pub fn drop_hotbar(&mut self, out: &mut impl InterfaceOut) -> bool {
+    pub fn drop_hotbar(&mut self, out: &mut dyn InterfaceOut) -> bool {
         let idx = (36..45).find_map(|idx| {
             #[allow(clippy::indexing_slicing)]
             self.slots[idx].take()?;
@@ -93,23 +93,23 @@ impl PlayerInventory {
         self.hotbar()[self.selected as usize].as_ref()
     }
 
-    pub fn change_slot(&mut self, idx: u8, out: &mut impl InterfaceOut) {
+    pub fn change_slot(&mut self, idx: u8, out: &mut dyn InterfaceOut) {
         if self.selected != idx {
             self.selected = idx;
             out.change_slot(idx);
         }
     }
 
-    pub fn switch_block(&mut self, out: &mut impl InterfaceOut) {
+    pub fn switch_block(&mut self, out: &mut dyn InterfaceOut) {
         self.switch_selector(out, BlockKind::throw_away_block);
     }
 
     /// true if successful
-    pub fn switch_food(&mut self, data: &BlockData, out: &mut impl InterfaceOut) -> bool {
+    pub fn switch_food(&mut self, data: &BlockData, out: &mut dyn InterfaceOut) -> bool {
         self.switch_selector(out, |kind| data.is_food(kind.id()))
     }
 
-    pub fn switch_bucket(&mut self, out: &mut impl InterfaceOut) {
+    pub fn switch_bucket(&mut self, out: &mut dyn InterfaceOut) {
         self.switch_selector(out, |kind| kind.id() == 325 || kind.id() == 326);
     }
 
@@ -117,7 +117,7 @@ impl PlayerInventory {
         &mut self,
         kind: BlockKind,
         data: &BlockData,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
     ) -> Tool {
         let tools = self.hotbar().iter().enumerate().map(|(idx, item_stack)| {
             let tool = match item_stack.as_ref() {
@@ -146,7 +146,7 @@ impl PlayerInventory {
 
     pub fn switch_selector(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         mut block: impl FnMut(BlockKind) -> bool,
     ) -> bool {
         let block_idx = self

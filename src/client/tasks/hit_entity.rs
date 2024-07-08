@@ -1,7 +1,7 @@
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::TaskTrait,
+        tasks::Task,
     },
     protocol::InterfaceOut,
     types::Displacement,
@@ -17,10 +17,10 @@ impl HitEntityTask {
     }
 }
 
-impl TaskTrait for HitEntityTask {
+impl Task for HitEntityTask {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

@@ -3,13 +3,13 @@ use std::time::Instant;
 use crate::{
     client::{
         state::{global::GlobalState, local::LocalState},
-        tasks::{stream::TaskStream, Task, TaskTrait},
+        tasks::{stream::TaskStream, Task},
     },
     protocol::InterfaceOut,
 };
 
 pub struct LazyStream<T: TaskStream> {
-    current: Option<Box<Task>>,
+    current: Option<Box<dyn Task>>,
     create_task: T,
 }
 
@@ -25,23 +25,23 @@ impl<T: TaskStream> From<T> for LazyStream<T> {
 impl<T: TaskStream> LazyStream<T> {
     fn get(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
-    ) -> Option<&mut Task> {
+    ) -> Option<&mut Box<dyn Task>> {
         if self.current.is_none() {
             let next = self.create_task.poll(out, local, global)?;
-            self.current = Some(next.into());
+            self.current = Some(next);
         }
 
-        self.current.as_deref_mut()
+        self.current.as_mut()
     }
 }
 
-impl<T: TaskStream> TaskTrait for LazyStream<T> {
+impl<T: TaskStream + Send> Task for LazyStream<T> {
     fn tick(
         &mut self,
-        out: &mut impl InterfaceOut,
+        out: &mut dyn InterfaceOut,
         local: &mut LocalState,
         global: &mut GlobalState,
     ) -> bool {

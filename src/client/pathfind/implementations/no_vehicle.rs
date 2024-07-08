@@ -125,7 +125,7 @@ impl Heuristic for ChunkHeuristic {
     fn heuristic(&self, input: &MoveNode) -> f64 {
         let dx = f64::from(input.location.x - self.center_x);
         let dz = f64::from(input.location.z - self.center_z);
-        let dist2 = dx * dx + dz * dz;
+        let dist2 = dx.mul_add(dx, dz * dz);
         dist2.sqrt() * self.move_cost * 0.2
     }
 }
