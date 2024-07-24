@@ -64,6 +64,8 @@ impl EventQueue for EventQueue340 {
 }
 
 impl EventQueue340 {
+    // allow lines
+    #[allow(clippy::too_many_lines)]
     fn process_packet(&mut self, mut data: PacketData, processor: &mut impl InterfaceIn) {
         use clientbound::*;
         match data.id {

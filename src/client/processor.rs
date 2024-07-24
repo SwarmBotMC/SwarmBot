@@ -57,31 +57,34 @@ impl<'a, I: InterfaceOut> SimpleInterfaceIn<'a, I> {
     }
 }
 
+impl<'a, I: InterfaceOut> SimpleInterfaceIn<'a, I> {
+    pub fn process_player_message(&mut self, msg: PlayerMessage) {
+        println!("processing player message {msg:?}");
+        if let Some(cmd) = msg.into_cmd() {
+            let name = cmd.command;
+            let args_str: Vec<&str> = cmd.args.iter().map(String::as_str).collect();
+            if let Err(err) = process_command(
+                &name,
+                &args_str,
+                self.local,
+                self.global,
+                self.actions,
+                self.out,
+            ) {
+                println!("could not process command. Reason: {err:?}");
+            }
+        }
+    }
+}
+
 impl<'a, I: InterfaceOut> InterfaceIn for SimpleInterfaceIn<'a, I> {
     fn on_chat(&mut self, message: Chat) {
         println!("{}", message.clone().colorize());
 
-        let mut process = |msg: PlayerMessage| {
-            if let Some(cmd) = msg.into_cmd() {
-                let name = cmd.command;
-                let args_str: Vec<&str> = cmd.args.iter().map(String::as_str).collect();
-                if let Err(err) = process_command(
-                    &name,
-                    &args_str,
-                    self.local,
-                    self.global,
-                    self.actions,
-                    self.out,
-                ) {
-                    println!("could not process command. Reason: {err:?}");
-                }
-            }
-        };
-
         if let Some(msg) = message.player_message() {
-            process(msg);
+            self.process_player_message(msg);
         } else if let Some(msg) = message.player_dm() {
-            process(msg);
+            self.process_player_message(msg);
         }
     }
 
